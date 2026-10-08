@@ -311,7 +311,12 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 
 ## 6. Android phone app specification (companion now, full app with widget later)
 
+- Implemented in `android/` (see `android/README.md`). Package name `io.github.juliajamnicka.brnomhd`.
 - Kotlin, minSdk 26, single activity (settings/onboarding) + one service.
+- The Wear Engine receiver only works while the app's process runs, and the watch cannot start the
+  phone app. So the service runs permanently as a low-priority foreground service (it is idle until
+  a message arrives; no polling) instead of "only while the watch app is open". It restarts after a
+  reboot if it was on; location then needs the optional "Allow all the time" permission.
 - Target phone: Nothing Phone (2), Android with Google Play services.
 - Libraries: Huawei Wear Engine SDK (phone side), Google Fused Location Provider,
   OkHttp + kotlinx.serialization (`LocationManager` fallback for phones without Play services).
@@ -329,7 +334,8 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 |------------|---------|-------------|
 | `{"c":"home"}` | Main screen: closest stop + departures | location -> `/nearby?limit=1` -> `/departures` for first platform -> `{"c":"dep", ...}` |
 | `{"c":"dep","g":"g1234","p":"1234Z2"}` | Departures for given platform | `/departures` -> `{"c":"dep", ...}` |
-| `{"c":"near"}` | Stop list | `/nearby?limit=12` -> `{"c":"near", ...}` (split into pages of 4 if over size limit) |
+| `{"c":"near"}` | Stop list | `/nearby?limit=12` -> `{"c":"near", ...}` (entries dropped from the end if over the size limit) |
+| `{"c":"pl","p":"U1073Z2"}` | Platform picker | `/departures` -> `{"c":"pl", ...}` with each platform's lines and direction |
 | `{"c":"veh"}` | Radar | `/vehicles?r=800` -> `{"c":"veh", ...}` (max 15 vehicles) |
 | any | Error | `{"c":"err","e":"noloc" / "net" / "srv"}` |
 
@@ -487,7 +493,7 @@ switch on each). The rules below describe them.
 | 0 | Spike (section 9) | Items 1-4 done; 5-6 waiting for the Huawei developer account. |
 | 1 | Backend: GTFS import, `/nearby`, `/departures` (scheduled only) | Implemented (`backend/`); spot-check 5 stops vs. idos.cz still to do. |
 | 2 | Backend realtime: lazy fetch + cache, trip matching, delays, deploy to Cloud Run (implemented; deploy waits for the Google Cloud setup) | `lv=1` on most departures during the day; ETA within 1 min of the stop display boards on spot checks. |
-| 3 | Companion app: location, Wear Engine, protocol | Messages round-trip with a test watch page. |
+| 3 | Companion app: location, Wear Engine, protocol | Implemented (`android/`); round trip with the watch waits for the Wear Engine permission and the watch app. |
 | 4 | Watch app: home + reverse direction + stop list | F1-F4, F6 met on the device. |
 | 5 | Bonus: radar (`/vehicles` + page) | F5 met. |
 | 6 | Polish: error states, about/attribution, Czech/English, battery check | 1 week of daily use without issues. |

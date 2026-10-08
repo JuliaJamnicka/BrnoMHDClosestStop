@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Nastavení</string>
+    <string name="status_off">Spojení s hodinkami je vypnuté</string>
+    <string name="status_connected">Připojeno</string>
+    <string name="status_waiting">Čekám na hodinky…</string>
+    <string name="status_last_request">Poslední dotaz z hodinek: %1$s</string>
+    <string name="status_send_failed">Odpověď se nepodařilo poslat do hodinek</string>
+    <string name="grant_location">Povolit polohu</string>
+    <string name="connect_watch">Připojit hodinky</string>
+    <string name="disconnect_watch">Vypnout spojení s hodinkami</string>
+    <string name="setup_auth_cancelled">Oprávnění Wear Engine nebylo uděleno.</string>
+    <string name="setup_auth_failed">Wear Engine není k dispozici: %1$s. Je nainstalovaná aplikace Huawei Health a jsou hodinky spárované?</string>
+    <string name="section_location">Poloha</string>
+    <string name="background_location_hint">Aby aplikace fungovala i po restartu telefonu, nastavte přístup k poloze na „Povolit vždy“.</string>
+    <string name="background_location_button">Povolit vždy</string>
+    <string name="section_preview">Odjezdy tady</string>
+    <string name="preview_hint">Ukáže, co by hodinky zobrazily pro vaši aktuální polohu.</string>
+    <string name="preview_loading">Načítám…</string>
+    <string name="preview_button">Načíst odjezdy</string>
+    <string name="preview_legend">● živá data o vozidle · oranžově: zpoždění 2 min a více</string>
+    <string name="now">teď</string>
+    <string name="section_language">Jazyk</string>
+    <string name="language_system">Podle systému</string>
+    <string name="section_watch">Hodinky</string>
+    <string name="departure_count">Počet odjezdů</string>
+    <string name="section_advanced">Pokročilé</string>
+    <string name="show_advanced">Zobrazit nastavení serveru</string>
+    <string name="server_url">Adresa serveru</string>
+    <string name="api_key">API klíč</string>
+    <string name="api_key_missing">API klíč není nastaven. Zadejte ho v nastavení serveru.</string>
+    <string name="save">Uložit</string>
+    <string name="error_no_location">Poloha není k dispozici.</string>
+    <string name="error_auth">Server odmítl API klíč.</string>
+    <string name="error_network">Nelze se spojit se serverem.</string>
+    <string name="error_server">Chyba serveru: %1$s</string>
+    <string name="attribution">Data: KORDIS JMK / data.Brno, CC BY 4.0</string>
+    <string name="notification_channel">Spojení s hodinkami</string>
+    <string name="notification_text">Připraveno posílat odjezdy do hodinek</string>
+</resources>
