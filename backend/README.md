@@ -92,9 +92,10 @@ SA=github-deploy@$PROJECT_ID.iam.gserviceaccount.com
 for role in roles/run.admin roles/artifactregistry.writer roles/iam.serviceAccountUser; do
   gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SA --role=$role
 done
-# Cloud Run's runtime account must read the API key secret
+# identity the running service uses; it may only read the API key secret
+gcloud iam service-accounts create mhd-runtime
 gcloud secrets add-iam-policy-binding mhd-api-key \
-  --member=serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com \
+  --member=serviceAccount:mhd-runtime@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/secretmanager.secretAccessor
 
 # keyless login from GitHub Actions (Workload Identity Federation), limited to this repository
