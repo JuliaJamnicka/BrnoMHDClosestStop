@@ -11,7 +11,8 @@ const app = buildApp({
   timetable,
   tracker,
   feed,
-  apiKey: process.env.API_KEY || undefined,
+  // Secret Manager keeps the value byte for byte; `openssl rand -hex` adds a trailing newline
+  apiKey: process.env.API_KEY?.trim() || undefined,
   logger: true,
 });
 
