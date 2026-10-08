@@ -1,6 +1,6 @@
 # Brno MHD Closest Stop - Technical Specification
 
-Status: draft v0.1 (2026-10-08)
+Status: draft v0.2 (2026-10-08) - open questions from v0.1 resolved (section 11)
 Target device: Huawei Watch GT series (HarmonyOS lite wearable), paired with an Android phone
 
 ---
@@ -20,6 +20,9 @@ closest to the user, using real-time delay data, without taking the phone out of
 | F4   | Departures auto-refresh while the screen is visible. | Must |
 | F5   | Live vehicle view: user position plus nearest buses/trams/trolleybuses in real time. | Should (bonus) |
 | F6   | Works without any interaction on the phone (phone stays in the pocket). | Must |
+| F7   | Czech and English UI, switchable in the phone app settings (default: follow phone language). | Must |
+| F8   | All stops in the IDS JMK dataset are included (Brno MHD and regional, incl. trains and the Brno dam boat). | Must |
+| F9   | Android home-screen widget with the same "closest stop departures" view. | Later phase (after the watch) |
 
 ### 1.2 Non-functional requirements
 
@@ -119,12 +122,12 @@ and in the companion app.
 |  Watch GT        | <------------------> |  Android companion   | <------------> |  Backend "mhd-api"  |
 |  JS lite app     |  small JSON msgs     |  (Kotlin)            |                |  (Node.js/TS)       |
 |  - UI only       |                      |  - phone GPS         |                |  - GTFS static DB   |
-|  - 3 pages       |                      |  - calls backend     |                |  - RT poller (10 s) |
+|  - 3 pages       |                      |  - calls backend     |                |  - RT cache (10 s)  |
 +------------------+                      |  - compacts payload  |                |  - ETA engine       |
                                           +----------------------+                +----------+----------+
                                                                                              |
-                                                         weekly: gtfs.zip  ------------------+
-                                                         every 10 s: gtfsReal.dat + ArcGIS positions
+                                           weekly (GitHub Actions): gtfs.zip -> timetable.db +
+                                       on request (10 s cache): gtfsReal.dat + ArcGIS positions
 ```
 
 ### 4.1 Responsibilities
@@ -158,13 +161,17 @@ written so they could be ported.
 - Node.js 22 + TypeScript, Fastify.
 - `gtfs-realtime-bindings` for protobuf decoding.
 - SQLite (better-sqlite3) for the static timetable, rebuilt weekly into a new file and swapped atomically.
-- Hosting: one small always-on instance (e.g. Cloud Run with `min-instances=1`, Fly.io, or a
-  home Raspberry Pi behind Cloudflare Tunnel). Always-on is needed because the real-time poller
-  keeps state in memory; on a scale-to-zero platform the poller must instead run lazily on request
-  with a 10 s cache (works, but first request after idle is slower).
+- Hosting: free cloud tier, scale-to-zero container (see 5.6). There is no background
+  poller: real-time data is fetched lazily on request and cached for 10 s (5.3), so the service
+  only runs while the app is actually used.
 - Simple shared API key in a header (the companion holds it) to stop casual abuse.
 
-### 5.2 Static data import (weekly, Sunday 13:00 and on startup)
+### 5.2 Static data import (weekly, Sunday 13:00)
+
+Runs as a scheduled **GitHub Actions** workflow (free for this repository), not on the server:
+it builds a compact read-only SQLite file (`timetable.db`), bakes it into the container image and
+redeploys. The server therefore never parses `gtfs.zip`, which keeps cold starts short.
+
 
 1. Download `gtfs.zip`, validate (required files present, row counts sane).
 2. Load into SQLite tables: `stops`, `routes`, `trips`, `stop_times`, `calendar`, `calendar_dates`.
@@ -174,15 +181,14 @@ written so they could be ported.
      (e.g. "Česká"); its platforms are directions.
    - **Platform direction label**: the 2-3 most frequent trip headsigns departing from that
      platform (e.g. "-> Královo Pole, Řečkovice").
-   - **Brno filter flag** per stop: served by at least one line with DPMB-style numbering
-     (1-99, N-lines) or inside the Brno city polygon; the stop list hides regional-only stops
-     by default.
+   - **Modes per stop group** from `routes.route_type` (tram, trolleybus, bus, train, boat, night).
+     All stops in the feed are kept (decision F8); no Brno-only filter.
    - Spatial index: stops bucketed into a 500 m grid for fast nearest search.
-4. Keep the previous DB for one week as rollback.
+4. Keep the previous image for one week as rollback; fail the workflow (and keep the old image) if validation fails.
 
-### 5.3 Real-time processing (every 10 s)
+### 5.3 Real-time processing (lazy, on request, 10 s cache)
 
-1. Fetch ArcGIS vehicle positions (primary, has `delay`, `laststopid`) and `gtfsReal.dat`
+1. On a request, if the cached snapshot is older than 10 s, fetch ArcGIS vehicle positions (primary, has `delay`, `laststopid`) and `gtfsReal.dat`
    (secondary, has `trip_id` if filled). Keep whichever is fresher per vehicle.
 2. For each active vehicle (`isinactive = false`, last update < 120 s), resolve the GTFS trip:
    - direct `trip_id` from GTFS-RT if present, else
@@ -192,6 +198,9 @@ written so they could be ported.
    delay = now - scheduled departure of the last passed stop (never negative while still at it).
    This mirrors the approach used by the third-party integration [S3].
 5. Drop vehicle state older than 5 min.
+6. If the ArcGIS source turns out to have no delay field, step 4 needs the previous snapshot;
+   the in-memory cache keeps the last 2 snapshots, which is enough while the app is in use
+   (the first request after a cold start uses scheduled times for vehicles without a delay).
 
 ### 5.4 Departure computation for a platform
 
@@ -242,13 +251,45 @@ All responses are compact JSON; times are Unix seconds; distances in metres.
 
 `GET /v1/health` - import date, realtime age, vehicle count.
 
+Mode codes used in all responses: `T` tram, `R` trolleybus, `B` bus, `N` night line, `V` train,
+`L` boat. Stop and headsign names are returned as in the dataset (Czech); only UI strings
+are translated (section 7.5).
+
+### 5.6 Hosting (free tier)
+
+Usage estimate: one user, about 20 app openings per day, 2-3 requests per minute while open.
+
+| Option | Free allowance | Fit |
+|--------|----------------|-----|
+| **Google Cloud Run** (recommended) | 2M requests, 180,000 vCPU-s, 360,000 GiB-s per month [S13] | Bills CPU only while a request is processed, scales to zero, cold start typically 1-3 s. Usage stays far inside the free tier. |
+| **Azure Container Apps** (equivalent alternative) | 2M requests, 180,000 vCPU-s, 360,000 GiB-s per month, Consumption plan only [S14] | Same model. Billed while a replica is running, including the scale-down cooldown (~5 min), so about 60,000 vCPU-s/month at 0.25 vCPU for this usage, still inside the free grant. |
+| Azure Functions (Consumption) | 1M executions, 400,000 GB-s per month [S15] | Works, but the native SQLite module and the Functions programming model make it less portable. |
+| Azure App Service F1 | 60 CPU minutes/day, 32-bit only, no SLA [S15] | Too limited; not recommended. |
+| Oracle Cloud Always Free VM | Ampere A1 VM, always on (allowance reportedly reduced to 2 OCPU / 12 GB in 2026) [S16] | No cold start, but you maintain a Linux VM yourself. Good fallback. |
+| Cloudflare Workers Free | 100k requests/day, **10 ms CPU per request** [S17] | Too little CPU to decode the whole-network real-time feed. Not recommended. |
+| Render Free | Spins down after 15 min idle, **~1 min to wake** [S18] | Too slow for a glance-at-the-watch app. Not recommended. |
+| Fly.io | No free tier for new accounts since 2024 (reported) [S19] | Not free. |
+
+Both recommended options need a credit card at sign-up, even when you stay in the free tier.
+Set a budget alert (for example 1 EUR) in either cloud console.
+The backend is a plain container, so moving between Cloud Run and Azure Container Apps is only
+a change in the deploy step of the GitHub Actions workflow.
+
+Cold start mitigation: the phone app sends `GET /v1/health` as soon as the watch app connects,
+so the container is usually warm by the time location is ready.
+
 ---
 
-## 6. Android companion specification
+## 6. Android phone app specification (companion now, full app with widget later)
 
 - Kotlin, minSdk 26, single activity (settings/onboarding) + one service.
 - Libraries: Huawei Wear Engine SDK (phone side), Fused Location Provider (or Android
   `LocationManager` if Google Play services are missing), OkHttp + kotlinx.serialization.
+- Settings screen:
+  - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
+  - Number of departures shown (3 or 4).
+  - Backend URL (hidden under "Advanced").
+  - About: data attribution (CC BY 4.0, KORDIS JMK / data.Brno).
 - Onboarding: grant location permission ("while in use" plus foreground service), Wear Engine
   device authorisation, backend URL/key (pre-filled).
 - Message protocol with the watch (JSON strings over P2P):
@@ -266,6 +307,20 @@ All responses are compact JSON; times are Unix seconds; distances in metres.
 - Cache last `home` response for 20 s so reopening the watch app is instant.
 - Destination names are shortened on the phone to fit the watch (max 16 chars, Czech
   diacritics kept; the watch font must be checked for diacritics in the spike).
+- Location provider: Google Fused Location Provider if Google Play services are present,
+  otherwise Android `LocationManager` (or Huawei Location Kit on Huawei phones without GMS).
+- Code structure prepared for the later widget phase: `data` module (backend client, location,
+  cache) is separate from the `wear` module (Wear Engine bridge), so the widget reuses `data`.
+
+### 6.1 Later phase: phone widget (F9)
+
+- Jetpack Glance app widget (2x2 and 4x2 sizes), showing stop, direction and the next 3-4
+  departures, with a reverse-direction button and tap-to-refresh.
+- Android limits automatic widget updates (`updatePeriodMillis` minimum 30 min, WorkManager
+  periodic work minimum 15 min), so a widget cannot stay "live" every 20 s in the background.
+  Plan: refresh on tap, on screen unlock while the widget is visible (best effort), and every
+  15 min via WorkManager; "N min" labels are shown as absolute times (`HH:MM`) so they do not go stale.
+- Same backend endpoints; no backend change expected.
 
 ---
 
@@ -368,6 +423,15 @@ Home shows a small pin icon when a stop was chosen manually; tapping it returns 
 
 ---
 
+### 7.5 Localisation
+
+- All UI strings live in a small dictionary in `app.js` (`cs` and `en`), selected by the `lg`
+  value the phone sends. The lite wearable `i18n` resource folder follows the watch system
+  language only, so it is not enough for a user-selectable language.
+- Stop names and headsigns are proper names and stay in Czech in both languages.
+- Example strings: "Hledám zastávku…" / "Finding stop…", "Nejbližší zastávky" / "Nearest stops",
+  "Připojte telefon" / "Connect your phone", "teď" / "now".
+
 ## 8. Error handling and edge cases
 
 | Case | Behaviour |
@@ -377,7 +441,7 @@ Home shows a small pin icon when a stop was chosen manually; tapping it returns 
 | Realtime feed down | Backend returns scheduled times with `lv=0`; watch shows no live dots. |
 | GTFS import fails | Keep previous DB; `/health` reports it. |
 | Night (no departures within 2 h) | Show next departure time even if later, or "Žádné odjezdy". |
-| Stop served by regional (non-MHD) lines only | Hidden from stop list unless no Brno stop within 1 km. |
+| Regional stop with few departures | Shown like any other stop (F8); if nothing departs within 2 h, the next departure is shown with its time. |
 | Times after midnight (`25:10:00`) | Handled via previous service day logic (5.4). |
 | Vehicle matched to wrong trip | Only apply live delay when vehicle line and final stop match the trip. |
 
@@ -404,11 +468,12 @@ These items could not be verified during research and decide details of the desi
 |-------|---------|-----------|
 | 0 | Spike (section 9) | All 6 items answered, spec updated. |
 | 1 | Backend: GTFS import, `/nearby`, `/departures` (scheduled only) | Correct departures for 5 test stops vs. idos.cz. |
-| 2 | Backend realtime: poller, trip matching, delays | `lv=1` on most departures during the day; ETA within 1 min of the stop display boards on spot checks. |
+| 2 | Backend realtime: lazy fetch + cache, trip matching, delays, deploy to Cloud Run | `lv=1` on most departures during the day; ETA within 1 min of the stop display boards on spot checks. |
 | 3 | Companion app: location, Wear Engine, protocol | Messages round-trip with a test watch page. |
 | 4 | Watch app: home + reverse direction + stop list | F1-F4, F6 met on the device. |
 | 5 | Bonus: radar (`/vehicles` + page) | F5 met. |
-| 6 | Polish: error states, about/attribution, battery check | 1 week of daily use without issues. |
+| 6 | Polish: error states, about/attribution, Czech/English, battery check | 1 week of daily use without issues. |
+| 7 | Phone app UI + widget (F9) | Widget shows correct departures and refreshes on tap. |
 
 Repository layout:
 ```
@@ -422,9 +487,17 @@ Repository layout:
 
 ## 11. Open questions
 
-- Hosting preference for the backend (cloud free tier vs. home server)?
-- App language on the watch: Czech, English, or follow system language?
-- Should regional (non-Brno) IDS JMK stops ever appear?
+Resolved in v0.2:
+
+- Hosting: cloud free tier -> Google Cloud Run recommended, Azure Container Apps as an equivalent alternative (5.6).
+- Language: Czech and English, switchable in the phone app settings (6, 7.5).
+- Stops: all stops in the dataset are included (F8).
+- Phone widget: added as a later phase (6.1, phase 7).
+
+Still open:
+
+- Exact watch model and size (GT 4/5/6, 41/42/46 mm) and phone model (with or without Google Play services).
+- Huawei developer account status (needed for Wear Engine permission).
 
 ---
 
@@ -443,3 +516,10 @@ Repository layout:
 - [S11] LiveScore Wearable Demo (phone fetches API, forwards via Wear Engine) - https://github.com/minkiapps/LiveScore-Wearable-Demo
 - [S12] P2P communication between Android and HarmonyOS wearable - https://dev.to/harmonyos/p2p-communication-between-android-and-next-wearable-fa-stage-model-device-technical-guide-3d9e
 - Wear Engine Kit docs - https://developer.huawei.com/consumer/en/codelabsPortal/carddetails/tutorials_WearEngine-ArkTS
+- [S13] Cloud Run free tier summaries - https://agentdeals.dev/vendor/google-cloud-run , https://cloudchipr.com/blog/cloud-run-pricing
+- [S14] Azure Container Apps pricing (free grant) - https://www.azure.cn/en-us/pricing/details/container-apps/ , https://freetier.co/directory/products/azure-container-apps , https://cloudtoolstack.com/tools/azure-container-apps-cost-estimator
+- [S15] Azure Functions pricing - https://azure.microsoft.com/pricing/details/functions/ ; App Service F1 - https://freetier.co/directory/products/azure-app-service , https://learn.microsoft.com/en-us/answers/questions/541687/i-am-using-f1-tier-for-app-service-and-i-can-only
+- [S16] Oracle Always Free A1 reduction report - https://linuxiac.com/oracle-quietly-cuts-free-tier-ampere-a1-resources-in-half/
+- [S17] Cloudflare Workers limits - https://developers.cloudflare.com/workers/platform/limits/
+- [S18] Render free tier - https://render.com/docs/free
+- [S19] Fly.io free tier status - https://agentdeals.dev/vendor/fly-io
