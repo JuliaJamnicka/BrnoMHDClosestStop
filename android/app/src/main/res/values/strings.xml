@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Brno MHD</string>
+    <string name="settings_title">Settings</string>
+    <string name="status_off">Watch link is off</string>
+    <string name="status_connected">Connected</string>
+    <string name="status_waiting">Waiting for the watch…</string>
+    <string name="status_last_request">Last request from the watch: %1$s</string>
+    <string name="status_send_failed">Could not send the reply to the watch</string>
+    <string name="grant_location">Allow location</string>
+    <string name="connect_watch">Connect watch</string>
+    <string name="disconnect_watch">Turn off watch link</string>
+    <string name="setup_auth_cancelled">Wear Engine permission was not granted.</string>
+    <string name="setup_auth_failed">Wear Engine is not available: %1$s. Is Huawei Health installed and the watch paired?</string>
+    <string name="section_location">Location</string>
+    <string name="background_location_hint">To keep working after a phone restart, set location access to \"Allow all the time\".</string>
+    <string name="background_location_button">Allow all the time</string>
+    <string name="section_preview">Departures here</string>
+    <string name="preview_hint">Shows what the watch would show for your current location.</string>
+    <string name="preview_loading">Loading…</string>
+    <string name="preview_button">Load departures</string>
+    <string name="preview_legend">● live vehicle data · amber: 2 min or more late</string>
+    <string name="now">now</string>
+    <string name="section_language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="section_watch">Watch</string>
+    <string name="departure_count">Departures shown</string>
+    <string name="section_advanced">Advanced</string>
+    <string name="show_advanced">Show server settings</string>
+    <string name="server_url">Server URL</string>
+    <string name="api_key">API key</string>
+    <string name="api_key_missing">API key is not set. Enter it under server settings.</string>
+    <string name="save">Save</string>
+    <string name="error_no_location">Location is not available.</string>
+    <string name="error_auth">The server rejected the API key.</string>
+    <string name="error_network">No connection to the server.</string>
+    <string name="error_server">Server error: %1$s</string>
+    <string name="attribution">Data: KORDIS JMK / data.Brno, CC BY 4.0</string>
+    <string name="notification_channel">Watch link</string>
+    <string name="notification_title" translatable="false">Brno MHD</string>
+    <string name="notification_text">Ready to send departures to your watch</string>
+</resources>
