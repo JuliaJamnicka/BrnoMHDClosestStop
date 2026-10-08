@@ -214,7 +214,7 @@ redeploys. The server therefore never parses `gtfs.zip`, which keeps cold starts
      shown as on time (never negative), because the schedule is the earliest departure.
 4. Store per trip: `delay_s`, `passed_sequence`, `lat`, `lon`, `bearing`, `ts`.
 5. A trip whose vehicle drops out of the feed keeps its last estimate for up to 5 minutes.
-6. Vehicles without `trip_id` (about 2 %) are shown on the radar only.
+6. Vehicles without `trip_id` (about 2 %) are ignored: without a trip there is no line number to show.
 
 ### 5.4 Departure computation for a platform
 
@@ -222,7 +222,7 @@ redeploys. The server therefore never parses `gtfs.zip`, which keeps cold starts
 input: platform_id(s), now
 candidates = stop_times at platform where trip runs today (calendar + calendar_dates,
              handle times >= 24:00 from the previous service day)
-             and scheduled_departure in [now - 15 min, now + 120 min]
+             and scheduled_departure in [now - 20 min, now + 120 min]   (12 h if empty)
 for each candidate:
     rt = realtime[trip]
     if rt and rt.passed_sequence >= candidate.stop_sequence: skip   # already left
@@ -248,7 +248,10 @@ Tapping the stop name on the watch opens a platform picker listing each platform
 
 ### 5.5 API
 
-All responses are compact JSON; times are Unix seconds; distances in metres.
+All responses are compact JSON; times are Unix seconds; distances in metres. The implemented
+API (with field-by-field notes) is documented in `backend/README.md`; in addition to the endpoints
+below, `GET /v1/home?lat=&lon=&n=` returns the closest platform and its departures in one round
+trip, which is what the watch home screen uses.
 
 `GET /v1/nearby?lat=49.195&lon=16.608&limit=12`
 ```json
@@ -482,8 +485,8 @@ switch on each). The rules below describe them.
 | Phase | Content | Done when |
 |-------|---------|-----------|
 | 0 | Spike (section 9) | Items 1-4 done; 5-6 waiting for the Huawei developer account. |
-| 1 | Backend: GTFS import, `/nearby`, `/departures` (scheduled only) | Correct departures for 5 test stops vs. idos.cz. |
-| 2 | Backend realtime: lazy fetch + cache, trip matching, delays, deploy to Cloud Run | `lv=1` on most departures during the day; ETA within 1 min of the stop display boards on spot checks. |
+| 1 | Backend: GTFS import, `/nearby`, `/departures` (scheduled only) | Implemented (`backend/`); spot-check 5 stops vs. idos.cz still to do. |
+| 2 | Backend realtime: lazy fetch + cache, trip matching, delays, deploy to Cloud Run (implemented; deploy waits for the Google Cloud setup) | `lv=1` on most departures during the day; ETA within 1 min of the stop display boards on spot checks. |
 | 3 | Companion app: location, Wear Engine, protocol | Messages round-trip with a test watch page. |
 | 4 | Watch app: home + reverse direction + stop list | F1-F4, F6 met on the device. |
 | 5 | Bonus: radar (`/vehicles` + page) | F5 met. |

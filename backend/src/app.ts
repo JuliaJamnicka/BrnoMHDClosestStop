@@ -1,0 +1,158 @@
+// HTTP API (docs/SPEC.md 5.5). Responses are compact JSON for the phone app,
+// which forwards trimmed versions to the watch.
+
+import Fastify, { FastifyInstance } from 'fastify';
+import { departures } from './departures.js';
+import { offsetM, distanceM } from './geo.js';
+import { RealtimeFeed } from './realtime/feed.js';
+import { Tracker } from './realtime/tracker.js';
+import { Group, Platform, Timetable } from './timetable.js';
+
+export interface AppOptions {
+  timetable: Timetable;
+  tracker: Tracker;
+  feed: Pick<RealtimeFeed, 'refresh' | 'status'>;
+  apiKey?: string;
+  now?: () => number;
+  logger?: boolean;
+}
+
+const MAX_NEARBY = 20;
+const MAX_DEPARTURES = 8;
+const MAX_RADIUS = 2000;
+const MAX_VEHICLES = 15;
+
+export function buildApp(opts: AppOptions): FastifyInstance {
+  const { timetable: tt, tracker, feed } = opts;
+  const now = opts.now ?? (() => Math.floor(Date.now() / 1000));
+  const app = Fastify({ logger: opts.logger ?? false });
+
+  app.addHook('onRequest', async (req, reply) => {
+    if (!opts.apiKey || req.url.startsWith('/v1/health')) return;
+    if (req.headers['x-api-key'] !== opts.apiKey) {
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
+  });
+
+  const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines });
+
+  const departurePayload = async (group: Group, platform: Platform, n: number, distance?: number) => {
+    await feed.refresh(now());
+    const t = now();
+    return {
+      t,
+      g: group.groupId,
+      stop: group.name,
+      p: platform.stopId,
+      dir: platform.dirLabel,
+      opp: platform.opp,
+      ...(distance !== undefined ? { d: Math.round(distance) } : {}),
+      pl: group.platforms.filter((x) => x.departures > 0).map(platformInfo),
+      dep: departures(tt, tracker, platform.stopId, t, n),
+    };
+  };
+
+  app.get('/v1/health', async () => {
+    const status = feed.status();
+    const t = now();
+    return {
+      ok: true,
+      t,
+      timetable: { builtAt: tt.meta.built_at, validFrom: tt.meta.feed_start, validTo: tt.meta.feed_end },
+      realtime: {
+        feedAge: status.feedTimestamp ? t - status.feedTimestamp : null,
+        trackedTrips: tracker.size,
+        lastError: status.lastError ?? null,
+      },
+    };
+  });
+
+  app.get<{ Querystring: { lat?: string; lon?: string; limit?: string } }>('/v1/nearby', async (req, reply) => {
+    const pos = position(req.query);
+    if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
+    const limit = clampInt(req.query.limit, 12, 1, MAX_NEARBY);
+    return {
+      t: now(),
+      stops: tt.nearbyGroups(pos.lat, pos.lon, limit).map(({ group, distance, platforms }) => ({
+        id: group.groupId,
+        n: group.name,
+        d: Math.round(distance),
+        m: modesOf(platforms.map((x) => x.platform)),
+        p: platforms.map((x) => platformInfo(x.platform)),
+      })),
+    };
+  });
+
+  // One round trip for the watch home screen: closest platform plus its departures.
+  app.get<{ Querystring: { lat?: string; lon?: string; n?: string } }>('/v1/home', async (req, reply) => {
+    const pos = position(req.query);
+    if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
+    const [closest] = tt.nearbyGroups(pos.lat, pos.lon, 1);
+    if (!closest) return reply.code(404).send({ error: 'no stops' });
+    const n = clampInt(req.query.n, 4, 1, MAX_DEPARTURES);
+    return departurePayload(closest.group, closest.platforms[0].platform, n, closest.distance);
+  });
+
+  app.get<{ Querystring: { platform?: string; n?: string; lat?: string; lon?: string } }>(
+    '/v1/departures',
+    async (req, reply) => {
+      const platform = req.query.platform ? tt.platforms.get(req.query.platform) : undefined;
+      const group = platform ? tt.groups.get(platform.groupId) : undefined;
+      if (!platform || !group) return reply.code(404).send({ error: 'unknown platform' });
+      const n = clampInt(req.query.n, 4, 1, MAX_DEPARTURES);
+      const pos = position(req.query);
+      const distance = pos ? distanceM(pos.lat, pos.lon, platform.lat, platform.lon) : undefined;
+      return departurePayload(group, platform, n, distance);
+    },
+  );
+
+  app.get<{ Querystring: { lat?: string; lon?: string; r?: string } }>('/v1/vehicles', async (req, reply) => {
+    const pos = position(req.query);
+    if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
+    const radius = clampInt(req.query.r, 800, 100, MAX_RADIUS);
+    await feed.refresh(now());
+    const t = now();
+    const seen = new Set<string>();
+    const vehicles = tracker
+      .liveVehicles(t)
+      .map((v) => ({ v, distance: distanceM(pos.lat, pos.lon, v.lat, v.lon) }))
+      .filter((x) => x.distance <= radius)
+      .sort((a, b) => a.distance - b.distance)
+      .map(({ v }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: Math.round(v.bearing), dl: v.delay, a: t - v.ts }))
+      // coupled units are reported as separate trips at the same spot; show them once
+      .filter((v) => {
+        const key = `${v.l}|${Math.round(v.dx / 20)}|${Math.round(v.dy / 20)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, MAX_VEHICLES);
+    const stops = tt
+      .nearbyGroups(pos.lat, pos.lon, 3)
+      .filter((x) => x.distance <= radius)
+      .map(({ group }) => ({ n: group.name, ...offsetM(pos.lat, pos.lon, group.lat, group.lon) }));
+    return { t, v: vehicles, s: stops };
+  });
+
+  return app;
+}
+
+function position(q: { lat?: string; lon?: string }): { lat: number; lon: number } | undefined {
+  const lat = Number(q.lat);
+  const lon = Number(q.lon);
+  if (q.lat === undefined || q.lon === undefined || !Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return undefined;
+  return { lat, lon };
+}
+
+function clampInt(value: string | undefined, fallback: number, min: number, max: number): number {
+  const n = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+function modesOf(platforms: Platform[]): string {
+  const order = 'TBVL';
+  return [...new Set(platforms.flatMap((p) => p.modes.split('')))]
+    .sort((a, b) => order.indexOf(a) - order.indexOf(b))
+    .join('');
+}
