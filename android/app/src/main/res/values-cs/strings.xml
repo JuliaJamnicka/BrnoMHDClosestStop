@@ -32,4 +32,15 @@
     <string name="attribution">Data: KORDIS JMK / data.Brno, CC BY 4.0</string>
     <string name="notification_channel">Spojení s hodinkami</string>
     <string name="notification_text">Připraveno posílat odjezdy do hodinek</string>
+    <string name="widget_title">Odjezdy</string>
+    <string name="widget_description">Nejbližší odjezdy z nejbližší zastávky</string>
+    <string name="widget_reverse">Opačný směr</string>
+    <string name="widget_pick_stop">Vybrat zastávku</string>
+    <string name="widget_refresh">Obnovit</string>
+    <string name="widget_pinned">Vybraná zastávka</string>
+    <string name="widget_tap_refresh">Klepněte na obnovit pro načtení odjezdů.</string>
+    <string name="widget_updated">Aktualizováno %1$s</string>
+    <string name="widget_no_location">Poloha není k dispozici. Otevřete aplikaci a povolte polohu „vždy“.</string>
+    <string name="widget_nearest_stop">Nejbližší zastávka (automaticky)</string>
+    <string name="widget_stops_failed">Nepodařilo se načíst okolní zastávky.</string>
 </resources>

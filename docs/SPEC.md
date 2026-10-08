@@ -350,7 +350,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - Code structure prepared for the later widget phase: `data` module (backend client, location,
   cache) is separate from the `wear` module (Wear Engine bridge), so the widget reuses `data`.
 
-### 6.1 Later phase: phone widget (F9)
+### 6.1 Phone widget (F9) - implemented early, while waiting for the Wear Engine approval
 
 - Jetpack Glance app widget (2x2 and 4x2 sizes), showing stop, direction and the next 3-4
   departures, with a reverse-direction button and tap-to-refresh.
@@ -500,7 +500,7 @@ switch on each). The rules below describe them.
 | 4 | Watch app: home + reverse direction + stop list | F1-F4, F6 met on the device. |
 | 5 | Bonus: radar (`/vehicles` + page) | F5 met. |
 | 6 | Polish: error states, about/attribution, Czech/English, battery check | 1 week of daily use without issues. |
-| 7 | Phone app UI + widget (F9) | Widget shows correct departures and refreshes on tap. |
+| 7 | Phone app UI + widget (F9) | Implemented ahead of the watch (`android/.../widget`); check on the phone. |
 
 Repository layout:
 ```

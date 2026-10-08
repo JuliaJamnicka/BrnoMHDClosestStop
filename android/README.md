@@ -21,9 +21,25 @@ screen (language, number of departures) and a "Departures here" preview, so it c
 | `wear/RequestHandler.kt` | Watch request -> reply bytes, errors mapped to codes the watch shows |
 | `wear/WearBridge.kt` | Wear Engine: finds the paired watch, receives and sends P2P messages |
 | `wear/WatchService.kt` | Foreground service that keeps the receiver alive; idle until a message arrives |
-| `ui/` | Settings screen (design: phone settings artboard on the design canvas) |
+| `ui/` | Settings screen (design: phone settings artboard on the design canvas) and the widget's stop picker |
+| `widget/` | Home-screen widget (Jetpack Glance): departures, reverse, stop picker, refresh |
 
-The `data` package does not depend on Wear Engine, so the later home-screen widget can reuse it.
+The `data` package does not depend on Wear Engine; the widget uses it too.
+
+### Widget
+
+Same content as the watch home screen: the nearest stop with service soon (as chosen by
+`/v1/home`), up to 3 or 4 departures with clock times, live dot and amber delays.
+
+- **⇄** opposite direction (stays reversed until you are at a different stop or press it again)
+- **≡** or tapping the stop name: list of nearby stops and their platforms; picking one pins the
+  widget (pin icon) until "Nearest stop (automatic)" is chosen
+- **⟳** refresh now
+
+Android lets widgets refresh automatically only every 15 minutes (WorkManager). While the watch
+link is on, the widget also refreshes when the phone is unlocked, at most once a minute. Times are
+shown as clock times so they never go stale. Refreshing in the background needs location
+"Allow all the time" unless the watch link is on.
 
 ### Watch protocol
 

@@ -34,4 +34,15 @@
     <string name="notification_channel">Watch link</string>
     <string name="notification_title" translatable="false">Brno MHD</string>
     <string name="notification_text">Ready to send departures to your watch</string>
+    <string name="widget_title">Departures</string>
+    <string name="widget_description">Next departures from the stop nearest to you</string>
+    <string name="widget_reverse">Opposite direction</string>
+    <string name="widget_pick_stop">Choose stop</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_pinned">Chosen stop</string>
+    <string name="widget_tap_refresh">Tap refresh to load departures.</string>
+    <string name="widget_updated">Updated %1$s</string>
+    <string name="widget_no_location">No location. Open the app and allow location \"all the time\".</string>
+    <string name="widget_nearest_stop">Nearest stop (automatic)</string>
+    <string name="widget_stops_failed">Could not load nearby stops.</string>
 </resources>

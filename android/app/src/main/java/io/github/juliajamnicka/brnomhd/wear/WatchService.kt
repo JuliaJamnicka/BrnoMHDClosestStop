@@ -4,8 +4,10 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -18,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import io.github.juliajamnicka.brnomhd.MhdApp
 import io.github.juliajamnicka.brnomhd.R
 import io.github.juliajamnicka.brnomhd.ui.MainActivity
+import io.github.juliajamnicka.brnomhd.widget.WidgetUpdater
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -32,6 +35,14 @@ class WatchService : LifecycleService() {
     private lateinit var handler: RequestHandler
     private var connectJob: Job? = null
 
+    // While the watch link runs anyway, also refresh home-screen widgets when the phone is unlocked
+    // (at most once a minute); otherwise Android only allows a widget refresh every 15 minutes.
+    private val unlockReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            lifecycleScope.launch { WidgetUpdater.refreshAll(applicationContext, minIntervalMs = 60_000) }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         val graph = (application as MhdApp).graph
@@ -41,6 +52,7 @@ class WatchService : LifecycleService() {
             departureCount = { graph.settings.current().departureCount },
             language = graph::watchLanguage,
         )
+        ContextCompat.registerReceiver(this, unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -51,6 +63,7 @@ class WatchService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        unregisterReceiver(unlockReceiver)
         bridge.disconnect()
         WatchStatus.update { WatchStatus.State() }
         super.onDestroy()
