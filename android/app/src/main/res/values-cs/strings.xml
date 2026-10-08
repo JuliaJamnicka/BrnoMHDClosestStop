@@ -24,14 +24,9 @@
     <string name="language_system">Podle systému</string>
     <string name="section_watch">Hodinky</string>
     <string name="departure_count">Počet odjezdů</string>
-    <string name="section_advanced">Pokročilé</string>
-    <string name="show_advanced">Zobrazit nastavení serveru</string>
-    <string name="server_url">Adresa serveru</string>
-    <string name="api_key">API klíč</string>
-    <string name="api_key_missing">API klíč není nastaven. Zadejte ho v nastavení serveru.</string>
-    <string name="save">Uložit</string>
     <string name="error_no_location">Poloha není k dispozici.</string>
-    <string name="error_auth">Server odmítl API klíč.</string>
+    <string name="no_departures">V příštích 12 hodinách nic neodjíždí.</string>
+    <string name="error_auth">Server odmítl API klíč. Aplikace byla sestavena bez správného klíče.</string>
     <string name="error_network">Nelze se spojit se serverem.</string>
     <string name="error_server">Chyba serveru: %1$s</string>
     <string name="attribution">Data: KORDIS JMK / data.Brno, CC BY 4.0</string>

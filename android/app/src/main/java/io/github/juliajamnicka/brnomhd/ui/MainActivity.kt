@@ -62,8 +62,6 @@ class MainActivity : AppCompatActivity() {
                         loadPreview = ::loadPreview,
                         setLanguage = ::setLanguage,
                         setDepartureCount = { n -> lifecycleScope.launch { graph.settings.setDepartureCount(n) } },
-                        setApiUrl = { url -> lifecycleScope.launch { graph.settings.setApiUrl(url) } },
-                        setApiKey = { key -> lifecycleScope.launch { graph.settings.setApiKey(key) } },
                     ),
                 )
             }
