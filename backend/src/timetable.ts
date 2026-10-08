@@ -168,6 +168,17 @@ export class Timetable {
     return result.sort((a, b) => a.distance - b.distance).slice(0, limit);
   }
 
+  /** Platforms with departures within [radiusM], nearest first. */
+  nearbyPlatforms(lat: number, lon: number, radiusM: number): { platform: Platform; distance: number }[] {
+    const result = [];
+    for (const platform of this.platforms.values()) {
+      if (platform.departures === 0) continue;
+      const distance = distanceM(lat, lon, platform.lat, platform.lon);
+      if (distance <= radiusM) result.push({ platform, distance });
+    }
+    return result.sort((a, b) => a.distance - b.distance);
+  }
+
   /** Dates whose service day may still be running at the given local date: today and yesterday. */
   static candidateDates(today: number): number[] {
     return [today, addDays(today, -1)];

@@ -1,7 +1,7 @@
 // Departure computation for a platform (docs/SPEC.md 5.4).
 
 import { LIVE_MAX_AGE, Tracker } from './realtime/tracker.js';
-import { localDate, serviceDayBase } from './time.js';
+import { addDays, localDate, serviceDayBase } from './time.js';
 import { Timetable } from './timetable.js';
 
 export interface Departure {
@@ -33,7 +33,9 @@ export function departures(tt: Timetable, tracker: Tracker, stopId: string, now:
 
 function collect(tt: Timetable, tracker: Tracker, stopId: string, now: number, window: number): Departure[] {
   const out: Departure[] = [];
-  for (const date of Timetable.candidateDates(localDate(now))) {
+  const today = localDate(now);
+  // yesterday for trips after midnight, tomorrow for the extended window late in the evening
+  for (const date of [addDays(today, -1), today, addDays(today, 1)]) {
     const base = serviceDayBase(date);
     const services = tt.activeServices(date);
     for (const row of tt.scheduledDepartures(stopId, now - base - LOOKBACK, now - base + window)) {

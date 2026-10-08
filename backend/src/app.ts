@@ -21,6 +21,9 @@ const MAX_NEARBY = 20;
 const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
 const MAX_VEHICLES = 15;
+const HOME_RADIUS = 400;
+const HOME_CANDIDATES = 12;
+const HOME_SOON = 30 * 60;
 
 export function buildApp(opts: AppOptions): FastifyInstance {
   const { timetable: tt, tracker, feed } = opts;
@@ -33,6 +36,17 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       return reply.code(401).send({ error: 'unauthorized' });
     }
   });
+
+  // The nearest platform within HOME_RADIUS with a departure soon; e.g. at night the closest
+  // stop may have nothing for hours while a night line stops a few hundred metres away.
+  const platformWithService = (lat: number, lon: number, t: number) =>
+    tt
+      .nearbyPlatforms(lat, lon, HOME_RADIUS)
+      .slice(0, HOME_CANDIDATES)
+      .find(({ platform }) => {
+        const [next] = departures(tt, tracker, platform.stopId, t, 1);
+        return next !== undefined && next.e - t <= HOME_SOON;
+      });
 
   const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines });
 
@@ -90,7 +104,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const [closest] = tt.nearbyGroups(pos.lat, pos.lon, 1);
     if (!closest) return reply.code(404).send({ error: 'no stops' });
     const n = clampInt(req.query.n, 4, 1, MAX_DEPARTURES);
-    return departurePayload(closest.group, closest.platforms[0].platform, n, closest.distance);
+    await feed.refresh(now());
+    const chosen = platformWithService(pos.lat, pos.lon, now()) ?? {
+      platform: closest.platforms[0].platform,
+      distance: closest.distance,
+    };
+    return departurePayload(tt.groups.get(chosen.platform.groupId)!, chosen.platform, n, chosen.distance);
   });
 
   app.get<{ Querystring: { platform?: string; n?: string; lat?: string; lon?: string } }>(
