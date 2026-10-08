@@ -1,0 +1,33 @@
+{
+  "name": "brno-mhd-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Departures and vehicle positions API for the Brno MHD watch app",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build-db": "node dist/build/buildDb.js",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "csv-parse": "^7.0.3",
+    "fastify": "^5.12.5",
+    "gtfs-realtime-bindings": "^2.2.0",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.20.5",
+    "@types/yauzl": "^3.4.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

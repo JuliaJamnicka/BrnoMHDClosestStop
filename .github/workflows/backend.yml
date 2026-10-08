@@ -1,0 +1,70 @@
+name: backend
+
+on:
+  push:
+    paths: ['backend/**', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend.yml']
+  schedule:
+    # KORDIS publishes the new timetable on Sundays at 12:00 Prague time
+    - cron: '30 12 * * 0'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  # Deploys to Cloud Run from main (and every Sunday with the fresh timetable).
+  # Skipped until the repository variables in backend/README.md are set.
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/mhd/mhd-api:${{ github.sha }}-${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: Build timetable database from the current GTFS feed
+        run: npm run build-db
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+      - run: docker build -t "$IMAGE" . && docker push "$IMAGE"
+      - name: Deploy
+        run: >
+          gcloud run deploy mhd-api
+          --image "$IMAGE"
+          --region ${{ vars.GCP_REGION }}
+          --allow-unauthenticated
+          --min-instances 0 --max-instances 1
+          --cpu 1 --memory 512Mi --concurrency 20 --timeout 10
+          --set-secrets API_KEY=mhd-api-key:latest
+          --service-account mhd-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+          --quiet
