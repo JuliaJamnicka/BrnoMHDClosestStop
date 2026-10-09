@@ -3,8 +3,11 @@
 Small Node.js service that answers the phone app: closest stops, departures with
 real-time delays, and nearby vehicles. Design: [docs/SPEC.md](../docs/SPEC.md), section 5.
 
-- Timetable: KORDIS GTFS (`gtfs.zip`), converted weekly into a read-only SQLite file
+- Timetable: KORDIS GTFS (`gtfs.zip`), converted daily into a read-only SQLite file
   `data/timetable.db` (~55 MB) by `npm run build-db`. The server never parses GTFS.
+  The build also reads data.Brno's weekly copy of the feed to map older trip_ids (which the
+  real-time feed may still use after KORDIS renumbers trips) onto the current ones; pass
+  `--alias-source none` to skip that.
 - Real-time: KORDIS GTFS-RT (`gtfsReal.dat`), fetched on demand and cached for 15 s.
   The feed has vehicle positions only; delays are derived in `src/realtime/tracker.ts`.
 
@@ -59,8 +62,8 @@ vehicle position was used, `opp` the platform for the reverse button, `pl` all p
 
 ## Deployment (Google Cloud Run)
 
-`.github/workflows/backend.yml` tests every push. On `main` (and every Sunday after the new
-timetable is published) it builds `timetable.db`, builds the image, pushes it to Artifact
+`.github/workflows/backend.yml` tests every push. On `main`, and daily at 05:20 UTC to pick up new
+KORDIS exports, it builds `timetable.db`, builds the image, pushes it to Artifact
 Registry and deploys to Cloud Run. The deploy job is skipped until the variables below exist.
 
 One-time setup (Cloud Shell or a terminal with `gcloud`; replace `PROJECT_ID`):

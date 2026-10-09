@@ -91,6 +91,24 @@ describe('departures', () => {
     expect(tracker.get('100', BASE, at('10:07:00'))).toMatchObject({ delay: 90, passedSeq: 2 });
   });
 
+  it('maps trip ids of an older export through the alias table', () => {
+    // In the other export trips 100 and 200 are swapped; trip "200" there is our trip 100.
+    expect(tt.aliasesOf('200')).toEqual(['100']);
+    const tracker = new Tracker(tt);
+    const now = at('10:07:00');
+    // our trip 200 does not stop at U1Z1, so the feed's "200" must mean trip 100 (2 min late there)
+    tracker.update([vehicle({ tripId: '200', stopId: 'U01Z01', status: STOPPED_AT, ts: now })], now);
+    expect(tracker.get('100', BASE, now)).toMatchObject({ delay: 120, passedSeq: 1 });
+    expect(tracker.get('200', BASE, now)).toBeUndefined();
+  });
+
+  it('keeps using the trip id directly when it fits the current export', () => {
+    const tracker = new Tracker(tt);
+    const now = at('10:11:00');
+    tracker.update([vehicle({ tripId: '200', stopId: 'U1Z2', status: STOPPED_AT, ts: now })], now);
+    expect(tracker.get('200', BASE, now)).toMatchObject({ delay: 60 });
+  });
+
   it('never reports early running as negative delay', () => {
     const tracker = new Tracker(tt);
     const now = at('10:02:00');

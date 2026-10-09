@@ -14,6 +14,12 @@ import { compareLines, modeFromRouteType, sortModes } from '../modes.js';
 import { parseGtfsTime } from '../time.js';
 
 export const DEFAULT_SOURCE = 'https://kordis-jmk.cz/gtfs/gtfs.zip';
+/**
+ * data.Brno's weekly copy of the same feed. KORDIS renumbers trip_ids with every export and the
+ * real-time feed can keep using the previous numbering for days, so trips of this copy are mapped
+ * onto the primary export as aliases (docs/SPEC.md 3.2).
+ */
+export const DEFAULT_ALIAS_SOURCE = 'https://www.arcgis.com/sharing/rest/content/items/379d2e9a7907460c8ca7fda1f3e84328/data';
 
 const NEEDED_FILES = [
   'stops.txt',
@@ -95,6 +101,7 @@ CREATE TABLE stop_times (
   arr INTEGER NOT NULL, dep INTEGER NOT NULL, pickup INTEGER NOT NULL,
   PRIMARY KEY (trip_id, seq)
 ) WITHOUT ROWID;
+CREATE TABLE trip_alias (alias_id TEXT NOT NULL, trip_id TEXT NOT NULL, PRIMARY KEY (alias_id, trip_id)) WITHOUT ROWID;
 CREATE TABLE calendar (service_id TEXT PRIMARY KEY, days TEXT NOT NULL, start_date INTEGER NOT NULL, end_date INTEGER NOT NULL) WITHOUT ROWID;
 CREATE TABLE calendar_dates (date INTEGER NOT NULL, service_id TEXT NOT NULL, type INTEGER NOT NULL, PRIMARY KEY (date, service_id)) WITHOUT ROWID;
 CREATE TABLE groups (group_id TEXT PRIMARY KEY, name TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL) WITHOUT ROWID;
@@ -114,7 +121,7 @@ interface PlatformStat {
   n: number;
 }
 
-export async function buildDatabase(source: string, outFile: string, log = console.log): Promise<void> {
+export async function buildDatabase(source: string, outFile: string, log = console.log, aliasSource?: string): Promise<void> {
   const files = await loadSource(source);
   for (const name of NEEDED_FILES) {
     if (!files[name]) throw new Error(`GTFS source is missing ${name}`);
@@ -245,6 +252,16 @@ export async function buildDatabase(source: string, outFile: string, log = conso
   db.exec('COMMIT');
   log(`groups: ${groupPlatforms.size}, platforms: ${platformRows.length}`);
 
+  if (aliasSource) {
+    try {
+      const count = await buildAliases(db, await loadSource(aliasSource));
+      log(`trip aliases: ${count}`);
+    } catch (err) {
+      // Aliases only improve real-time matching; never fail the build because of them.
+      log(`trip aliases skipped: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   db.exec('CREATE INDEX stop_times_by_stop ON stop_times (stop_id, dep)');
   db.exec('CREATE INDEX platforms_by_group ON platforms (group_id)');
   const insMeta = db.prepare('INSERT INTO meta VALUES (?, ?)');
@@ -305,6 +322,67 @@ function oppositePlatform(stopId: string, platforms: Row[], stats: Map<string, P
   return best;
 }
 
+/**
+ * Maps trip_ids of another export of the feed onto this one. A trip is identified across exports by
+ * its route, direction, first and last stop and their times; ids that are the same in both are skipped.
+ */
+const MAX_ALIAS_TARGETS = 16;
+
+async function buildAliases(db: Database.Database, files: Files): Promise<number> {
+  const key = (route: string, dir: string, firstStop: string, firstDep: number, lastStop: string, lastArr: number) =>
+    `${route}|${dir}|${firstStop}|${firstDep}|${lastStop}|${lastArr}`;
+
+  // The same trip often exists several times with different service days, so a key can match
+  // several trips; all are kept and the tracker picks the one running that day.
+  const primary = new Map<string, string[]>();
+  const rowsPrimary = db
+    .prepare(
+      `SELECT t.trip_id AS tripId, t.route_id AS route, t.direction AS dir,
+              f.stop_id AS firstStop, f.dep AS firstDep, l.stop_id AS lastStop, l.arr AS lastArr
+       FROM trips t
+       JOIN stop_times f ON f.trip_id = t.trip_id AND f.seq = (SELECT min(seq) FROM stop_times WHERE trip_id = t.trip_id)
+       JOIN stop_times l ON l.trip_id = t.trip_id AND l.seq = t.last_seq`,
+    )
+    .all() as { tripId: string; route: string; dir: number; firstStop: string; firstDep: number; lastStop: string; lastArr: number }[];
+  for (const r of rowsPrimary) {
+    const k = key(r.route, String(r.dir), r.firstStop, r.firstDep, r.lastStop, r.lastArr);
+    const list = primary.get(k);
+    if (list) list.push(r.tripId);
+    else primary.set(k, [r.tripId]);
+  }
+
+  const tripInfo = new Map<string, { route: string; dir: string }>();
+  for await (const r of rows(files, 'trips.txt')) tripInfo.set(r.trip_id, { route: r.route_id, dir: r.direction_id || '0' });
+  const ends = new Map<string, { minSeq: number; firstStop: string; firstDep: number; maxSeq: number; lastStop: string; lastArr: number }>();
+  for await (const r of rows(files, 'stop_times.txt')) {
+    const seq = Number(r.stop_sequence);
+    const e = ends.get(r.trip_id);
+    const dep = parseGtfsTime(r.departure_time || r.arrival_time);
+    const arr = parseGtfsTime(r.arrival_time || r.departure_time);
+    if (!e) ends.set(r.trip_id, { minSeq: seq, firstStop: r.stop_id, firstDep: dep, maxSeq: seq, lastStop: r.stop_id, lastArr: arr });
+    else {
+      if (seq < e.minSeq) Object.assign(e, { minSeq: seq, firstStop: r.stop_id, firstDep: dep });
+      if (seq > e.maxSeq) Object.assign(e, { maxSeq: seq, lastStop: r.stop_id, lastArr: arr });
+    }
+  }
+
+  const insAlias = db.prepare('INSERT OR IGNORE INTO trip_alias VALUES (?, ?)');
+  let count = 0;
+  db.exec('BEGIN');
+  for (const [aliasId, e] of ends) {
+    const info = tripInfo.get(aliasId);
+    if (!info) continue;
+    const targets = primary.get(key(info.route, info.dir, e.firstStop, e.firstDep, e.lastStop, e.lastArr)) ?? [];
+    for (const target of targets.slice(0, MAX_ALIAS_TARGETS)) {
+      if (target === aliasId) continue;
+      insAlias.run(aliasId, target);
+      count++;
+    }
+  }
+  db.exec('COMMIT');
+  return count;
+}
+
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : undefined;
@@ -312,8 +390,9 @@ function arg(name: string): string | undefined {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const source = arg('--source') ?? DEFAULT_SOURCE;
+  const aliasSource = arg('--alias-source') ?? DEFAULT_ALIAS_SOURCE;
   const out = arg('--out') ?? 'data/timetable.db';
-  buildDatabase(source, out).catch((err) => {
+  buildDatabase(source, out, console.log, aliasSource === 'none' ? undefined : aliasSource).catch((err) => {
     console.error(err);
     process.exit(1);
   });
