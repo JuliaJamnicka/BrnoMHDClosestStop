@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -68,4 +68,10 @@ test('labels distances and texts in both languages', () => {
   assert.equal(t('en', 'stale', { m: 2 }), 'Data 2 min old');
   assert.equal(t('cs', 'err_phone'), 'Telefon není připojen');
   assert.equal(t('xx', 'now'), 'teď');
+});
+
+test('wraps hints at spaces so words are never split', () => {
+  assert.deepEqual(wrapLines('Zapněte Bluetooth a jednou otevřete aplikaci Fčil v telefonu.', 22),
+    ['Zapněte Bluetooth a', 'jednou otevřete', 'aplikaci Fčil v', 'telefonu.']);
+  assert.deepEqual(wrapLines('Krátké', 22), ['Krátké']);
 });

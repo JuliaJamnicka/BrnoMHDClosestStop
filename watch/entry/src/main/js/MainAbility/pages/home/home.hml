@@ -6,7 +6,7 @@
 
     <div if="{{view === 'error'}}" class="center">
         <text class="title error-title">{{errorTitle}}</text>
-        <text class="hint">{{errorHint}}</text>
+        <text for="{{errorLines}}" class="hint-line">{{$item}}</text>
         <input type="button" class="button" value="{{retryText}}" onclick="load"></input>
     </div>
 

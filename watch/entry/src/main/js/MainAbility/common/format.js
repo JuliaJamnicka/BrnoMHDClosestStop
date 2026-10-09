@@ -127,3 +127,22 @@ export function distanceLabel(metres) {
   if (metres < 1000) return metres + ' m';
   return (Math.round(metres / 100) / 10).toString().replace('.', ',') + ' km';
 }
+
+// Lite wearable <text> wraps at any character, splitting words; break at spaces ourselves
+// and render one <text> per line. maxChars is a conservative fit for the line width.
+export function wrapLines(text, maxChars) {
+  const lines = [];
+  let line = '';
+  const words = String(text).split(' ');
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    if (line && line.length + 1 + word.length > maxChars) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? line + ' ' + word : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}

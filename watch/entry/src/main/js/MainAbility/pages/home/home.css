@@ -36,7 +36,16 @@
     text-align: center;
 }
 .error-title {
+    width: 420px;
+    margin-bottom: 8px;
     color: #ffb020;
+}
+.hint-line {
+    width: 400px;
+    height: 40px;
+    font-size: 30px;
+    color: #aeaeb2;
+    text-align: center;
 }
 .hint {
     width: 330px;
