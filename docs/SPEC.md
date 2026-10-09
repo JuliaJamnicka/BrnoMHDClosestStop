@@ -98,6 +98,14 @@ Verified on 2026-10-08 by downloading the feeds and decoding them (results in se
     (`U1677Z2`). Normalise with `U0*(\d+)Z0*(\d+) -> U$1Z$2`; afterwards 935 of 982 match.
   - Alerts reference lines by `route_short_name` (`"4"`, `"N94"`), not by `route_id`.
 - Update cadence: the file is regenerated about **every 30-35 s**; positions are up to ~30 s old.
+- **trip_ids are renumbered with every KORDIS export**, and the real-time feed does not switch at the
+  same time. Seen on 2026-10-09: `gtfs.zip` was re-exported at 06:23 Prague time, but at 09:00 the
+  real-time feed still used the numbering of the 2026-10-02 export, so only ~10 % of vehicles
+  matched. Fix: the build also reads data.Brno's weekly copy of the feed and stores, for each of its
+  trip_ids, the trips of the current export with the same route, direction, first/last stop and
+  times (`trip_alias`). The tracker tries the feed's trip_id and its aliases and keeps the trip that
+  runs that day and contains the vehicle's next stop at about that time. Result on live data: 82 %
+  of vehicles matched, the same as with the export the feed itself used. The backend rebuilds daily.
 - The server sends `Cache-Control: max-age=86400` although the content changes every ~30 s,
   so the backend must revalidate (`If-None-Match` with the ETag) instead of trusting caches.
 - There is no delay field, so **delay is derived** from position + schedule (5.3). A sanity

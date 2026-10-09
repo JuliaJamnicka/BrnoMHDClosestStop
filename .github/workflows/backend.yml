@@ -6,8 +6,9 @@ on:
   pull_request:
     paths: ['backend/**', '.github/workflows/backend.yml']
   schedule:
-    # KORDIS publishes the new timetable on Sundays at 12:00 Prague time
-    - cron: '30 12 * * 0'
+    # Daily: KORDIS publishes new exports (seen on Fridays ~06:30 Prague time), data.Brno copies
+    # them weekly, and the trip aliases between the two must follow both
+    - cron: '20 5 * * *'
   workflow_dispatch:
 
 defaults:
@@ -28,7 +29,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  # Deploys to Cloud Run from main (and every Sunday with the fresh timetable).
+  # Deploys to Cloud Run from main (and daily with the fresh timetable).
   # Skipped until the repository variables in backend/README.md are set.
   deploy:
     needs: test

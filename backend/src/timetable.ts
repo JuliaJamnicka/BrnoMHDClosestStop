@@ -64,6 +64,7 @@ export class Timetable {
   private readonly stmtDepartures: Database.Statement;
   private readonly stmtTripStops: Database.Statement;
   private readonly stmtTrip: Database.Statement;
+  private readonly stmtAlias: Database.Statement | undefined;
 
   constructor(file: string) {
     this.db = new Database(file, { readonly: true, fileMustExist: true });
@@ -103,6 +104,8 @@ export class Timetable {
     this.stmtTripStops = this.db.prepare(
       'SELECT seq, stop_id AS stopId, arr, dep FROM stop_times WHERE trip_id = ? ORDER BY seq',
     );
+    const hasAliases = this.db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'trip_alias'").get();
+    this.stmtAlias = hasAliases ? this.db.prepare('SELECT trip_id AS tripId FROM trip_alias WHERE alias_id = ?') : undefined;
     this.stmtTrip = this.db.prepare(
       `SELECT t.trip_id AS tripId, t.service_id AS serviceId, r.short AS line, r.mode AS mode,
               t.headsign AS headsign, t.last_seq AS lastSeq
@@ -148,6 +151,11 @@ export class Timetable {
     if (this.tripStopsCache.size >= TRIP_CACHE_LIMIT) this.tripStopsCache.clear();
     this.tripStopsCache.set(tripId, stops);
     return stops;
+  }
+
+  /** Trips of this export that a trip_id of the other export (see build) may stand for. */
+  aliasesOf(tripId: string): string[] {
+    return ((this.stmtAlias?.all(tripId) ?? []) as { tripId: string }[]).map((r) => r.tripId);
   }
 
   trip(tripId: string): TripInfo | undefined {

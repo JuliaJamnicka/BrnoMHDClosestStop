@@ -4,7 +4,7 @@
 //  - a measured departure delay when two observations show it leaving a stop.
 
 import { distanceM } from '../geo.js';
-import { Timetable, TripStop } from '../timetable.js';
+import { Timetable, TripInfo, TripStop } from '../timetable.js';
 import { localDate, serviceDayBase } from '../time.js';
 
 export const STOPPED_AT = 1;
@@ -37,6 +37,15 @@ export interface TripState {
   mode: string;
 }
 
+interface TripMatch {
+  tripId: string;
+  stops: TripStop[];
+  trip: TripInfo;
+  base: number;
+  /** Index in stops of the vehicle's current / next stop. */
+  k: number;
+}
+
 /** Positions newer than this are "live" (docs/SPEC.md 3.2: feed refreshes every ~30 s). */
 export const LIVE_MAX_AGE = 120;
 /** Trip state is kept this long after the vehicle drops out of the feed. */
@@ -56,10 +65,11 @@ export class Tracker {
   update(vehicles: RtVehicle[], now: number): void {
     for (const v of vehicles) {
       if (!v.tripId || now - v.ts > STATE_MAX_AGE) continue;
-      const prev = this.states.get(v.tripId);
+      const match = this.resolve(v);
+      if (!match) continue;
+      const prev = this.states.get(match.tripId);
       if (prev && prev.ts >= v.ts) continue;
-      const state = this.estimate(v, prev);
-      if (state) this.states.set(v.tripId, state);
+      this.states.set(match.tripId, this.estimate(v, match, prev));
     }
     for (const [tripId, s] of this.states) {
       if (now - s.ts > STATE_MAX_AGE) this.states.delete(tripId);
@@ -82,17 +92,36 @@ export class Tracker {
     return this.states.size;
   }
 
-  private estimate(v: RtVehicle, prev: TripState | undefined): TripState | undefined {
-    const stops = this.timetable.tripStops(v.tripId!);
-    const trip = this.timetable.trip(v.tripId!);
-    if (stops.length === 0 || !trip) return undefined;
+  /**
+   * Finds the trip a vehicle runs. The feed's trip_id may use the numbering of an older export
+   * (KORDIS renumbers trips with every export), so the id and its alias are both tried and the one
+   * whose schedule contains the vehicle's next stop at about this time wins.
+   */
+  private resolve(v: RtVehicle): TripMatch | undefined {
+    const candidates = [v.tripId!, ...this.timetable.aliasesOf(v.tripId!)];
+    const stopId = v.stopId ? normalizeStopId(v.stopId) : undefined;
+    let fallback: TripMatch | undefined;
+    // first pass: trips running that day; second pass: any trip whose times fit
+    for (const runningOnly of [true, false]) {
+      for (const tripId of candidates) {
+        const stops = this.timetable.tripStops(tripId);
+        const trip = this.timetable.trip(tripId);
+        if (stops.length === 0 || !trip) continue;
+        const base = this.chooseBase(v.ts, stops, trip.serviceId, runningOnly);
+        if (base === undefined) continue;
+        const k = stopId ? stops.findIndex((s) => s.stopId === stopId) : -1;
+        if (k >= 0) return { tripId, stops, trip, base, k };
+        if (!fallback) {
+          const nearest = this.nearestStopIndex(stops, v.lat, v.lon);
+          if (nearest >= 0) fallback = { tripId, stops, trip, base, k: nearest };
+        }
+      }
+    }
+    return fallback;
+  }
 
-    const base = this.chooseBase(v.ts, stops, trip.serviceId);
-    if (base === undefined) return undefined;
-
-    let k = v.stopId ? stops.findIndex((s) => s.stopId === normalizeStopId(v.stopId!)) : -1;
-    if (k < 0) k = this.nearestStopIndex(stops, v.lat, v.lon);
-    if (k < 0) return undefined;
+  private estimate(v: RtVehicle, match: TripMatch, prev: TripState | undefined): TripState {
+    const { stops, trip, base, k } = match;
 
     let passedSeq: number;
     let lower: number;
@@ -116,7 +145,7 @@ export class Tracker {
     if (passedSeq < stops[0].seq) carry = undefined;
 
     return {
-      tripId: v.tripId!,
+      tripId: match.tripId,
       base,
       passedSeq,
       delay: Math.max(0, Math.round(lower), carry ?? 0),
@@ -131,7 +160,7 @@ export class Tracker {
   }
 
   /** Service day the trip is running on: today or yesterday (trips after midnight). */
-  private chooseBase(ts: number, stops: TripStop[], serviceId: string): number | undefined {
+  private chooseBase(ts: number, stops: TripStop[], serviceId: string, runningOnly = false): number | undefined {
     let fallback: number | undefined;
     for (const date of Timetable.candidateDates(localDate(ts))) {
       const base = serviceDayBase(date);
@@ -141,7 +170,7 @@ export class Tracker {
       if (this.timetable.activeServices(date).has(serviceId)) return base;
       fallback ??= base;
     }
-    return fallback;
+    return runningOnly ? undefined : fallback;
   }
 
   private nearestStopIndex(stops: TripStop[], lat: number, lon: number): number {

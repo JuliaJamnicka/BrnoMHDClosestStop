@@ -60,10 +60,27 @@ L91D99,1,400,"Řečkovice",1,,0
 `,
 };
 
-export async function buildFixtureDb(): Promise<string> {
+/**
+ * The same feed as another KORDIS export would number it: trip_ids 100 and 200 swapped. The real-time
+ * feed can still use such an older numbering after a new export (docs/SPEC.md 3.2).
+ */
+function renumbered(): Record<string, string> {
+  const swap = (text: string) =>
+    text.replace(/^(100|200),/gm, (_, id) => (id === '100' ? '__200,' : '__100,')).replace(/^__/gm, '');
+  const swapTrips = (text: string) =>
+    text.replace(/,(100|200),/g, (_, id) => (id === '100' ? ',__200,' : ',__100,')).replace(/,__/g, ',');
+  return { ...files, 'trips.txt': swapTrips(files['trips.txt']), 'stop_times.txt': swap(files['stop_times.txt']) };
+}
+
+function writeFeed(content: Record<string, string>): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mhd-fixture-'));
-  for (const [name, content] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), content);
+  for (const [name, text] of Object.entries(content)) fs.writeFileSync(path.join(dir, name), text);
+  return dir;
+}
+
+export async function buildFixtureDb(): Promise<string> {
+  const dir = writeFeed(files);
   const out = path.join(dir, 'timetable.db');
-  await buildDatabase(dir, out, () => {});
+  await buildDatabase(dir, out, () => {}, writeFeed(renumbered()));
   return out;
 }
