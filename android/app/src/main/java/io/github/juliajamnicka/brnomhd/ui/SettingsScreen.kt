@@ -1,5 +1,6 @@
 package io.github.juliajamnicka.brnomhd.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +98,11 @@ fun SettingsScreen(
                 .widthIn(max = 640.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
+            Image(
+                painterResource(R.drawable.ic_wordmark),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.height(44.dp),
+            )
             Text(stringResource(R.string.settings_title), fontSize = 34.sp, fontWeight = FontWeight.Bold)
 
             WatchCard(status, watchEnabled, hasLocation, setupMessage, actions)
