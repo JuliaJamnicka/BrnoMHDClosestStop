@@ -110,8 +110,14 @@ describe('departures', () => {
     const tracker = new Tracker(tt);
     const christmas = serviceDayBase(20261225);
     const deps = departures(tt, tracker, 'U1Z2', christmas + parseGtfsTime('9:55:00'), 4);
-    // nothing on 25 Dec; the extended window finds the next day
-    expect(deps.every((d) => d.e > christmas + 86400)).toBe(true);
+    // nothing runs on 25 Dec and the next departure is more than 12 h away
+    expect(deps).toEqual([]);
+  });
+
+  it('shows the first departure of the next morning late in the evening', () => {
+    const tracker = new Tracker(tt);
+    const deps = departures(tt, tracker, 'U1Z2', at('23:05:00'), 4);
+    expect(deps.map((d) => d.e)).toEqual([serviceDayBase(20261009) + parseGtfsTime('10:10:00')]);
   });
 });
 
@@ -126,6 +132,20 @@ describe('HTTP API', () => {
     expect(body).toMatchObject({ stop: 'Česká', p: 'U1Z1', opp: 'U1Z2', d: 0 });
     expect(body.dep).toHaveLength(2);
     expect(body.pl.map((p: { id: string }) => p.id)).toEqual(['U1Z1', 'U1Z2']);
+  });
+
+  it('prefers a nearby platform with a departure soon over the closest one', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed, now: () => at('9:30:00') });
+    // Česká is closest but its next departure is at 10:05; N91 leaves Kořískova at 9:40
+    const body = (await app.inject('/v1/home?lat=49.1981&lon=16.6061&n=1')).json();
+    expect(body).toMatchObject({ stop: 'Kořískova', p: 'U4Z1' });
+    expect(body.d).toBeGreaterThan(250);
+  });
+
+  it('falls back to the closest platform when nothing nearby runs soon', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed, now: () => at('5:00:00') });
+    const body = (await app.inject('/v1/home?lat=49.1981&lon=16.6061&n=1')).json();
+    expect(body).toMatchObject({ stop: 'Česká', p: 'U1Z1' });
   });
 
   it('requires the API key when one is configured, except for health', async () => {

@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -26,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -36,18 +34,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,8 +68,6 @@ class SettingsActions(
     val loadPreview: () -> Unit,
     val setLanguage: (Language) -> Unit,
     val setDepartureCount: (Int) -> Unit,
-    val setApiUrl: (String) -> Unit,
-    val setApiKey: (String) -> Unit,
 )
 
 @Composable
@@ -163,13 +154,16 @@ fun SettingsScreen(
                                     selected = s.departureCount == n,
                                     onClick = { actions.setDepartureCount(n) },
                                     shape = SegmentedButtonDefaults.itemShape(i, 2),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
                                 ) { Text(n.toString()) }
                             }
                         }
                     }
                 }
 
-                AdvancedSection(s, actions)
             }
 
             Text(
@@ -190,6 +184,7 @@ private fun WatchCard(
     actions: SettingsActions,
 ) {
     Card(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
@@ -254,6 +249,7 @@ private fun DepartureList(r: DeparturesResponse) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(r.stop, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text("→ ${r.dir}" + (r.d?.let { " · $it m" } ?: ""), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (r.dep.isEmpty()) Text(stringResource(R.string.no_departures))
         r.dep.forEach { d ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -278,44 +274,6 @@ private fun DepartureList(r: DeparturesResponse) {
 }
 
 @Composable
-private fun AdvancedSection(s: AppSettings, actions: SettingsActions) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Section(stringResource(R.string.section_advanced)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (!expanded) {
-                TextButton(onClick = { expanded = true }) { Text(stringResource(R.string.show_advanced)) }
-            } else {
-                var url by remember(s.apiUrl) { mutableStateOf(s.apiUrl) }
-                var key by remember(s.apiKey) { mutableStateOf(s.apiKey) }
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text(stringResource(R.string.server_url)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = key,
-                    onValueChange = { key = it },
-                    label = { Text(stringResource(R.string.api_key)) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Button(onClick = {
-                    actions.setApiUrl(url)
-                    actions.setApiKey(key)
-                }) { Text(stringResource(R.string.save)) }
-            }
-            if (s.apiKey.isBlank()) {
-                Text(stringResource(R.string.api_key_missing), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -326,6 +284,7 @@ private fun Section(title: String, content: @Composable () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) { content() }

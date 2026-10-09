@@ -2,7 +2,7 @@
 
 Companion app for the watch (docs/SPEC.md, section 6). It answers the watch's requests over
 Huawei Wear Engine, using the phone's location and the backend API. It also has a settings
-screen and a "Departures here" preview, so it can be tested before the watch app exists.
+screen (language, number of departures) and a "Departures here" preview, so it can be tested before the watch app exists.
 
 - Kotlin, Jetpack Compose, minSdk 26, targetSdk 35
 - Package name: `io.github.juliajamnicka.brnomhd`
@@ -16,14 +16,30 @@ screen and a "Departures here" preview, so it can be tested before the watch app
 | `data/ApiClient.kt` | Calls `/v1/home`, `/v1/departures`, `/v1/nearby`, `/v1/vehicles` with the `x-api-key` header |
 | `data/LocationSource.kt` | Last known location if < 30 s old and < 50 m accurate, else a fresh fix (4 s timeout) |
 | `data/TransitRepository.kt` | Location + API; caches the home response for 20 s |
-| `data/Settings.kt` | Language, number of departures, server URL, API key (DataStore) |
+| `data/Settings.kt` | Language and number of departures (DataStore) |
 | `wear/WatchProtocol.kt` | Message format between watch and phone (kept under 1000 bytes) |
 | `wear/RequestHandler.kt` | Watch request -> reply bytes, errors mapped to codes the watch shows |
 | `wear/WearBridge.kt` | Wear Engine: finds the paired watch, receives and sends P2P messages |
 | `wear/WatchService.kt` | Foreground service that keeps the receiver alive; idle until a message arrives |
-| `ui/` | Settings screen (design: phone settings artboard on the design canvas) |
+| `ui/` | Settings screen (design: phone settings artboard on the design canvas) and the widget's stop picker |
+| `widget/` | Home-screen widget (Jetpack Glance): departures, reverse, stop picker, refresh |
 
-The `data` package does not depend on Wear Engine, so the later home-screen widget can reuse it.
+The `data` package does not depend on Wear Engine; the widget uses it too.
+
+### Widget
+
+Same content as the watch home screen: the nearest stop with service soon (as chosen by
+`/v1/home`), up to 3 or 4 departures with clock times, live dot and amber delays.
+
+- **⇄** opposite direction (stays reversed until you are at a different stop or press it again)
+- **≡** or tapping the stop name: list of nearby stops and their platforms; picking one pins the
+  widget (pin icon) until "Nearest stop (automatic)" is chosen
+- **⟳** refresh now
+
+Android lets widgets refresh automatically only every 15 minutes (WorkManager). While the watch
+link is on, the widget also refreshes when the phone is unlocked, at most once a minute. Times are
+shown as clock times so they never go stale. Refreshing in the background needs location
+"Allow all the time" unless the watch link is on.
 
 ### Watch protocol
 
@@ -54,7 +70,7 @@ Optional settings in `android/local.properties` (not committed) or environment v
 
 | Property | Env var | Meaning |
 |----------|---------|---------|
-| `mhdApiKey` | `MHD_API_KEY` | Backend API key baked into the build (can also be entered in the app) |
+| `mhdApiKey` | `MHD_API_KEY` | Backend API key baked into the build (GitHub: repository secret `MHD_API_KEY`) |
 | `mhdApiUrl` | `MHD_API_URL` | Backend URL (default: the Cloud Run service) |
 | `watchPackage` | `WATCH_PACKAGE` | Package name of the watch app (default `io.github.juliajamnicka.brnomhd.watch`) |
 | `watchFingerprint` | `WATCH_FINGERPRINT` | Signing fingerprint of the watch app (from DevEco Studio) |
@@ -67,8 +83,8 @@ The APK is attached to the workflow run as the artifact `brno-mhd-debug-apk`.
 
 1. Download `brno-mhd-debug-apk` from the latest successful **android** workflow run (GitHub > Actions),
    unzip it and open `app-debug.apk` on the phone (allow installing from your browser or files app).
-2. Open the app: allow location, then enter the API key under **Advanced > Show server settings**
-   (Cloud Shell: `gcloud secrets versions access latest --secret=mhd-api-key`).
+2. Open the app and allow location. The API key is built in from the GitHub secret `MHD_API_KEY`
+   (local builds: `mhdApiKey` in `local.properties`); there is no setting for it in the app.
 3. **Departures here > Load departures** should list the departures at your nearest stop.
 4. **Connect watch** needs the Huawei Health app with the watch paired, and the Wear Engine
    permission for this app (applied for in AppGallery Connect). Until then it shows an error,
@@ -87,8 +103,7 @@ base64 -w0 brnomhd.jks > brnomhd.jks.b64                               # value f
 ```
 
 Keep `brnomhd.jks` and its password safe (not in the repository). Then add GitHub
-**secrets** `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD`, and
-optionally `MHD_API_KEY` so the downloaded APK works without entering the key.
+**secrets** `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD` and `SIGNING_KEY_PASSWORD`.
 
 ## Permissions
 

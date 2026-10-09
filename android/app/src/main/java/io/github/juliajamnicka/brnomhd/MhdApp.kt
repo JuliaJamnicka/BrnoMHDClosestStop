@@ -23,10 +23,8 @@ class MhdApp : Application() {
 class AppGraph(app: Application) {
     val settings = SettingsStore(app)
     val location = FusedLocationSource(app)
-    val api = ApiClient(config = {
-        val s = settings.current()
-        ApiClient.ApiConfig(s.apiUrl, s.apiKey)
-    })
+    // Server URL and API key are set at build time (android/README.md)
+    val api = ApiClient(config = { ApiClient.ApiConfig(BuildConfig.DEFAULT_API_URL, BuildConfig.DEFAULT_API_KEY) })
     val repository = TransitRepository(api, location)
 
     /** Language code sent to the watch: the app language if set, else the phone language. */

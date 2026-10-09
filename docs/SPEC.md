@@ -241,7 +241,10 @@ other platform of the same stop group with the most departures of the same route
 `direction_id` (Česká: Z1 <-> Z2, Z3 <-> Z4, Z9 <-> Z10). If no platform shares a route, the button
 cycles through the group's platforms ordered by distance. The API returns it as `opp`.
 
-**Which platform is shown first.** The closest *platform*, not the station centre: platforms of
+**Which platform is shown first (`/v1/home`).** Among platforms within 400 m, the nearest one with
+a departure in the next 30 minutes; if none has one, the nearest platform. Found in real use: at
+night the closest stop (Žitná, lines 42 and 70) has nothing for hours while N91 stops at Kořískova,
+283 m away. Otherwise the closest *platform*, not the station centre: platforms of
 big stops are up to 150 m apart, and the closest one usually matches where the user stands.
 Tapping the stop name on the watch opens a platform picker listing each platform's lines
 (needed for hubs like Česká with 7 departure platforms).
@@ -324,7 +327,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - Settings screen:
   - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
   - Number of departures shown (3 or 4).
-  - Backend URL (hidden under "Advanced").
+  - The backend URL and API key are set at build time (GitHub secret `MHD_API_KEY`), not in the app.
   - About: data attribution (CC BY 4.0, KORDIS JMK / data.Brno).
 - Onboarding: grant location permission ("while in use" plus foreground service), Wear Engine
   device authorisation, backend URL/key (pre-filled).
@@ -347,7 +350,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - Code structure prepared for the later widget phase: `data` module (backend client, location,
   cache) is separate from the `wear` module (Wear Engine bridge), so the widget reuses `data`.
 
-### 6.1 Later phase: phone widget (F9)
+### 6.1 Phone widget (F9) - implemented early, while waiting for the Wear Engine approval
 
 - Jetpack Glance app widget (2x2 and 4x2 sizes), showing stop, direction and the next 3-4
   departures, with a reverse-direction button and tap-to-refresh.
@@ -497,7 +500,7 @@ switch on each). The rules below describe them.
 | 4 | Watch app: home + reverse direction + stop list | F1-F4, F6 met on the device. |
 | 5 | Bonus: radar (`/vehicles` + page) | F5 met. |
 | 6 | Polish: error states, about/attribution, Czech/English, battery check | 1 week of daily use without issues. |
-| 7 | Phone app UI + widget (F9) | Widget shows correct departures and refreshes on tap. |
+| 7 | Phone app UI + widget (F9) | Implemented ahead of the watch (`android/.../widget`); check on the phone. |
 
 Repository layout:
 ```
