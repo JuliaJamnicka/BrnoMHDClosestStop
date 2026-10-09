@@ -111,7 +111,7 @@ object WatchProtocol {
             buildJsonArray {
                 add(JsonPrimitive(s.p.firstOrNull()?.id ?: s.id))
                 add(JsonPrimitive(TextShortener.shorten(s.n, NAME_MAX)))
-                add(JsonPrimitive(s.d))
+                add(JsonPrimitive(s.d ?: 0))
                 add(JsonPrimitive(s.m))
             }
         },

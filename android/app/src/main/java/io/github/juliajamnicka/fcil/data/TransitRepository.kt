@@ -36,6 +36,9 @@ class TransitRepository(
 
     suspend fun warmUp() = api.warmUp()
 
+    /** Stop search for the stop-list editor; works without a location too. */
+    suspend fun searchStops(query: String): NearbyResponse = api.searchStops(query, location.current(), SEARCH_LIMIT)
+
     /**
      * What to show here and now, fetched fresh: the board of a stop list with a stop nearby,
      * else the nearest stop with service soon (as chosen by the backend).
@@ -59,5 +62,6 @@ class TransitRepository(
         const val HOME_CACHE_MS = 20_000L
         const val NEARBY_LIMIT = 12
         const val RADAR_RADIUS_M = 800
+        const val SEARCH_LIMIT = 20
     }
 }

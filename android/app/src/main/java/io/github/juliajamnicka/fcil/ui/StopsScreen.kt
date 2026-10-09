@@ -11,27 +11,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,13 +33,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.NearbyStop
-import io.github.juliajamnicka.fcil.data.PlatformDto
 import io.github.juliajamnicka.fcil.data.StopList
-import io.github.juliajamnicka.fcil.data.StopListEntry
 
 /** Nearby stops and the user's stop lists; picking a platform or a list pins the departures screen. */
 @Composable
-fun StopsScreen(model: AppViewModel, hasLocation: Boolean, onPicked: () -> Unit, contentPadding: PaddingValues) {
+fun StopsScreen(
+    model: AppViewModel,
+    hasLocation: Boolean,
+    onPicked: () -> Unit,
+    onNewList: () -> Unit,
+    onEditList: (String) -> Unit,
+    contentPadding: PaddingValues,
+) {
     if (hasLocation) RefreshWhileVisible(REFRESH_MS) { model.refreshStops() }
     val lists by model.stopLists.collectAsState(initial = emptyList())
     StopList(
@@ -61,12 +56,8 @@ fun StopsScreen(model: AppViewModel, hasLocation: Boolean, onPicked: () -> Unit,
         selectedList = model.config.pinnedList,
         contentPadding = contentPadding,
         onRefresh = if (hasLocation) model::refreshStops else null,
-        editor = ListEditor(
-            create = model::createList,
-            add = model::addToList,
-            remove = model::removeFromList,
-            delete = model::deleteList,
-        ),
+        onNewList = onNewList,
+        onEditList = onEditList,
         onPickList = { id ->
             model.pinList(id)
             onPicked()
@@ -76,14 +67,6 @@ fun StopsScreen(model: AppViewModel, hasLocation: Boolean, onPicked: () -> Unit,
         onPicked()
     }
 }
-
-/** Editing actions for stop lists; the widget's stop picker only picks. */
-class ListEditor(
-    val create: (name: String, first: StopListEntry?) -> Unit,
-    val add: (listId: String, entry: StopListEntry) -> Unit,
-    val remove: (listId: String, platform: String) -> Unit,
-    val delete: (listId: String) -> Unit,
-)
 
 /**
  * "Nearest stop (automatic)", the user's stop lists, then stops ordered by distance with their
@@ -100,13 +83,13 @@ fun StopList(
     selectedList: String? = null,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onRefresh: (() -> Unit)? = null,
-    editor: ListEditor? = null,
+    /** The app passes these to edit lists; the widget's stop picker only picks. */
+    onNewList: (() -> Unit)? = null,
+    onEditList: ((String) -> Unit)? = null,
     onPickList: (String) -> Unit = {},
     onPick: (String?) -> Unit,
 ) {
     val highlight = MaterialTheme.colorScheme.secondaryContainer
-    // a new list, optionally created from a platform's "+" menu with that platform in it
-    var newList by remember { mutableStateOf<NewList?>(null) }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -145,25 +128,23 @@ fun StopList(
             }
         }
 
-        if (lists.isNotEmpty() || editor != null) {
-            item { SectionTitle(stringResource(R.string.lists_title)) }
-        }
-        items(lists, key = { "list-" + it.id }) { list ->
-            ListCard(list, list.id == selectedList, highlight, editor, onPickList)
-        }
-        if (editor != null) {
+        if (lists.isNotEmpty() || onNewList != null) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (lists.isEmpty()) {
-                        Text(stringResource(R.string.lists_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
-                    }
-                    OutlinedButton(onClick = { newList = NewList(null) }) {
-                        Icon(painterResource(R.drawable.ic_add), contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.lists_new))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { SectionTitle(stringResource(R.string.lists_title)) }
+                    if (onNewList != null) {
+                        IconButton(onClick = onNewList) {
+                            Icon(painterResource(R.drawable.ic_add), stringResource(R.string.lists_new), tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
+        }
+        if (lists.isEmpty() && onNewList != null) {
+            item { Text(stringResource(R.string.lists_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp) }
+        }
+        items(lists, key = { "list-" + it.id }) { list ->
+            ListCard(list, list.id == selectedList, highlight, onEditList, onPickList)
         }
 
         item { SectionTitle(stringResource(R.string.stops_nearby)) }
@@ -178,7 +159,7 @@ fun StopList(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(stop.n, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Text(distanceLabel(stop.d), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            stop.d?.let { Text(distanceLabel(it), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                         stop.p.forEachIndexed { i, platform ->
                             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -194,10 +175,6 @@ fun StopList(
                                     Text("→ ${platform.dir}", fontSize = 16.sp)
                                     Text(platform.l, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                                 }
-                                val entry = entryOf(stop, platform)
-                                if (editor != null && entry != null) {
-                                    AddToListButton(lists, entry, editor) { newList = NewList(entry) }
-                                }
                             }
                         }
                         Box(Modifier.padding(bottom = 6.dp))
@@ -206,24 +183,6 @@ fun StopList(
             }
         }
     }
-
-    newList?.let { pending ->
-        NewListDialog(
-            onDismiss = { newList = null },
-            onCreate = { name ->
-                editor?.create?.invoke(name, pending.first)
-                newList = null
-            },
-        )
-    }
-}
-
-private class NewList(val first: StopListEntry?)
-
-private fun entryOf(stop: NearbyStop, platform: PlatformDto): StopListEntry? {
-    val lat = platform.la ?: return null
-    val lon = platform.lo ?: return null
-    return StopListEntry(platform.id, stop.n, platform.dir, lat, lon)
 }
 
 @Composable
@@ -231,129 +190,41 @@ private fun ListCard(
     list: StopList,
     pinned: Boolean,
     highlight: Color,
-    editor: ListEditor?,
+    onEditList: ((String) -> Unit)?,
     onPickList: (String) -> Unit,
 ) {
-    var confirmDelete by remember { mutableStateOf(false) }
     BrandCard {
-        Column(Modifier.background(if (pinned) highlight else MaterialTheme.colorScheme.surface)) {
+        Row(
+            Modifier.background(if (pinned) highlight else MaterialTheme.colorScheme.surface),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Row(
                 Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .clickable(enabled = list.entries.isNotEmpty()) { onPickList(list.id) }
-                    .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+                    .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(painterResource(R.drawable.ic_stop_list), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
-                Text(list.name, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(vertical = 8.dp))
-                if (editor != null) {
-                    IconButton(onClick = { confirmDelete = true }) {
-                        Icon(painterResource(R.drawable.ic_close), stringResource(R.string.lists_delete))
-                    }
-                }
-            }
-            if (list.entries.isEmpty()) {
-                Text(
-                    stringResource(R.string.lists_empty),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                )
-            }
-            list.entries.forEach { e ->
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                Column(Modifier.weight(1f)) {
+                    Text(list.name, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        "${e.stop} → ${e.dir}",
-                        fontSize = 16.sp,
+                        list.entries.map { it.stop }.distinct().joinToString(" · "),
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).padding(vertical = 12.dp),
                     )
-                    if (editor != null) {
-                        IconButton(onClick = { editor.remove(list.id, e.platform) }) {
-                            Icon(
-                                painterResource(R.drawable.ic_close),
-                                stringResource(R.string.lists_remove_stop),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
+                }
+            }
+            if (onEditList != null) {
+                IconButton(onClick = { onEditList(list.id) }, modifier = Modifier.padding(end = 4.dp)) {
+                    Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.lists_edit))
                 }
             }
         }
     }
-    if (confirmDelete && editor != null) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.lists_delete_title, list.name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    editor.delete(list.id)
-                }) { Text(stringResource(R.string.lists_delete)) }
-            },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(android.R.string.cancel)) } },
-        )
-    }
-}
-
-/** "+" on a platform: add it to one of the lists, or to a new one. */
-@Composable
-private fun AddToListButton(lists: List<StopList>, entry: StopListEntry, editor: ListEditor, onNewList: () -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) {
-            Icon(painterResource(R.drawable.ic_add), stringResource(R.string.lists_add), tint = MaterialTheme.colorScheme.primary)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            lists.forEach { list ->
-                val already = list.entries.any { it.platform == entry.platform }
-                DropdownMenuItem(
-                    text = { Text(list.name) },
-                    enabled = !already,
-                    onClick = {
-                        open = false
-                        editor.add(list.id, entry)
-                    },
-                )
-            }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.lists_new)) },
-                onClick = {
-                    open = false
-                    onNewList()
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun NewListDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.lists_new)) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.take(40) },
-                label = { Text(stringResource(R.string.lists_name)) },
-                placeholder = { Text(stringResource(R.string.lists_name_example)) },
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onCreate(name) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.lists_create)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
-    )
 }
 
 private const val REFRESH_MS = 60_000L

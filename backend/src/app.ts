@@ -99,6 +99,37 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     };
   });
 
+  // Stop search by name for the stop-list editor (docs/SPEC.md 6.2): case and diacritics are ignored;
+  // names starting with the query come first, then a word starting with it, then any match.
+  app.get<{ Querystring: { q?: string; lat?: string; lon?: string; limit?: string } }>('/v1/stops', async (req, reply) => {
+    const q = fold((req.query.q ?? '').trim());
+    if (q.length < 2) return reply.code(400).send({ error: 'q must have at least 2 characters' });
+    const limit = clampInt(req.query.limit, 20, 1, MAX_NEARBY);
+    const pos = position(req.query);
+    const matches = [];
+    for (const group of tt.groups.values()) {
+      const platforms = group.platforms.filter((p) => p.departures > 0);
+      if (platforms.length === 0) continue;
+      const name = fold(group.name);
+      const at = name.indexOf(q);
+      if (at < 0) continue;
+      const rank = at === 0 ? 0 : /[\s,.\-(]/.test(name[at - 1]) ? 1 : 2;
+      const distance = pos ? distanceM(pos.lat, pos.lon, group.lat, group.lon) : undefined;
+      matches.push({ group, platforms, rank, distance });
+    }
+    matches.sort((a, b) => a.rank - b.rank || (a.distance ?? 0) - (b.distance ?? 0) || a.group.name.localeCompare(b.group.name, 'cs'));
+    return {
+      t: now(),
+      stops: matches.slice(0, limit).map(({ group, platforms, distance }) => ({
+        id: group.groupId,
+        n: group.name,
+        ...(distance !== undefined ? { d: Math.round(distance) } : {}),
+        m: modesOf(platforms),
+        p: platforms.map(platformInfo),
+      })),
+    };
+  });
+
   // One round trip for the watch home screen: closest platform plus its departures.
   app.get<{ Querystring: { lat?: string; lon?: string; n?: string } }>('/v1/home', async (req, reply) => {
     const pos = position(req.query);
@@ -182,6 +213,11 @@ function position(q: { lat?: string; lon?: string }): { lat: number; lon: number
   if (q.lat === undefined || q.lon === undefined || !Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return undefined;
   return { lat, lon };
+}
+
+/** Lower case without diacritics, for name search ("Konečného" matches "konecneho"). */
+function fold(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
 function round5(x: number): number {
