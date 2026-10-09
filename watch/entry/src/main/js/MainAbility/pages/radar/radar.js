@@ -16,6 +16,7 @@ let receivedAt = 0;
 export default {
     data: {
         markers: [],
+        arrows: [],
         stops: [],
         status: '',
     },
@@ -46,7 +47,11 @@ export default {
                 return;
             }
             receivedAt = now();
-            self.markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
+            const markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
+            self.markers = markers;
+            self.arrows = markers.filter(function (m) {
+                return !!m.arrow;
+            });
             const stops = [];
             const list = reply.s || [];
             const scale = RADIUS_PX / RANGE_M;

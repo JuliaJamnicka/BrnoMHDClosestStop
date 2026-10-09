@@ -90,7 +90,7 @@ export default {
         if (!r) return;
         const current = now();
         this.stop = r.s;
-        this.direction = '→ ' + r.r;
+        this.direction = r.r ? '→ ' + r.r : ''; // a stop list (r.l) has no single direction
         this.distance = distanceLabel(r.d);
         this.pinned = !!state.pinned;
         this.canReverse = !!r.o;
@@ -119,7 +119,7 @@ export default {
     },
 
     openPlatforms() {
-        if (reply) router.replace({ uri: 'pages/platforms/platforms' });
+        if (reply && reply.p) router.replace({ uri: 'pages/platforms/platforms' });
     },
 
     openRadar() {

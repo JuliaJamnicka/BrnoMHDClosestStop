@@ -21,6 +21,7 @@ const MAX_NEARBY = 20;
 const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
 const MAX_VEHICLES = 15;
+const MAX_BOARD_PLATFORMS = 8;
 const HOME_RADIUS = 400;
 const HOME_CANDIDATES = 12;
 const HOME_SOON = 30 * 60;
@@ -48,7 +49,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         return next !== undefined && next.e - t <= HOME_SOON;
       });
 
-  const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines });
+  // la/lo let the phone tell which of the user's stop lists is nearby without asking the server
+  const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines, la: round5(p.lat), lo: round5(p.lon) });
 
   const departurePayload = async (group: Group, platform: Platform, n: number, distance?: number) => {
     await feed.refresh(now());
@@ -125,6 +127,24 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     },
   );
 
+  // A user's stop list (docs/SPEC.md 6.2): the next departures of several platforms in one timeline.
+  // Unknown platform ids are skipped; a new timetable export can drop a stop.
+  app.get<{ Querystring: { platforms?: string; n?: string } }>('/v1/board', async (req, reply) => {
+    const platforms = [...new Set((req.query.platforms ?? '').split(','))]
+      .slice(0, MAX_BOARD_PLATFORMS)
+      .map((id) => tt.platforms.get(id))
+      .filter((p): p is Platform => p !== undefined);
+    if (platforms.length === 0) return reply.code(404).send({ error: 'unknown platforms' });
+    const n = clampInt(req.query.n, 4, 1, MAX_DEPARTURES);
+    await feed.refresh(now());
+    const t = now();
+    const dep = platforms
+      .flatMap((p) => departures(tt, tracker, p.stopId, t, n).map((d) => ({ ...d, p: p.stopId, sn: p.name })))
+      .sort((a, b) => a.e - b.e || a.s - b.s)
+      .slice(0, n);
+    return { t, dep };
+  });
+
   app.get<{ Querystring: { lat?: string; lon?: string; r?: string } }>('/v1/vehicles', async (req, reply) => {
     const pos = position(req.query);
     if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
@@ -137,7 +157,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       .map((v) => ({ v, distance: distanceM(pos.lat, pos.lon, v.lat, v.lon) }))
       .filter((x) => x.distance <= radius)
       .sort((a, b) => a.distance - b.distance)
-      .map(({ v }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: Math.round(v.bearing), dl: v.delay, a: t - v.ts }))
+      .map(({ v }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: v.heading, h: v.headsign, dl: v.delay, a: t - v.ts }))
       // coupled units are reported as separate trips at the same spot; show them once
       .filter((v) => {
         const key = `${v.l}|${Math.round(v.dx / 20)}|${Math.round(v.dy / 20)}`;
@@ -162,6 +182,10 @@ function position(q: { lat?: string; lon?: string }): { lat: number; lon: number
   if (q.lat === undefined || q.lon === undefined || !Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return undefined;
   return { lat, lon };
+}
+
+function round5(x: number): number {
+  return Math.round(x * 1e5) / 1e5;
 }
 
 function clampInt(value: string | undefined, fallback: number, min: number, max: number): number {

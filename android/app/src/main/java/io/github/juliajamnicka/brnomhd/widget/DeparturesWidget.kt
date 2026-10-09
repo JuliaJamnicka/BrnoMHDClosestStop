@@ -68,7 +68,7 @@ class DeparturesWidget : GlanceAppWidget() {
             Content(
                 context = context,
                 response = WidgetState.response(prefs),
-                pinned = prefs[WidgetState.pinnedPlatform] != null,
+                pinned = prefs[WidgetState.pinnedPlatform] != null || prefs[WidgetState.pinnedList] != null,
                 loading = prefs[WidgetState.loading] == true,
                 updatedAt = prefs[WidgetState.updatedAt],
                 error = prefs[WidgetState.error]?.let { runCatching { WidgetError.valueOf(it) }.getOrNull() },
@@ -113,7 +113,8 @@ private fun Content(
                         maxLines = 1,
                     )
                 }
-                val subtitle = response?.let { r -> "→ ${r.dir}" + (r.d?.let { " · $it m" } ?: "") }
+                // a stop list's board has no single direction; its rows name their stops
+                val subtitle = response?.takeIf { it.listId == null }?.let { r -> "→ ${r.dir}" + (r.d?.let { " · $it m" } ?: "") }
                 if (subtitle != null) Text(subtitle, style = TextStyle(color = Secondary, fontSize = 13.sp), maxLines = 1)
             }
             IconButton(R.drawable.ic_reverse, context.getString(R.string.widget_reverse), actionRunCallback<ReverseAction>())
@@ -156,7 +157,12 @@ private fun DepartureRow(d: DepartureDto) {
             Text(d.l, style = TextStyle(color = Primary, fontSize = 14.sp, fontWeight = FontWeight.Bold), maxLines = 1)
         }
         Spacer(GlanceModifier.width(10.dp))
-        Text(d.h, style = TextStyle(color = Primary, fontSize = 15.sp), maxLines = 1, modifier = GlanceModifier.defaultWeight())
+        Text(
+            if (d.sn != null) "${d.sn} · ${d.h}" else d.h,
+            style = TextStyle(color = Primary, fontSize = 15.sp),
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+        )
         val delayMin = d.dl / 60
         if (delayMin >= 1) {
             Text(

@@ -14,13 +14,16 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,13 +66,21 @@ fun LineBadge(line: String, mode: String, minWidth: Dp = 44.dp, fontSize: TextUn
     ) { Text(line, color = Color.White, fontWeight = FontWeight.Bold, fontSize = fontSize, maxLines = 1) }
 }
 
-/** One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red). */
+/**
+ * One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red).
+ * On a stop list's board the row's stop is named under the headsign.
+ */
 @Composable
 fun DepartureRow(d: DepartureDto, now: Long) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         LineBadge(d.l, d.m)
         Spacer(Modifier.width(12.dp))
-        Text(d.h, Modifier.weight(1f), fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f)) {
+            Text(d.h, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (d.sn != null) {
+                Text(d.sn, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
         val delayMin = d.dl / 60
         if (delayMin >= 1) {
             Text(
@@ -97,6 +108,18 @@ fun DepartureRow(d: DepartureDto, now: Long) {
             textAlign = TextAlign.End,
         )
     }
+}
+
+/** Direction of travel; [heading] in degrees, 0 north. Nothing when the heading is unknown (-1). */
+@Composable
+fun HeadingArrow(heading: Int, size: Dp = 16.dp, tint: Color = MaterialTheme.colorScheme.onSurface) {
+    if (heading < 0) return
+    Icon(
+        painterResource(R.drawable.ic_arrow),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(size).rotate(heading.toFloat()),
+    )
 }
 
 @Composable

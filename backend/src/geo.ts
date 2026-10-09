@@ -17,3 +17,9 @@ export function offsetM(lat1: number, lon1: number, lat2: number, lon2: number):
   const dy = (lat2 - lat1) * toRad * EARTH_RADIUS_M;
   return { dx: Math.round(dx), dy: Math.round(dy) };
 }
+
+/** Compass bearing from point 1 to point 2 in degrees (0 north, 90 east); short distances only. */
+export function bearingDeg(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const { dx, dy } = offsetM(lat1, lon1, lat2, lon2);
+  return (Math.round((Math.atan2(dx, dy) * 180) / Math.PI) + 360) % 360;
+}

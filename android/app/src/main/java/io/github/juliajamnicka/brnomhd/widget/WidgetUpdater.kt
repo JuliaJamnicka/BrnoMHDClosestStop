@@ -58,10 +58,10 @@ object WidgetUpdater {
         DeparturesWidget().update(context, id)
     }
 
-    /** Pins a widget to a platform, or back to the nearest stop when [platform] is null. */
-    suspend fun pin(context: Context, appWidgetId: Int, platform: String?) {
+    /** Pins a widget to a platform or a stop list, or back to automatic when both are null. */
+    suspend fun pin(context: Context, appWidgetId: Int, platform: String?, list: String? = null) {
         val id = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-        refresh(context, id) { _, _ -> WidgetConfig(pinnedPlatform = platform) }
+        refresh(context, id) { _, _ -> WidgetConfig(pinnedPlatform = platform, pinnedList = list) }
     }
 
     private suspend fun load(context: Context, config: WidgetConfig): Result<Pair<WidgetConfig, DeparturesResponse>> = try {

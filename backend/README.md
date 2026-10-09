@@ -43,7 +43,8 @@ trolleybus), `V` train, `L` boat.
 | `GET /v1/home?lat=&lon=&n=4` | Closest platform and its next `n` departures (one round trip for the watch home screen) |
 | `GET /v1/departures?platform=U1073Z2&n=4[&lat=&lon=]` | Departures from a platform (used by the reverse button and the stop list) |
 | `GET /v1/nearby?lat=&lon=&limit=12` | Stops ordered by distance, each with its platforms |
-| `GET /v1/vehicles?lat=&lon=&r=800` | Up to 15 live vehicles and 3 stops, as metres east (`dx`) / north (`dy`) of the user |
+| `GET /v1/board?platforms=U1073Z1,U1201Z2&n=8` | A stop list: the next `n` departures of up to 8 platforms in one timeline, each with its platform (`p`) and stop name (`sn`) |
+| `GET /v1/vehicles?lat=&lon=&r=800` | Up to 15 live vehicles and 3 stops, as metres east (`dx`) / north (`dy`) of the user; `b` heading in degrees (-1 unknown), `h` headsign |
 | `GET /v1/health` | Timetable validity and real-time feed age (no API key needed) |
 
 Example `/v1/home` response (shortened):
@@ -52,13 +53,13 @@ Example `/v1/home` response (shortened):
 {
   "t": 1791485744, "g": "U1073N2860", "stop": "Česká", "p": "U1073Z1",
   "dir": "Náměstí Míru, Starý Lískovec, smyčka", "opp": "U1073Z2", "d": 20,
-  "pl": [{ "id": "U1073Z1", "dir": "Náměstí Míru, Starý Lískovec, smyčka", "l": "3 4 5 6 H4" }],
+  "pl": [{ "id": "U1073Z1", "dir": "Náměstí Míru, Starý Lískovec, smyčka", "l": "3 4 5 6 H4", "la": 49.19811, "lo": 16.60607 }],
   "dep": [{ "l": "5", "m": "T", "h": "Ústřední hřbitov - smyčka", "e": 1791485760, "s": 1791485760, "dl": 0, "lv": 1 }]
 }
 ```
 
 `e` expected departure, `s` scheduled departure, `dl` delay in seconds, `lv` 1 when a live
-vehicle position was used, `opp` the platform for the reverse button, `pl` all platforms of the stop.
+vehicle position was used, `opp` the platform for the reverse button, `pl` all platforms of the stop (with coordinates `la`/`lo`).
 
 ## Deployment (Google Cloud Run)
 

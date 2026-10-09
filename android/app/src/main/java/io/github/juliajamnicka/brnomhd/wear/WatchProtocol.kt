@@ -54,6 +54,9 @@ object WatchProtocol {
     /**
      * {"c":"dep","lg","t","g","s":stop,"p":platform,"o":opposite,"r":direction,"d":distance,
      *  "x":[[line, mode, headsign, expectedEpoch, delayMinutes, live0or1], ...]}
+     *
+     * A stop list's board (docs/SPEC.md 6.2) has "l":1, the list name as "s", empty "p" and "r",
+     * and each row's stop name in place of the headsign: the user knows where their lines go.
      */
     fun departures(r: DeparturesResponse, lang: String): ByteArray = fit(
         buildJsonObject {
@@ -63,6 +66,7 @@ object WatchProtocol {
             put("g", r.g)
             put("s", TextShortener.shorten(r.stop, NAME_MAX))
             put("p", r.p)
+            if (r.listId != null) put("l", 1)
             r.opp?.let { put("o", it) }
             put("r", TextShortener.shorten(r.dir, 24))
             r.d?.let { put("d", it) }
@@ -71,7 +75,7 @@ object WatchProtocol {
             buildJsonArray {
                 add(JsonPrimitive(d.l))
                 add(JsonPrimitive(d.m))
-                add(JsonPrimitive(TextShortener.shorten(d.h, HEADSIGN_MAX)))
+                add(JsonPrimitive(TextShortener.shorten(d.sn ?: d.h, HEADSIGN_MAX)))
                 add(JsonPrimitive(d.e))
                 add(JsonPrimitive(d.dl / 60))
                 add(JsonPrimitive(d.lv))
@@ -115,7 +119,7 @@ object WatchProtocol {
 
     /**
      * {"c":"veh","lg","t","s":[[stopName, dx, dy], ...],
-     *  "x":[[line, mode, dxMetres, dyMetres, bearing, delayMinutes], ...]}
+     *  "x":[[line, mode, dxMetres, dyMetres, headingDegreesOrMinus1, delayMinutes], ...]}
      */
     fun vehicles(r: VehiclesResponse, lang: String): ByteArray = fit(
         buildJsonObject {

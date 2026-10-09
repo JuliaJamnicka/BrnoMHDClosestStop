@@ -31,16 +31,22 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.juliajamnicka.brnomhd.R
 import io.github.juliajamnicka.brnomhd.data.TransitRepository
 import io.github.juliajamnicka.brnomhd.data.VehicleDto
 import io.github.juliajamnicka.brnomhd.data.VehiclesResponse
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** Live vehicles around the user, north up, as on the watch; the nearest ones are listed below. */
+/**
+ * Live vehicles around the user, north up, as on the watch, each with an arrow for its direction
+ * of travel; the nearest ones are listed below with their destination.
+ */
 @Composable
 fun RadarScreen(model: AppViewModel, hasLocation: Boolean, contentPadding: PaddingValues) {
     if (hasLocation) RefreshWhileVisible(REFRESH_MS) { model.refreshRadar() }
@@ -83,7 +89,15 @@ fun RadarScreen(model: AppViewModel, hasLocation: Boolean, contentPadding: Paddi
                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             LineBadge(v.l, v.m)
                             Spacer(Modifier.width(12.dp))
-                            Text(distanceLabel(distance(v)), Modifier.weight(1f), fontSize = 17.sp)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    if (v.h.isNotEmpty()) "→ ${v.h}" else "",
+                                    fontSize = 17.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(distanceLabel(distance(v)), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             val delayMin = v.dl / 60
                             if (delayMin >= 1) {
                                 Text(
@@ -91,7 +105,9 @@ fun RadarScreen(model: AppViewModel, hasLocation: Boolean, contentPadding: Paddi
                                     color = if (delayMin >= 2) delayColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.SemiBold,
                                 )
+                                Spacer(Modifier.width(8.dp))
                             }
+                            HeadingArrow(v.b, size = 20.dp)
                         }
                     }
                 }
@@ -135,7 +151,17 @@ private fun Radar(data: VehiclesResponse?) {
             )
         }
         data?.v?.filter { distance(it) <= RANGE_M }?.forEach { v ->
-            Box(Modifier.centreAt(centre + v.dx * scale, centre - v.dy * scale)) {
+            val x = centre + v.dx * scale
+            val y = centre - v.dy * scale
+            if (v.b >= 0) {
+                // an arrow just ahead of the badge, in the direction of travel
+                val rad = Math.toRadians(v.b.toDouble())
+                val ahead = 24.dp.value * LocalDensity.current.density
+                Box(Modifier.centreAt(x + (sin(rad) * ahead).toFloat(), y - (cos(rad) * ahead).toFloat())) {
+                    HeadingArrow(v.b, size = 14.dp, tint = modeColor(v.m))
+                }
+            }
+            Box(Modifier.centreAt(x, y)) {
                 LineBadge(v.l, v.m, minWidth = 34.dp, fontSize = 13.sp)
             }
         }

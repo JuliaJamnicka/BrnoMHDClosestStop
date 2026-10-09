@@ -50,7 +50,7 @@ fun DeparturesScreen(
 ) {
     if (hasLocation) RefreshWhileVisible(REFRESH_MS) { model.refreshDepartures() }
     val state = model.departures
-    val pinned = model.config.pinnedPlatform != null
+    val pinned = model.config.pinnedPlatform != null || model.config.pinnedList != null
 
     Column(
         Modifier
@@ -148,6 +148,15 @@ private fun StopHeader(r: DeparturesResponse, pinned: Boolean, model: AppViewMod
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (r.listId != null) {
+                            Icon(
+                                painterResource(R.drawable.ic_stop_list),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
                         if (pinned) {
                             Icon(
                                 painterResource(R.drawable.ic_pin),
@@ -160,7 +169,9 @@ private fun StopHeader(r: DeparturesResponse, pinned: Boolean, model: AppViewMod
                         Text(r.stop, fontSize = 26.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     Text(
-                        "→ ${r.dir}" + (r.d?.let { " · ${distanceLabel(it)}" } ?: ""),
+                        // a stop list's board has no single direction; its rows name their stops
+                        if (r.listId != null) stringResource(R.string.lists_board)
+                        else "→ ${r.dir}" + (r.d?.let { " · ${distanceLabel(it)}" } ?: ""),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp,
                     )

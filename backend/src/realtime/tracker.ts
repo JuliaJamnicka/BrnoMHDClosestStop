@@ -3,7 +3,7 @@
 //  - a lower bound from how overdue the vehicle is at its next stop, and
 //  - a measured departure delay when two observations show it leaving a stop.
 
-import { distanceM } from '../geo.js';
+import { bearingDeg, distanceM } from '../geo.js';
 import { Timetable, TripInfo, TripStop } from '../timetable.js';
 import { localDate, serviceDayBase } from '../time.js';
 
@@ -32,9 +32,11 @@ export interface TripState {
   ts: number;
   lat: number;
   lon: number;
-  bearing: number;
+  /** Direction of travel in degrees (0 north), or -1 when unknown. */
+  heading: number;
   line: string;
   mode: string;
+  headsign: string;
 }
 
 interface TripMatch {
@@ -153,10 +155,23 @@ export class Tracker {
       ts: v.ts,
       lat: v.lat,
       lon: v.lon,
-      bearing: v.bearing ?? 0,
+      heading: this.heading(v, stops[k], prev),
       line: trip.line,
       mode: trip.mode,
+      headsign: trip.headsign,
     };
+  }
+
+  /**
+   * The feed's bearing when it has one. About a tenth of the vehicles report 0 (also while
+   * standing), so 0 counts as missing: then the direction to the next stop is used, or the last
+   * known heading when the vehicle is (almost) at that stop.
+   */
+  private heading(v: RtVehicle, next: TripStop, prev: TripState | undefined): number {
+    if (v.bearing) return Math.round(v.bearing) % 360;
+    const p = this.timetable.platforms.get(next.stopId);
+    if (p && distanceM(v.lat, v.lon, p.lat, p.lon) > 30) return bearingDeg(v.lat, v.lon, p.lat, p.lon);
+    return prev?.heading ?? -1;
   }
 
   /** Service day the trip is running on: today or yesterday (trips after midnight). */

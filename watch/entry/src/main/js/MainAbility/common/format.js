@@ -62,6 +62,15 @@ export function departureRows(reply, now, nowWord) {
   return rows;
 }
 
+const ARROW_OFFSET = 36;
+
+/** One of 8 pre-drawn arrow images (lite wearables cannot rotate images); null when the heading is unknown. */
+export function arrowFor(heading) {
+  if (heading === undefined || heading === null || heading < 0) return null;
+  const sector = Math.round(heading / 45) % 8;
+  return { src: '/common/images/arrow' + sector + '.png', angle: sector * 45 };
+}
+
 /**
  * Radar marker positions in a size x size round screen, north up, user in the centre.
  * radiusPx is the screen distance of rangeM metres (the outer ring).
@@ -76,7 +85,16 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
     const y = centre - v[3] * scale;
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
-    markers.push({ line: v[0], badge: badgeClass(v[1]), left: Math.round(x - 24), top: Math.round(y - 16), late: isLate(v[5]) });
+    const marker = { line: v[0], badge: badgeClass(v[1]), left: Math.round(x - 24), top: Math.round(y - 16), late: isLate(v[5]) };
+    const arrow = arrowFor(v[4]);
+    if (arrow) {
+      // a small arrow just ahead of the badge, in the direction of travel
+      const rad = (arrow.angle * Math.PI) / 180;
+      marker.arrow = arrow.src;
+      marker.arrowLeft = Math.round(x + Math.sin(rad) * ARROW_OFFSET - 12);
+      marker.arrowTop = Math.round(y - Math.cos(rad) * ARROW_OFFSET - 12);
+    }
+    markers.push(marker);
   }
   return markers;
 }

@@ -49,6 +49,19 @@ class WatchProtocolTest {
     }
 
     @Test
+    fun sendsAStopListBoardWithStopNamesInsteadOfHeadsigns() {
+        val board = DeparturesResponse(
+            t = 1, g = "", stop = "Domů z práce", p = "", dir = "", listId = "home",
+            dep = listOf(DepartureDto("12", "T", "Komárov", 100, 100, 0, 1, p = "U1Z2", sn = "Česká")),
+        )
+        val obj = Json.parseToJsonElement(WatchProtocol.departures(board, "cs").decodeToString()).jsonObject
+        assertEquals("1", obj["l"]!!.jsonPrimitive.content)
+        assertNull(obj["o"])
+        assertEquals("""["12","T","Česká",100,0,1]""", obj["x"]!!.jsonArray[0].toString())
+        assertNull(Json.parseToJsonElement(WatchProtocol.departures(ceska, "cs").decodeToString()).jsonObject["l"])
+    }
+
+    @Test
     fun dropsEntriesToStayUnderTheSizeLimit() {
         val many = VehiclesResponse(t = 1, v = List(200) { VehicleDto("N${it}", "B", it, -it, 90, 0, 3) })
         val bytes = WatchProtocol.vehicles(many, "en")
