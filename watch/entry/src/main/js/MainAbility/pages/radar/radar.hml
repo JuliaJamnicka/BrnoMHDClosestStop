@@ -1,0 +1,13 @@
+<stack class="screen" onswipe="onSwipe">
+    <div class="ring-outer"></div>
+    <div class="ring-inner"></div>
+    <text class="north">N</text>
+    <text class="label-400">400 m</text>
+    <text class="label-800">800 m</text>
+    <div for="{{stops}}" class="stop-dot" style="left: {{$item.left}}px; top: {{$item.top}}px;"></div>
+    <div class="me"></div>
+    <div for="{{markers}}" class="{{$item.badge}}" style="left: {{$item.left}}px; top: {{$item.top}}px;">
+        <text class="badge-text">{{$item.line}}</text>
+    </div>
+    <text class="status">{{status}}</text>
+</stack>

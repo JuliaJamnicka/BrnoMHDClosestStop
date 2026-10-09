@@ -374,10 +374,11 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 
 ### 7.1 Project
 
+- Implemented in `watch/` (see `watch/README.md`); built and signed in DevEco Studio.
 - DevEco Studio, project type "Lite Wearable", JS (FA model), HML + CSS + JS (ES5).
-- Pages: `pages/home`, `pages/stops`, `pages/radar`, `pages/about`.
-- Wear Engine watch-side API (`@system.wearengine` / P2P) for messaging with the companion.
-- State shared between pages via `app.js` globals (current group/platform, last payloads).
+- Pages: `pages/home`, `pages/stops`, `pages/platforms`, `pages/radar` (data attribution is in the phone app).
+- Wear Engine watch-side SDK (`common/wearengine.js`, Huawei, Apache-2.0) for P2P messaging with the phone. It sends and receives text, so the phone escapes non-ASCII characters as `\uXXXX` in its JSON replies.
+- State shared between pages in `common/state.js` (pinned platform, last reply, clock offset, language).
 
 ### 7.2 Navigation
 

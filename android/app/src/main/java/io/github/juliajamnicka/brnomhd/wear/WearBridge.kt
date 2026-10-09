@@ -41,8 +41,11 @@ class WearBridge(context: Context) {
             ?: throw IllegalStateException("No watch paired in Huawei Health")
         device = watch
 
+        // The lite-wearable SDK sends text (Builder.setDescription); accept it as data or description.
         val r = Receiver { message ->
-            if (message.type == Message.MESSAGE_TYPE_DATA) message.data?.let(onMessage)
+            if (message.type != Message.MESSAGE_TYPE_FILE) {
+                (message.data ?: message.description?.encodeToByteArray())?.let(onMessage)
+            }
         }
         p2pClient.registerReceiver(watch, r).await()
         receiver = r
