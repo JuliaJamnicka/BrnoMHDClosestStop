@@ -19,7 +19,7 @@
     <string name="preview_hint">Shows what the watch would show for your current location.</string>
     <string name="preview_loading">Loading…</string>
     <string name="preview_button">Load departures</string>
-    <string name="preview_legend">● live vehicle data · amber: 2 min or more late</string>
+    <string name="preview_legend">● live vehicle data · +N min: delay (amber from 2 min)</string>
     <string name="now">now</string>
     <string name="section_language">Language</string>
     <string name="language_system">System default</string>

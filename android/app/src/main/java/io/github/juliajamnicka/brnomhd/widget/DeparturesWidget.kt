@@ -157,6 +157,15 @@ private fun DepartureRow(d: DepartureDto) {
         }
         Spacer(GlanceModifier.width(10.dp))
         Text(d.h, style = TextStyle(color = Primary, fontSize = 15.sp), maxLines = 1, modifier = GlanceModifier.defaultWeight())
+        val delayMin = d.dl / 60
+        if (delayMin >= 1) {
+            Text(
+                "+$delayMin min",
+                style = TextStyle(color = if (delayMin >= 2) Amber else Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold),
+                maxLines = 1,
+            )
+            Spacer(GlanceModifier.width(6.dp))
+        }
         if (d.lv == 1) Text("● ", style = TextStyle(color = Live, fontSize = 10.sp))
         Text(
             DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(d.e * 1000)),

@@ -414,7 +414,8 @@ switch on each). The rules below describe them.
 | Boat | `route_type` 4 | uses the bus badge with "LOĎ" (rare) |
 
 - Live indicator: small teal (`#5EEAD4`) signal icon before the time.
-- Delay of 2 min or more: time in amber (`#FFB020`). Amber is also used for "stale data" and "pinned stop".
+- Delay shown explicitly as "+N min" before the time from 1 min (grey), amber (`#FFB020`) from 2 min,
+  where the time itself also turns amber. Amber is also used for "stale data" and "pinned stop".
 - Touch targets at least 44 px.
 
 **Home / departures**
