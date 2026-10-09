@@ -20,9 +20,7 @@ import com.huawei.wearengine.auth.AuthCallback
 import com.huawei.wearengine.auth.Permission
 import io.github.juliajamnicka.brnomhd.MhdApp
 import io.github.juliajamnicka.brnomhd.R
-import io.github.juliajamnicka.brnomhd.data.ApiException
 import io.github.juliajamnicka.brnomhd.data.Language
-import io.github.juliajamnicka.brnomhd.data.NoLocationException
 import io.github.juliajamnicka.brnomhd.wear.WatchService
 import kotlinx.coroutines.launch
 
@@ -31,7 +29,6 @@ class MainActivity : AppCompatActivity() {
 
     private var hasLocation by mutableStateOf(false)
     private var hasBackgroundLocation by mutableStateOf(false)
-    private var preview by mutableStateOf<PreviewState>(PreviewState.Idle)
     private var setupMessage by mutableStateOf<String?>(null)
 
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -47,22 +44,27 @@ class MainActivity : AppCompatActivity() {
         refreshPermissions()
         setContent {
             MhdTheme {
-                SettingsScreen(
-                    settingsFlow = graph.settings.settings,
-                    watchEnabled = WatchService.isEnabled(this),
+                AppScreen(
                     hasLocation = hasLocation,
-                    hasBackgroundLocation = hasBackgroundLocation,
-                    setupMessage = setupMessage,
-                    preview = preview,
-                    actions = SettingsActions(
-                        requestLocation = ::requestLocation,
-                        requestBackgroundLocation = ::requestBackgroundLocation,
-                        connectWatch = ::connectWatch,
-                        disconnectWatch = { WatchService.stop(this) },
-                        loadPreview = ::loadPreview,
-                        setLanguage = ::setLanguage,
-                        setDepartureCount = { n -> lifecycleScope.launch { graph.settings.setDepartureCount(n) } },
-                    ),
+                    requestLocation = ::requestLocation,
+                    settings = { padding ->
+                        SettingsScreen(
+                            settingsFlow = graph.settings.settings,
+                            watchEnabled = WatchService.isEnabled(this),
+                            hasLocation = hasLocation,
+                            hasBackgroundLocation = hasBackgroundLocation,
+                            setupMessage = setupMessage,
+                            actions = SettingsActions(
+                                requestLocation = ::requestLocation,
+                                requestBackgroundLocation = ::requestBackgroundLocation,
+                                connectWatch = ::connectWatch,
+                                disconnectWatch = { WatchService.stop(this) },
+                                setLanguage = ::setLanguage,
+                                setDepartureCount = { n -> lifecycleScope.launch { graph.settings.setDepartureCount(n) } },
+                            ),
+                            contentPadding = padding,
+                        )
+                    },
                 )
             }
         }
@@ -111,26 +113,6 @@ class MainActivity : AppCompatActivity() {
                 }
         } catch (e: Exception) {
             setupMessage = getString(R.string.setup_auth_failed, e.message ?: "")
-        }
-    }
-
-    private fun loadPreview() {
-        preview = PreviewState.Loading
-        lifecycleScope.launch {
-            preview = try {
-                val count = graph.settings.current().departureCount
-                PreviewState.Loaded(graph.repository.departuresForPreview(count))
-            } catch (e: NoLocationException) {
-                PreviewState.Failed(getString(R.string.error_no_location))
-            } catch (e: ApiException) {
-                PreviewState.Failed(
-                    when (e.kind) {
-                        ApiException.Kind.AUTH -> getString(R.string.error_auth)
-                        ApiException.Kind.NETWORK -> getString(R.string.error_network)
-                        ApiException.Kind.SERVER -> getString(R.string.error_server, e.message ?: "")
-                    },
-                )
-            }
         }
     }
 

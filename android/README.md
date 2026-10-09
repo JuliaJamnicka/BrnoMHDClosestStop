@@ -1,8 +1,9 @@
 # Android phone app
 
-Companion app for the watch (docs/SPEC.md, section 6). It answers the watch's requests over
-Huawei Wear Engine, using the phone's location and the backend API. It also has a settings
-screen (language, number of departures) and a "Departures here" preview, so it can be tested before the watch app exists.
+Fčil for the phone (docs/SPEC.md, section 6). It works on its own, with four tabs: departures
+from the nearest stop (reverse, platform switch, pinning), nearby stops, a radar of live vehicles
+and settings. It also answers the watch's requests over Huawei Wear Engine and drives the
+home-screen widget.
 
 - Kotlin, Jetpack Compose, minSdk 26, targetSdk 35
 - Package name: `io.github.juliajamnicka.brnomhd`
@@ -21,7 +22,7 @@ screen (language, number of departures) and a "Departures here" preview, so it c
 | `wear/RequestHandler.kt` | Watch request -> reply bytes, errors mapped to codes the watch shows |
 | `wear/WearBridge.kt` | Wear Engine: finds the paired watch, receives and sends P2P messages |
 | `wear/WatchService.kt` | Foreground service that keeps the receiver alive; idle until a message arrives |
-| `ui/` | Settings screen (design: phone settings artboard on the design canvas) and the widget's stop picker |
+| `ui/` | The app's tabs (`AppScreen`: departures, stops, radar, settings), their state (`AppViewModel`) and the widget's stop picker |
 | `widget/` | Home-screen widget (Jetpack Glance): departures, reverse, stop picker, refresh |
 
 The `data` package does not depend on Wear Engine; the widget uses it too.

@@ -19,6 +19,7 @@ work = "2.10.0"
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }

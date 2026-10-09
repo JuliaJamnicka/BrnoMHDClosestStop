@@ -1,9 +1,10 @@
 package io.github.juliajamnicka.brnomhd.widget
 
 import io.github.juliajamnicka.brnomhd.data.DeparturesResponse
+import io.github.juliajamnicka.brnomhd.data.TransitRepository
 
 /**
- * Which departures a widget shows (pure logic, unit tested).
+ * Which departures a widget, or the app's departures screen, shows (pure logic, unit tested).
  *
  * - Default: the home stop chosen by the backend (nearest platform with service soon).
  * - Reverse while following the home stop: remember the stop group and show its opposite
@@ -39,3 +40,14 @@ object WidgetLogic {
         else -> config
     }
 }
+
+/** Loads what [config] asks for; returns the config to keep (a stale reverse is dropped) and the departures. */
+suspend fun TransitRepository.departuresFor(config: WidgetConfig, n: Int): Pair<WidgetConfig, DeparturesResponse> =
+    when (val fetch = WidgetLogic.firstFetch(config)) {
+        is WidgetLogic.Fetch.Platform -> config to departures(fetch.id, n)
+        WidgetLogic.Fetch.Home -> {
+            val home = departuresForPreview(n)
+            val (newConfig, reversed) = WidgetLogic.afterHome(config, home)
+            newConfig to (reversed?.let { departures(it, n) } ?: home)
+        }
+    }

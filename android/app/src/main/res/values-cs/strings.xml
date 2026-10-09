@@ -14,10 +14,7 @@
     <string name="section_location">Poloha</string>
     <string name="background_location_hint">Aby aplikace fungovala i po restartu telefonu, nastavte přístup k poloze na „Povolit vždy“.</string>
     <string name="background_location_button">Povolit vždy</string>
-    <string name="section_preview">Odjezdy tady</string>
-    <string name="preview_hint">Ukáže, co by hodinky zobrazily pro vaši aktuální polohu.</string>
     <string name="preview_loading">Načítám…</string>
-    <string name="preview_button">Načíst odjezdy</string>
     <string name="preview_legend">● živá data o vozidle · +N min: zpoždění (oranžově od 2 min)</string>
     <string name="now">teď</string>
     <string name="section_language">Jazyk</string>
@@ -43,4 +40,11 @@
     <string name="widget_no_location">Poloha není k dispozici. Otevřete aplikaci a povolte polohu „vždy“.</string>
     <string name="widget_nearest_stop">Nejbližší zastávka (automaticky)</string>
     <string name="widget_stops_failed">Nepodařilo se načíst okolní zastávky.</string>
+    <string name="tab_departures">Odjezdy</string>
+    <string name="tab_stops">Zastávky</string>
+    <string name="tab_radar">Radar</string>
+    <string name="location_needed">Fčil potřebuje polohu, aby našel nejbližší zastávku.</string>
+    <string name="radar_legend">Sever nahoře. Červená tečka: vy · kruhy: 400 a 800 m · kroužky: zastávky</string>
+    <string name="radar_nearest">Vozidla v okolí (%1$d)</string>
+    <string name="radar_empty">Do 800 m nejsou žádná živá vozidla.</string>
 </resources>

@@ -320,10 +320,18 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 
 ---
 
-## 6. Android phone app specification (companion now, full app with widget later)
+## 6. Android phone app specification
 
 - Implemented in `android/` (see `android/README.md`). Package name `io.github.juliajamnicka.brnomhd`.
-- Kotlin, minSdk 26, single activity (settings/onboarding) + one service.
+- Kotlin, minSdk 26, one main activity with four tabs + one service:
+  - **Departures**: the same as the watch home screen with up to 8 departures, refreshed every
+    20 s while visible; reverse button, platform chips to switch platform, pin indicator and
+    "Nearest stop (automatic)" to unpin. Pinning works as in the widget (`WidgetLogic`).
+  - **Stops**: nearby stops with their platforms; tapping a platform pins the Departures tab.
+  - **Radar**: vehicles within 800 m, north up (as on the watch), refreshed every 15 s, with the
+    nearest vehicles listed below.
+  - **Settings**: watch link, language, number of departures for the watch and widget.
+- Look: Fčil brand (docs/brand): blue accents, "now" in the háček red, night blue in dark mode.
 - The Wear Engine receiver only works while the app's process runs, and the watch cannot start the
   phone app. So the service runs permanently as a low-priority foreground service (it is idle until
   a message arrives; no polling) instead of "only while the watch app is open". It restarts after a
@@ -332,7 +340,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - Libraries: Huawei Wear Engine SDK (phone side), Google Fused Location Provider,
   OkHttp + kotlinx.serialization (`LocationManager` fallback for phones without Play services).
 - The Huawei Health app must be installed and the watch paired in it; Wear Engine works through it.
-- Settings screen:
+- Settings tab:
   - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
   - Number of departures shown (3 or 4).
   - The backend URL and API key are set at build time (GitHub secret `MHD_API_KEY`), not in the app.
@@ -414,7 +422,7 @@ switch on each). The rules below describe them.
 | Train | `route_type` 2 | blue `#1D5FD1`, square |
 | Boat | `route_type` 4 | uses the bus badge with "LOĎ" (rare) |
 
-- Live indicator: small teal (`#5EEAD4`) signal icon before the time.
+- Live indicator: small blue (`#6EA0EE`) dot before the time; "now" is shown in red (`#F0373E`), the Fčil háček colour.
 - Delay shown explicitly as "+N min" before the time from 1 min (grey), amber (`#FFB020`) from 2 min,
   where the time itself also turns amber. Amber is also used for "stale data" and "pinned stop".
 - Touch targets at least 44 px.
@@ -440,7 +448,7 @@ switch on each). The rules below describe them.
 
 **Radar (bonus, F5)**
 - No map tiles: lite wearables have no map component and image transfer every few seconds
-  would be too heavy. User at centre (teal dot), north up, rings at 400 m and 800 m, vehicles
+  would be too heavy. User at centre (red dot), north up, rings at 400 m and 800 m, vehicles
   as mode badges with line number and a small heading arrow, nearest stops as hollow dots, the
   closest stop labelled. "Aktualizováno před 4 s" / "Updated 4 s ago" at the bottom.
 - Implemented with a `stack` of absolutely positioned elements (or `canvas` if available on
