@@ -27,7 +27,6 @@ export default {
         canReverse: false,
         rows: [],
         empty: false,
-        staleClass: '',
         staleText: '',
     },
     onInit() {
@@ -98,7 +97,6 @@ export default {
         this.empty = this.rows.length === 0;
         const age = receivedAt ? current - receivedAt : 0;
         const stale = age > STALE_AFTER_S;
-        this.staleClass = stale ? 'stale' : '';
         this.staleText = stale ? t(state.lang, 'stale', { m: Math.floor(age / 60) }) : '';
         this.view = 'dep';
     },

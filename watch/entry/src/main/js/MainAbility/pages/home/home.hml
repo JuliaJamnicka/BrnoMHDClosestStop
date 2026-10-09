@@ -22,16 +22,16 @@
                 <image class="icon" src="/common/images/reverse.png"></image>
             </div>
         </div>
-        <div class="rows {{staleClass}}">
+        <div class="rows">
             <text if="{{empty}}" class="hint">{{noDeparturesText}}</text>
             <div for="{{rows}}" class="row">
-                <div class="{{$item.badge}}">
+                <div class="badge" style="background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
                     <text class="badge-text">{{$item.line}}</text>
                 </div>
                 <text class="headsign">{{$item.headsign}}</text>
                 <text class="delay">{{$item.delay}}</text>
                 <div if="{{$item.live}}" class="live-dot"></div>
-                <text class="{{$item.timeClass}}">{{$item.big}}</text>
+                <text class="time" style="color: {{$item.timeColour}};">{{$item.big}}</text>
             </div>
         </div>
         <text if="{{staleText}}" class="stale-text">{{staleText}}</text>

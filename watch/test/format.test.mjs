@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeClass, arrowFor } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -35,14 +35,15 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
   const rows = departureRows(parseReply(reply), 1000, 'teď');
   assert.equal(rows.length, 3);
   assert.deepEqual(
-    rows.map((r) => [r.line, r.badge, r.delay, r.timeClass, r.live]),
+    rows.map((r) => [r.line, r.badgeColour, r.badgeRadius, r.delay, r.timeColour, r.live]),
     [
-      ['6', 'badge badge-tram', '', 'time time-now', true],
-      ['4', 'badge badge-tram', '+3', 'time time-late', true],
-      ['N93', 'badge badge-bus', '+1', 'time', false],
+      ['6', '#c8262c', 8, '', '#f0373e', true],
+      ['4', '#c8262c', 8, '+3', '#ffb020', true],
+      ['N93', '#1f7a4d', 19, '+1', '#ffffff', false],
     ],
   );
-  assert.equal(badgeClass('V'), 'badge badge-train');
+  assert.deepEqual(badgeStyle('V', 38), { colour: '#1d5fd1', radius: 2 });
+  assert.equal(timeColour(false, 0), '#ffffff');
 });
 
 test('places radar markers north-up around the centre and drops far vehicles', () => {
