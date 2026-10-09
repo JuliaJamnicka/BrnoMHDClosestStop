@@ -1,0 +1,46 @@
+<div class="screen" onswipe="onSwipe">
+    <div if="{{view === 'loading'}}" class="center">
+        <text class="title">{{loadingText}}</text>
+    </div>
+
+    <div if="{{view === 'error'}}" class="center">
+        <text class="title error-title">{{errorTitle}}</text>
+        <text class="hint">{{errorHint}}</text>
+        <input type="button" class="button" value="{{retryText}}" onclick="load"></input>
+    </div>
+
+    <div if="{{view === 'dep'}}" class="page">
+        <div class="header">
+            <image if="{{pinned}}" class="pin" src="/common/images/pin.png" onclick="unpin"></image>
+            <text class="stop" onclick="openPlatforms">{{stop}}</text>
+        </div>
+        <div class="direction-row">
+            <text class="direction">{{direction}}</text>
+            <div if="{{canReverse}}" class="round-button" onclick="reverse">
+                <image class="icon" src="/common/images/reverse.png"></image>
+            </div>
+        </div>
+        <div class="rows {{staleClass}}">
+            <text if="{{empty}}" class="hint">{{noDeparturesText}}</text>
+            <div for="{{rows}}" class="row">
+                <div class="{{$item.badge}}">
+                    <text class="badge-text">{{$item.line}}</text>
+                </div>
+                <text class="headsign">{{$item.headsign}}</text>
+                <text class="delay">{{$item.delay}}</text>
+                <div if="{{$item.live}}" class="live-dot"></div>
+                <text class="{{$item.timeClass}}">{{$item.big}}</text>
+            </div>
+        </div>
+        <text if="{{staleText}}" class="stale-text">{{staleText}}</text>
+        <div class="footer">
+            <div class="round-button" onclick="openStops">
+                <image class="icon" src="/common/images/list.png"></image>
+            </div>
+            <text class="distance">{{distance}}</text>
+            <div class="round-button" onclick="openRadar">
+                <image class="icon" src="/common/images/radar.png"></image>
+            </div>
+        </div>
+    </div>
+</div>

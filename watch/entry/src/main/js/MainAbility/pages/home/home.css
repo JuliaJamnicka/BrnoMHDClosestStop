@@ -1,0 +1,181 @@
+/* Lite wearables support few font sizes; this app uses only 30px and 38px (see watch/README.md). */
+.screen {
+    width: 466px;
+    height: 466px;
+    background-color: #000000;
+}
+.center {
+    width: 466px;
+    height: 466px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.page {
+    width: 466px;
+    height: 466px;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 34px;
+}
+.title {
+    width: 360px;
+    height: 50px;
+    font-size: 38px;
+    color: #ffffff;
+    text-align: center;
+}
+.error-title {
+    color: #ffb020;
+}
+.hint {
+    width: 330px;
+    height: 120px;
+    font-size: 30px;
+    color: #aeaeb2;
+    text-align: center;
+}
+.button {
+    width: 220px;
+    height: 56px;
+    margin-top: 12px;
+    border-radius: 28px;
+    background-color: #5eead4;
+    color: #00201a;
+    font-size: 30px;
+}
+.header {
+    width: 340px;
+    height: 48px;
+    justify-content: center;
+    align-items: center;
+}
+.pin {
+    width: 36px;
+    height: 36px;
+    margin-right: 6px;
+}
+.stop {
+    width: 310px;
+    height: 48px;
+    font-size: 38px;
+    color: #ffffff;
+    text-align: center;
+    text-overflow: ellipsis;
+}
+.direction-row {
+    width: 360px;
+    height: 54px;
+    justify-content: center;
+    align-items: center;
+}
+.direction {
+    width: 290px;
+    height: 40px;
+    font-size: 30px;
+    color: #c7c7cc;
+    text-align: center;
+    text-overflow: ellipsis;
+}
+.round-button {
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background-color: #2c2c2e;
+    justify-content: center;
+    align-items: center;
+}
+.icon {
+    width: 30px;
+    height: 30px;
+}
+.rows {
+    width: 384px;
+    height: 216px;
+    flex-direction: column;
+}
+.stale {
+    opacity: 0.5;
+}
+.row {
+    width: 384px;
+    height: 54px;
+    align-items: center;
+}
+.badge {
+    width: 58px;
+    height: 38px;
+    justify-content: center;
+    align-items: center;
+}
+.badge-tram {
+    background-color: #c8262c;
+    border-radius: 8px;
+}
+.badge-bus {
+    background-color: #1f7a4d;
+    border-radius: 19px;
+}
+.badge-train {
+    background-color: #1d5fd1;
+    border-radius: 2px;
+}
+.badge-text {
+    width: 58px;
+    height: 38px;
+    font-size: 30px;
+    color: #ffffff;
+    text-align: center;
+}
+.headsign {
+    width: 170px;
+    height: 40px;
+    margin-left: 10px;
+    font-size: 30px;
+    color: #f2f2f2;
+    text-overflow: ellipsis;
+}
+.delay {
+    width: 50px;
+    height: 40px;
+    font-size: 30px;
+    color: #ffb020;
+    text-align: right;
+}
+.live-dot {
+    width: 10px;
+    height: 10px;
+    margin-left: 4px;
+    border-radius: 5px;
+    background-color: #5eead4;
+}
+.time {
+    width: 82px;
+    height: 40px;
+    font-size: 30px;
+    color: #ffffff;
+    text-align: right;
+}
+.time-late {
+    color: #ffb020;
+}
+.stale-text {
+    width: 300px;
+    height: 36px;
+    font-size: 30px;
+    color: #ffb020;
+    text-align: center;
+}
+.footer {
+    width: 260px;
+    height: 60px;
+    justify-content: space-between;
+    align-items: center;
+}
+.distance {
+    width: 140px;
+    height: 40px;
+    font-size: 30px;
+    color: #8e8e93;
+    text-align: center;
+}

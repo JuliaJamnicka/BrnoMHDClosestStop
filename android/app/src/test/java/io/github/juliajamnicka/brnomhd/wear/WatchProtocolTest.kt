@@ -64,6 +64,13 @@ class WatchProtocolTest {
     }
 
     @Test
+    fun sendsOnlyAsciiSoDiacriticsSurviveTheWatchSdk() {
+        val text = WatchProtocol.departures(ceska, "cs").decodeToString()
+        assertTrue(text.all { it.code < 0x80 })
+        assertTrue(text.contains("\\u010cesk\\u00e1"))
+    }
+
+    @Test
     fun encodesErrors() {
         assertEquals("""{"c":"err","lg":"en","e":"noloc"}""", WatchProtocol.error(WatchProtocol.Error.NO_LOCATION, "en").decodeToString())
     }

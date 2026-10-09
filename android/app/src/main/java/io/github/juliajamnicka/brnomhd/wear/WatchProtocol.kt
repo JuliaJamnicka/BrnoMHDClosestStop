@@ -152,11 +152,19 @@ object WatchProtocol {
             put("e", error.code)
         }.toString().encodeToByteArray()
 
+    /**
+     * JSON with every non-ASCII character escaped as \uXXXX, so Czech names survive whatever text
+     * encoding the watch side of Wear Engine assumes; JSON.parse on the watch restores them.
+     */
+    fun asciiJson(json: String): String = buildString(json.length) {
+        for (c in json) if (c.code < 0x80) append(c) else append("\\u%04x".format(c.code))
+    }
+
     /** Adds [entries] as "x", dropping entries from the end until the message fits. */
     private fun fit(head: JsonObject, entries: List<JsonArray>): ByteArray {
         var count = entries.size
         while (true) {
-            val message = JsonObject(head + ("x" to JsonArray(entries.take(count)))).toString().encodeToByteArray()
+            val message = asciiJson(JsonObject(head + ("x" to JsonArray(entries.take(count)))).toString()).encodeToByteArray()
             if (message.size <= MAX_BYTES || count == 0) return message
             count--
         }

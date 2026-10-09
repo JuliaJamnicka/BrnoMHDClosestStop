@@ -1,0 +1,13 @@
+<div class="screen" onswipe="onSwipe">
+    <text class="title">{{title}}</text>
+    <text if="{{message}}" class="hint">{{message}}</text>
+    <list class="list">
+        <list-item class="item" onclick="pickNearest">
+            <text class="name auto">{{autoText}}</text>
+        </list-item>
+        <list-item for="{{stops}}" class="item" onclick="pick($idx)">
+            <text class="name">{{$item.name}}</text>
+            <text class="detail">{{$item.detail}}</text>
+        </list-item>
+    </list>
+</div>

@@ -1,0 +1,32 @@
+name: watch
+
+on:
+  push:
+    paths: ['watch/**', '.github/workflows/watch.yml']
+  pull_request:
+    paths: ['watch/**', '.github/workflows/watch.yml']
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: watch
+
+# The watch app itself is built and signed in DevEco Studio (see watch/README.md);
+# CI checks the JavaScript syntax, the JSON configs and the unit-tested helpers.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: |
+          for f in $(find entry/src/main/js -name '*.js'); do
+            cp "$f" "$RUNNER_TEMP/check.mjs" && node --check "$RUNNER_TEMP/check.mjs" || { echo "::error file=watch/$f::syntax error"; exit 1; }
+          done
+      - name: JSON configs
+        run: node -e "for (const f of ['entry/src/main/config.json','entry/src/main/resources/base/element/string.json']) JSON.parse(require('fs').readFileSync(f,'utf8'))"
+      - name: Unit tests
+        run: node --test test/*.test.mjs
