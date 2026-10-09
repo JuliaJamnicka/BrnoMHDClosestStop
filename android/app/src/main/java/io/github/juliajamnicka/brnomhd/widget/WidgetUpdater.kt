@@ -10,7 +10,6 @@ import io.github.juliajamnicka.brnomhd.MhdApp
 import io.github.juliajamnicka.brnomhd.data.ApiException
 import io.github.juliajamnicka.brnomhd.data.DeparturesResponse
 import io.github.juliajamnicka.brnomhd.data.NoLocationException
-import io.github.juliajamnicka.brnomhd.widget.WidgetLogic.Fetch
 import kotlinx.coroutines.CancellationException
 import androidx.datastore.preferences.core.Preferences
 
@@ -68,15 +67,7 @@ object WidgetUpdater {
     private suspend fun load(context: Context, config: WidgetConfig): Result<Pair<WidgetConfig, DeparturesResponse>> = try {
         val graph = (context.applicationContext as MhdApp).graph
         val n = graph.settings.current().departureCount
-        val repository = graph.repository
-        val loaded = when (val fetch = WidgetLogic.firstFetch(config)) {
-            is Fetch.Platform -> config to repository.departures(fetch.id, n)
-            Fetch.Home -> {
-                val home = repository.departuresForPreview(n)
-                val (newConfig, reversed) = WidgetLogic.afterHome(config, home)
-                newConfig to (reversed?.let { repository.departures(it, n) } ?: home)
-            }
-        }
+        val loaded = graph.repository.departuresFor(config, n)
         Result.success(loaded)
     } catch (e: CancellationException) {
         throw e

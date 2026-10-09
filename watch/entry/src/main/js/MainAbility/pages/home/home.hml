@@ -1,5 +1,6 @@
 <div class="screen" onswipe="onSwipe">
     <div if="{{view === 'loading'}}" class="center">
+        <image class="logo" src="/common/images/logo.png"></image>
         <text class="title">{{loadingText}}</text>
     </div>
 
@@ -10,6 +11,7 @@
     </div>
 
     <div if="{{view === 'dep'}}" class="page">
+        <image class="now-mark" src="/common/images/now.png"></image>
         <div class="header">
             <image if="{{pinned}}" class="pin" src="/common/images/pin.png" onclick="unpin"></image>
             <text class="stop" onclick="openPlatforms">{{stop}}</text>

@@ -10,7 +10,7 @@
     width: 320px;
     height: 46px;
     font-size: 30px;
-    color: #c7c7cc;
+    color: #c3ccdd;
     text-align: center;
 }
 .list {
@@ -34,11 +34,11 @@
     width: 340px;
     height: 34px;
     font-size: 30px;
-    color: #8e8e93;
+    color: #8d99b3;
     text-overflow: ellipsis;
 }
 .auto {
-    color: #5eead4;
+    color: #6ea0ee;
 }
 .hint {
     width: 320px;

@@ -55,7 +55,7 @@ export function departureRows(reply, now, nowWord) {
       big: label.big,
       unit: label.unit,
       delay: delayLabel(r[4]),
-      timeClass: isLate(r[4]) ? 'time time-late' : 'time',
+      timeClass: label.big === nowWord ? 'time time-now' : isLate(r[4]) ? 'time time-late' : 'time',
       live: r[5] === 1,
     });
   }

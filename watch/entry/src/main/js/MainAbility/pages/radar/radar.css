@@ -10,7 +10,7 @@
     height: 400px;
     border-radius: 200px;
     border-width: 2px;
-    border-color: #3a3a3c;
+    border-color: #22345a;
 }
 .ring-inner {
     left: 133px;
@@ -19,7 +19,7 @@
     height: 200px;
     border-radius: 100px;
     border-width: 2px;
-    border-color: #3a3a3c;
+    border-color: #22345a;
 }
 .north {
     left: 213px;
@@ -36,7 +36,7 @@
     width: 90px;
     height: 36px;
     font-size: 30px;
-    color: #8e8e93;
+    color: #8d99b3;
 }
 .label-800 {
     left: 340px;
@@ -44,14 +44,14 @@
     width: 100px;
     height: 36px;
     font-size: 30px;
-    color: #8e8e93;
+    color: #8d99b3;
 }
 .stop-dot {
     width: 14px;
     height: 14px;
     border-radius: 7px;
     border-width: 3px;
-    border-color: #8e8e93;
+    border-color: #8d99b3;
 }
 .me {
     left: 223px;
@@ -59,7 +59,7 @@
     width: 20px;
     height: 20px;
     border-radius: 10px;
-    background-color: #5eead4;
+    background-color: #f0373e;
 }
 .badge {
     width: 48px;
@@ -92,6 +92,6 @@
     width: 300px;
     height: 36px;
     font-size: 30px;
-    color: #8e8e93;
+    color: #8d99b3;
     text-align: center;
 }

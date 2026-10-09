@@ -31,13 +31,13 @@ test('formats times like the design: now, minutes, clock time', () => {
   assert.match(timeLabel(1000 + 3 * 3600, 1000, 'teď').big, /^\d\d:\d\d$/);
 });
 
-test('builds departure rows with delays, live dots and badge styles', () => {
+test('builds departure rows with delays, live dots, badge styles and "now" in red', () => {
   const rows = departureRows(parseReply(reply), 1000, 'teď');
   assert.equal(rows.length, 3);
   assert.deepEqual(
     rows.map((r) => [r.line, r.badge, r.delay, r.timeClass, r.live]),
     [
-      ['6', 'badge badge-tram', '', 'time', true],
+      ['6', 'badge badge-tram', '', 'time time-now', true],
       ['4', 'badge badge-tram', '+3', 'time time-late', true],
       ['N93', 'badge badge-bus', '+1', 'time', false],
     ],

@@ -46,14 +46,14 @@ import io.github.juliajamnicka.brnomhd.ui.StopPickerActivity
 import java.text.DateFormat
 import java.util.Date
 
-// Same look as the watch app: black, white text, mode badges, teal live dot, amber delays.
-private val Background = Color(0xFF000000)
+// Fčil look (docs/brand): night blue, white text, mode badges, blue live dot, amber delays.
+private val Background = Color(0xFF0E1B33)
 private val Primary = ColorProvider(Color.White)
-private val Secondary = ColorProvider(Color(0xFFC7C7CC))
-private val Muted = ColorProvider(Color(0xFF8E8E93))
-private val Live = ColorProvider(Color(0xFF5EEAD4))
+private val Secondary = ColorProvider(Color(0xFFC3CCDD))
+private val Muted = ColorProvider(Color(0xFF8D99B3))
+private val Live = ColorProvider(Color(0xFF6EA0EE))
 private val Amber = ColorProvider(Color(0xFFFFB020))
-private val ButtonBackground = Color(0xFF2C2C2E)
+private val ButtonBackground = Color(0xFF22345A)
 
 class DeparturesWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
