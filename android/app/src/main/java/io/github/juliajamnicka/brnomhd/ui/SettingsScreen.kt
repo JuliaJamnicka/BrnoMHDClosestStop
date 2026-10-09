@@ -262,6 +262,16 @@ private fun DepartureList(r: DeparturesResponse) {
                 Spacer(Modifier.width(10.dp))
                 Text(d.h, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 val minutes = ((d.e - r.t) / 60).coerceAtLeast(0)
+                val delayMin = d.dl / 60
+                if (delayMin >= 1) {
+                    Text(
+                        "+$delayMin min",
+                        color = if (delayMin >= 2) DelayAmber else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
                 Text(
                     (if (d.lv == 1) "● " else "") + if (minutes == 0L) stringResource(R.string.now) else "$minutes min",
                     color = if (d.dl >= 120) DelayAmber else MaterialTheme.colorScheme.onSurface,

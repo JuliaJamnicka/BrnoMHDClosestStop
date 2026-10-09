@@ -18,7 +18,7 @@
     <string name="preview_hint">Ukáže, co by hodinky zobrazily pro vaši aktuální polohu.</string>
     <string name="preview_loading">Načítám…</string>
     <string name="preview_button">Načíst odjezdy</string>
-    <string name="preview_legend">● živá data o vozidle · oranžově: zpoždění 2 min a více</string>
+    <string name="preview_legend">● živá data o vozidle · +N min: zpoždění (oranžově od 2 min)</string>
     <string name="now">teď</string>
     <string name="section_language">Jazyk</string>
     <string name="language_system">Podle systému</string>
