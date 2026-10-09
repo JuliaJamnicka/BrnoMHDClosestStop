@@ -6,7 +6,7 @@ the user's stop lists, a radar of live vehicles with their direction of travel, 
 home-screen widget.
 
 - Kotlin, Jetpack Compose, minSdk 26, targetSdk 35
-- Package name: `io.github.juliajamnicka.brnomhd`
+- Package name: `io.github.juliajamnicka.fcil`
 - Huawei Wear Engine SDK `com.huawei.hms:wearengine:5.0.3.302` (from `https://developer.huawei.com/repo/`)
 - Google Fused Location Provider, OkHttp, kotlinx.serialization, DataStore
 
@@ -74,16 +74,16 @@ Optional settings in `android/local.properties` (not committed) or environment v
 |----------|---------|---------|
 | `mhdApiKey` | `MHD_API_KEY` | Backend API key baked into the build (GitHub: repository secret `MHD_API_KEY`) |
 | `mhdApiUrl` | `MHD_API_URL` | Backend URL (default: the Cloud Run service) |
-| `watchPackage` | `WATCH_PACKAGE` | Package name of the watch app (default `io.github.juliajamnicka.brnomhd.watch`) |
+| `watchPackage` | `WATCH_PACKAGE` | Package name of the watch app (default `io.github.juliajamnicka.fcil.watch`) |
 | `watchFingerprint` | `WATCH_FINGERPRINT` | Signing fingerprint of the watch app (from DevEco Studio) |
 | `signingStoreFile`, `signingStorePassword`, `signingKeyAlias`, `signingKeyPassword` | `SIGNING_*` | Stable signing key, see below |
 
 Every push that changes `android/` builds the app on GitHub (`.github/workflows/android.yml`).
-The APK is attached to the workflow run as the artifact `brno-mhd-debug-apk`.
+The APK is attached to the workflow run as the artifact `fcil-debug-apk`.
 
 ## Installing on the phone
 
-1. Download `brno-mhd-debug-apk` from the latest successful **android** workflow run (GitHub > Actions),
+1. Download `fcil-debug-apk` from the latest successful **android** workflow run (GitHub > Actions),
    unzip it and open `app-debug.apk` on the phone (allow installing from your browser or files app).
 2. Open the app and allow location. The API key is built in from the GitHub secret `MHD_API_KEY`
    (local builds: `mhdApiKey` in `local.properties`); there is no setting for it in the app.
@@ -99,13 +99,15 @@ signing certificate, and the watch app lists the same pair in its `config.json`.
 from GitHub are otherwise signed with a random key each time, so create one key and reuse it:
 
 ```sh
-keytool -genkeypair -v -keystore brnomhd.jks -alias brnomhd -keyalg RSA -keysize 2048 -validity 10000
-keytool -list -v -keystore brnomhd.jks -alias brnomhd | grep SHA256   # the fingerprint to register
-base64 -w0 brnomhd.jks > brnomhd.jks.b64                               # value for the GitHub secret
+keytool -genkeypair -v -keystore fcil.jks -alias fcil -keyalg RSA -keysize 2048 -validity 10000
+keytool -list -v -keystore fcil.jks -alias fcil | grep SHA256   # the fingerprint to register
+base64 -w0 fcil.jks > fcil.jks.b64                               # value for the GitHub secret
 ```
 
-Keep `brnomhd.jks` and its password safe (not in the repository). Then add GitHub
+Keep `fcil.jks` and its password safe (not in the repository). Then add GitHub
 **secrets** `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD` and `SIGNING_KEY_PASSWORD`.
+The build uses the keystore's only key whatever its alias, so a keystore made earlier with the
+alias `brnomhd` keeps working; set the variable `SIGNING_KEY_ALIAS` only for a keystore with several keys.
 
 ## Permissions
 

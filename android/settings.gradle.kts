@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         maven("https://developer.huawei.com/repo/")
     }
 }
-rootProject.name = "BrnoMHD"
+rootProject.name = "Fcil"
 include(":app")

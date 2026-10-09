@@ -1,3 +1,4 @@
+import java.security.KeyStore
 import java.util.Properties
 
 plugins {
@@ -13,15 +14,19 @@ val localProps = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 fun config(name: String, env: String, default: String): String =
-    (findProperty(name) as String?) ?: localProps.getProperty(name) ?: System.getenv(env) ?: default
+    // an unset GitHub variable arrives as an empty string
+    (findProperty(name) as String?) ?: localProps.getProperty(name) ?: System.getenv(env)?.takeIf { it.isNotEmpty() } ?: default
+fun onlyAlias(path: String, password: String): String? = runCatching {
+    KeyStore.getInstance(file(path), password.toCharArray()).aliases().toList().singleOrNull()
+}.getOrNull()
 fun quoted(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
-    namespace = "io.github.juliajamnicka.brnomhd"
+    namespace = "io.github.juliajamnicka.fcil"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.juliajamnicka.brnomhd"
+        applicationId = "io.github.juliajamnicka.fcil"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -30,7 +35,7 @@ android {
         buildConfigField("String", "DEFAULT_API_URL", quoted(config("mhdApiUrl", "MHD_API_URL", "https://mhd-api-620350272938.europe-west1.run.app")))
         buildConfigField("String", "DEFAULT_API_KEY", quoted(config("mhdApiKey", "MHD_API_KEY", "")))
         // Package name and signing fingerprint of the watch app, used by Wear Engine to pair the two apps.
-        buildConfigField("String", "WATCH_PACKAGE", quoted(config("watchPackage", "WATCH_PACKAGE", "io.github.juliajamnicka.brnomhd.watch")))
+        buildConfigField("String", "WATCH_PACKAGE", quoted(config("watchPackage", "WATCH_PACKAGE", "io.github.juliajamnicka.fcil.watch")))
         buildConfigField("String", "WATCH_FINGERPRINT", quoted(config("watchFingerprint", "WATCH_FINGERPRINT", "")))
     }
 
@@ -40,7 +45,8 @@ android {
     val stableSigning = if (keystorePath.isNotEmpty()) signingConfigs.create("stable") {
         storeFile = file(keystorePath)
         storePassword = config("signingStorePassword", "SIGNING_STORE_PASSWORD", "")
-        keyAlias = config("signingKeyAlias", "SIGNING_KEY_ALIAS", "brnomhd")
+        // a keystore made for this app holds one key; use it whatever its alias (e.g. the earlier "brnomhd")
+        keyAlias = config("signingKeyAlias", "SIGNING_KEY_ALIAS", onlyAlias(keystorePath, storePassword ?: "") ?: "fcil")
         keyPassword = config("signingKeyPassword", "SIGNING_KEY_PASSWORD", "")
     } else null
 
