@@ -43,6 +43,7 @@ trolleybus), `V` train, `L` boat.
 | `GET /v1/home?lat=&lon=&n=4` | Closest platform and its next `n` departures (one round trip for the watch home screen) |
 | `GET /v1/departures?platform=U1073Z2&n=4[&lat=&lon=]` | Departures from a platform (used by the reverse button and the stop list) |
 | `GET /v1/nearby?lat=&lon=&limit=12` | Stops ordered by distance, each with its platforms |
+| `GET /v1/stops?q=kone&lat=&lon=&limit=20` | Stop search by name (case and diacritics ignored, at least 2 characters), same shape as `/v1/nearby`; `d` only with a position |
 | `GET /v1/board?platforms=U1073Z1,U1201Z2&n=8` | A stop list: the next `n` departures of up to 8 platforms in one timeline, each with its platform (`p`) and stop name (`sn`) |
 | `GET /v1/vehicles?lat=&lon=&r=800` | Up to 15 live vehicles and 3 stops, as metres east (`dx`) / north (`dy`) of the user; `b` heading in degrees (-1 unknown), `h` headsign |
 | `GET /v1/health` | Timetable validity and real-time feed age (no API key needed) |

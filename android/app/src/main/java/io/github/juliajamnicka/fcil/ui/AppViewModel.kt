@@ -12,6 +12,7 @@ import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.ApiException
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NearbyResponse
+import io.github.juliajamnicka.fcil.data.NearbyStop
 import io.github.juliajamnicka.fcil.data.NoLocationException
 import io.github.juliajamnicka.fcil.data.StopList
 import io.github.juliajamnicka.fcil.data.StopListEntry
@@ -90,13 +91,33 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshDepartures()
     }
 
-    fun createList(name: String, first: StopListEntry?) = editLists { lists ->
-        lists + StopList(UUID.randomUUID().toString(), name.trim(), listOfNotNull(first))
+    /** Saves the list being edited; [id] null creates a new list. */
+    fun saveList(id: String?, name: String, entries: List<StopListEntry>) =
+        editLists { StopListLogic.save(it, id ?: UUID.randomUUID().toString(), name, entries) }
+
+    /** Stop search for the list editor; a query under 2 characters clears the results. */
+    var stopSearch by mutableStateOf(Loadable<List<NearbyStop>>())
+        private set
+    private var searchJob: Job? = null
+
+    fun searchStops(query: String) {
+        searchJob?.cancel()
+        val q = query.trim()
+        if (q.length < 2) {
+            stopSearch = Loadable()
+            return
+        }
+        stopSearch = stopSearch.copy(loading = true)
+        searchJob = viewModelScope.launch {
+            stopSearch = try {
+                Loadable(repository.searchStops(q).stops, updatedAt = System.currentTimeMillis())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Loadable(error = errorMessage(getApplication(), e))
+            }
+        }
     }
-
-    fun addToList(listId: String, entry: StopListEntry) = editLists { StopListLogic.add(it, listId, entry) }
-
-    fun removeFromList(listId: String, platform: String) = editLists { StopListLogic.remove(it, listId, platform) }
 
     fun deleteList(listId: String) {
         if (config.pinnedList == listId) config = WidgetConfig()

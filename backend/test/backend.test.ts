@@ -207,6 +207,20 @@ describe('HTTP API', () => {
     expect((await app.inject('/v1/board?platforms=nope')).statusCode).toBe(404);
   });
 
+  it('searches stops by name ignoring case and diacritics, best matches first', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed });
+    const body = (await app.inject('/v1/stops?q=CESKA&lat=49.198&lon=16.606')).json();
+    expect(body.stops.map((s: { n: string }) => s.n)).toEqual(['Česká']);
+    expect(body.stops[0]).toMatchObject({ d: 0, p: [{ id: 'U1Z1' }, { id: 'U1Z2' }] });
+    // "ko" starts both "Kořískova" and "Konečného náměstí"; equal rank, so the nearer one comes first; "Řečkovice" only contains it
+    const ko = (await app.inject('/v1/stops?q=ko&lat=49.198&lon=16.606')).json();
+    expect(ko.stops.map((s: { n: string }) => s.n)).toEqual(['Kořískova', 'Konečného náměstí', 'Řečkovice']);
+    // "nam" only matches inside a word of "Konečného náměstí"
+    const nam = (await app.inject('/v1/stops?q=nam')).json();
+    expect(nam.stops.map((s: { n: string }) => s.n)).toEqual(['Konečného náměstí']);
+    expect((await app.inject('/v1/stops?q=k')).statusCode).toBe(400);
+  });
+
   it('gives platform coordinates so the phone can match its stop lists', async () => {
     const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed });
     const body = (await app.inject('/v1/nearby?lat=49.198&lon=16.606&limit=1')).json();

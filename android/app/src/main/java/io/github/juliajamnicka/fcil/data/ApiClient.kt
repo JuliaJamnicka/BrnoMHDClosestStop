@@ -35,6 +35,13 @@ class ApiClient(
     suspend fun board(platforms: List<String>, n: Int): BoardResponse =
         get("v1/board") { addQueryParameter("platforms", platforms.joinToString(",")).addQueryParameter("n", n.toString()) }
 
+    /** Stops whose name contains [query] (case and diacritics ignored), nearest first when [at] is known. */
+    suspend fun searchStops(query: String, at: GeoPoint?, limit: Int): NearbyResponse =
+        get("v1/stops") {
+            addQueryParameter("q", query).addQueryParameter("limit", limit.toString())
+            if (at != null) addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString())
+        }
+
     suspend fun nearby(at: GeoPoint, limit: Int): NearbyResponse =
         get("v1/nearby") { addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString()).addQueryParameter("limit", limit.toString()) }
 

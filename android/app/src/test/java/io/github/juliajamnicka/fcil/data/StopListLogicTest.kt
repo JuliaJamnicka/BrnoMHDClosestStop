@@ -25,10 +25,13 @@ class StopListLogicTest {
     }
 
     @Test
-    fun addsEachPlatformOnceAndRemovesIt() {
-        val added = StopListLogic.add(listOf(far), "far", entry("U8Z1", 49.0, 16.0))
-        assertEquals(listOf("U9Z1", "U8Z1"), added.single().entries.map { it.platform })
-        assertEquals(added, StopListLogic.add(added, "far", entry("U8Z1", 49.0, 16.0)))
-        assertEquals(listOf("U9Z1"), StopListLogic.remove(added, "far", "U8Z1").single().entries.map { it.platform })
+    fun savesANewListOrReplacesTheOneWithTheSameId() {
+        val created = StopListLogic.save(listOf(far), "new", "  Domů  ", listOf(entry("U1Z2", 49.0, 16.0), entry("U1Z2", 49.0, 16.0)))
+        assertEquals(listOf("far", "new"), created.map { it.id })
+        // the name is trimmed and each platform kept once
+        assertEquals(StopList("new", "Domů", listOf(entry("U1Z2", 49.0, 16.0))), created[1])
+        val edited = StopListLogic.save(created, "far", "Babička", emptyList())
+        assertEquals(listOf("far", "new"), edited.map { it.id })
+        assertEquals(emptyList<StopListEntry>(), edited[0].entries)
     }
 }

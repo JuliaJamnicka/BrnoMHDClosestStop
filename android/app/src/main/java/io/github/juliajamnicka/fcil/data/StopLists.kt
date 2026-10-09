@@ -16,7 +16,15 @@ import kotlin.math.sqrt
 data class StopList(val id: String, val name: String, val entries: List<StopListEntry> = emptyList())
 
 @Serializable
-data class StopListEntry(val platform: String, val stop: String, val dir: String, val lat: Double, val lon: Double)
+data class StopListEntry(
+    val platform: String,
+    val stop: String,
+    val dir: String,
+    val lat: Double,
+    val lon: Double,
+    /** Lines serving the platform, shown in the editor (absent in lists saved by older versions). */
+    val lines: String = "",
+)
 
 object StopListLogic {
     /** A list switches on when any of its stops is within this distance. */
@@ -30,11 +38,12 @@ object StopListLogic {
             .minByOrNull { (_, d) -> d }
             ?.first
 
-    fun add(lists: List<StopList>, listId: String, entry: StopListEntry): List<StopList> =
-        lists.map { l -> if (l.id == listId && l.entries.none { it.platform == entry.platform }) l.copy(entries = l.entries + entry) else l }
+    /** Replaces the list with [id], or adds a new one when there is none (or [id] is null). */
+    fun save(lists: List<StopList>, id: String, name: String, entries: List<StopListEntry>): List<StopList> {
+        val list = StopList(id, name.trim(), entries.distinctBy { it.platform })
+        return if (lists.any { it.id == id }) lists.map { if (it.id == id) list else it } else lists + list
+    }
 
-    fun remove(lists: List<StopList>, listId: String, platform: String): List<StopList> =
-        lists.map { l -> if (l.id == listId) l.copy(entries = l.entries.filter { it.platform != platform }) else l }
 
     fun distanceM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val toRad = Math.PI / 180

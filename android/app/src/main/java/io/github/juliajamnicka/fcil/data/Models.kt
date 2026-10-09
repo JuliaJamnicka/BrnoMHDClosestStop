@@ -54,7 +54,14 @@ data class DeparturesResponse(
 data class BoardResponse(val t: Long, val dep: List<DepartureDto> = emptyList())
 
 @Serializable
-data class NearbyStop(val id: String, val n: String, val d: Int, val m: String, val p: List<PlatformDto>)
+data class NearbyStop(
+    val id: String,
+    val n: String,
+    /** Distance in metres; absent in search results made without a position. */
+    val d: Int? = null,
+    val m: String,
+    val p: List<PlatformDto>,
+)
 
 @Serializable
 data class NearbyResponse(val t: Long, val stops: List<NearbyStop>)

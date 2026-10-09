@@ -11,6 +11,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,6 +37,21 @@ fun AppScreen(
     model: AppViewModel = viewModel(),
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.DEPARTURES) }
+    // the stop-list editor covers the whole screen: null closed, "" a new list, else the list's id
+    var editorFor by rememberSaveable { mutableStateOf<String?>(null) }
+    editorFor?.let { id ->
+        val lists by model.stopLists.collectAsState(initial = null)
+        // wait for the stored lists before opening an existing one
+        if (id.isEmpty() || lists != null) {
+            ListEditorScreen(
+                model = model,
+                list = lists?.firstOrNull { it.id == id },
+                nearby = model.stops.data?.stops,
+                onClose = { editorFor = null },
+            )
+        }
+        return
+    }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
@@ -57,7 +73,14 @@ fun AppScreen(
     ) { padding ->
         when (tab) {
             Tab.DEPARTURES -> DeparturesScreen(model, hasLocation, requestLocation, padding)
-            Tab.STOPS -> StopsScreen(model, hasLocation, onPicked = { tab = Tab.DEPARTURES }, contentPadding = padding)
+            Tab.STOPS -> StopsScreen(
+                model,
+                hasLocation,
+                onPicked = { tab = Tab.DEPARTURES },
+                onNewList = { editorFor = "" },
+                onEditList = { editorFor = it },
+                contentPadding = padding,
+            )
             Tab.RADAR -> RadarScreen(model, hasLocation, padding)
             Tab.SETTINGS -> settings(padding)
         }

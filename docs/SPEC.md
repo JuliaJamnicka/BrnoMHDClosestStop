@@ -328,7 +328,8 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
     20 s while visible; reverse button, platform chips to switch platform, pin indicator and
     "Nearest stop (automatic)" to unpin. Pinning works as in the widget (`WidgetLogic`).
   - **Stops**: the user's stop lists (6.2) and nearby stops with their platforms; tapping a
-    platform or a list pins the Departures tab, "+" on a platform adds it to a list.
+    platform or a list pins the Departures tab. "+" next to "My lists" and the pencil on a list
+    open the list editor.
   - **Radar**: vehicles within 800 m, north up (as on the watch), each with an arrow for its
     direction of travel, refreshed every 15 s, with the nearest vehicles listed below with their
     destination.
@@ -371,7 +372,13 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 ### 6.2 Stop lists
 
 For places with several useful stops (e.g. leaving work, three stops nearby all lead home), the
-user makes a named list of platforms (stop + direction) in the Stops tab.
+user makes a named list of platforms (stop + direction) in the Stops tab. In Czech these are
+"skupiny" (groups).
+
+- List editor (a full screen): the name, the chosen platforms (× removes one), and a search over
+  all stops of the network (`GET /v1/stops?q=`, case and diacritics ignored; nearby stops while
+  the search is empty) where + adds a platform and the check removes it. "Save" stores the list;
+  an existing list can also be deleted there.
 
 - A list shows by itself, instead of the single nearest stop, when any of its stops is within
   500 m; if several lists qualify, the one with the closest stop wins. Pinning a stop or a list

@@ -53,13 +53,25 @@
     <string name="lists_title">My lists</string>
     <string name="lists_hint">A list puts several stops on one board, e.g. all the stops near work that take you home. It shows by itself when one of its stops is nearby.</string>
     <string name="lists_new">New list</string>
+    <string name="lists_edit">Edit list</string>
     <string name="lists_name">Name</string>
     <string name="lists_name_example">e.g. Home from work</string>
-    <string name="lists_create">Create</string>
-    <string name="lists_add">Add to a list</string>
+    <string name="lists_in">Stops in this list · %1$d</string>
+    <string name="lists_none_yet">None yet. Find stops below and add them with +.</string>
+    <string name="lists_search">Search all stops</string>
+    <string name="lists_results">Results</string>
+    <string name="lists_no_results">No stop matches.</string>
+    <string name="lists_add">Add: %1$s</string>
+    <string name="lists_added">Added, tap to remove: %1$s</string>
     <string name="lists_remove_stop">Remove from the list</string>
+    <string name="lists_save">Save list</string>
     <string name="lists_delete">Delete list</string>
     <string name="lists_delete_title">Delete the list \"%1$s\"?</string>
-    <string name="lists_empty">Add stops with + in the list below.</string>
     <string name="lists_board">My list · all its stops</string>
+    <string name="back">Back</string>
+    <string name="clear">Clear</string>
+    <plurals name="stops_count">
+        <item quantity="one">%1$d stop</item>
+        <item quantity="other">%1$d stops</item>
+    </plurals>
 </resources>
