@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Brno MHD</string>
+    <string name="app_name" translatable="false">Fčil</string>
     <string name="settings_title">Settings</string>
     <string name="status_off">Watch link is off</string>
     <string name="status_connected">Connected</string>
@@ -32,7 +32,7 @@
     <string name="error_server">Server error: %1$s</string>
     <string name="attribution">Data: KORDIS JMK / data.Brno, CC BY 4.0</string>
     <string name="notification_channel">Watch link</string>
-    <string name="notification_title" translatable="false">Brno MHD</string>
+    <string name="notification_title" translatable="false">Fčil</string>
     <string name="notification_text">Ready to send departures to your watch</string>
     <string name="widget_title">Departures</string>
     <string name="widget_description">Next departures from the stop nearest to you</string>

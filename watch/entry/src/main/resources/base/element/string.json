@@ -1,7 +1,7 @@
 {
   "string": [
-    { "name": "module_desc", "value": "Brno MHD departures" },
+    { "name": "module_desc", "value": "Fčil: Brno departures" },
     { "name": "MainAbility_desc", "value": "Departures from the nearest Brno public transport stop" },
-    { "name": "MainAbility_label", "value": "Brno MHD" }
+    { "name": "MainAbility_label", "value": "Fčil" }
   ]
 }

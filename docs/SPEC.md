@@ -533,6 +533,7 @@ Decided:
 - Phone widget: later phase (6.1, phase 7).
 - Devices: Huawei Watch GT 5 46 mm; Nothing Phone (2) with Google Play services.
 - Real-time source: KORDIS GTFS-RT only; delays derived (3.2, 5.3).
+- Name: "Fčil" (Brno colloquial for "now"); wordmark and icon in `docs/brand/`.
 
 Open:
 

@@ -1,4 +1,6 @@
-# Brno MHD Closest Stop
+# Fčil
+
+![Fčil](docs/brand/fcil-wordmark.svg)
 
 Huawei Watch GT (HarmonyOS lite wearable) app showing real-time departures from the closest Brno public transport stop.
 

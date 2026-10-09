@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fčil wordmark (docs/brand/fcil-wordmark.svg) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="76dp"
+    android:height="48dp"
+    android:viewportWidth="310"
+    android:viewportHeight="195">
+    <group
+        android:translateX="10"
+        android:translateY="-20">
+        <path
+            android:pathData="M30,200V95A45,45 0,0 1,75 50H85M8,112H66M185.4,114.6A50,50 0,1 0,185.4 185.4M230,100V200M275,50V200"
+            android:strokeColor="#1A4FA3"
+            android:strokeWidth="24"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M216,62a14,14 0,1 0,28 0a14,14 0,1 0,-28 0z"
+            android:fillColor="#1A4FA3" />
+        <path
+            android:pathData="M128,38L150,60L172,38"
+            android:strokeColor="#E3242B"
+            android:strokeWidth="22"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>
