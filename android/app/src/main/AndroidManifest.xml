@@ -22,6 +22,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Fcil">
 
+        <!-- AppGallery Connect app id (app/build.gradle.kts) -->
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="appid=${hmsAppId}" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">

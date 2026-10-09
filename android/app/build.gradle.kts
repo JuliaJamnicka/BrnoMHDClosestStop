@@ -37,6 +37,10 @@ android {
         // Package name and signing fingerprint of the watch app, used by Wear Engine to pair the two apps.
         buildConfigField("String", "WATCH_PACKAGE", quoted(config("watchPackage", "WATCH_PACKAGE", "io.github.juliajamnicka.fcil.watch")))
         buildConfigField("String", "WATCH_FINGERPRINT", quoted(config("watchFingerprint", "WATCH_FINGERPRINT", "")))
+        // AppGallery Connect app id, which Huawei Wear Engine reads from the manifest. This is the one
+        // value the AppGallery Connect plugin would take from agconnect-services.json; that file also
+        // holds a client secret, so it is not used or committed (it is in .gitignore).
+        manifestPlaceholders["hmsAppId"] = config("hmsAppId", "HMS_APP_ID", "119274877")
     }
 
     // Wear Engine identifies this app by its signing certificate, so builds that talk to the watch
