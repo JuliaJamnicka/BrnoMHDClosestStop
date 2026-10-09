@@ -327,9 +327,11 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
   - **Departures**: the same as the watch home screen with up to 8 departures, refreshed every
     20 s while visible; reverse button, platform chips to switch platform, pin indicator and
     "Nearest stop (automatic)" to unpin. Pinning works as in the widget (`WidgetLogic`).
-  - **Stops**: nearby stops with their platforms; tapping a platform pins the Departures tab.
-  - **Radar**: vehicles within 800 m, north up (as on the watch), refreshed every 15 s, with the
-    nearest vehicles listed below.
+  - **Stops**: the user's stop lists (6.2) and nearby stops with their platforms; tapping a
+    platform or a list pins the Departures tab, "+" on a platform adds it to a list.
+  - **Radar**: vehicles within 800 m, north up (as on the watch), each with an arrow for its
+    direction of travel, refreshed every 15 s, with the nearest vehicles listed below with their
+    destination.
   - **Settings**: watch link, language, number of departures for the watch and widget.
 - Look: Fčil brand (docs/brand): blue accents, "now" in the háček red, night blue in dark mode.
 - The Wear Engine receiver only works while the app's process runs, and the watch cannot start the
@@ -365,6 +367,23 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
   diacritics kept; the watch font must be checked for diacritics in the spike).
 - Code structure prepared for the later widget phase: `data` module (backend client, location,
   cache) is separate from the `wear` module (Wear Engine bridge), so the widget reuses `data`.
+
+### 6.2 Stop lists
+
+For places with several useful stops (e.g. leaving work, three stops nearby all lead home), the
+user makes a named list of platforms (stop + direction) in the Stops tab.
+
+- A list shows by itself, instead of the single nearest stop, when any of its stops is within
+  500 m; if several lists qualify, the one with the closest stop wins. Pinning a stop or a list
+  overrides this, as in the widget.
+- One merged timeline (`GET /v1/board?platforms=...`): the next departures of all its platforms
+  sorted by time, each row with its stop name. No walking times: the user picked the stops and
+  knows where they are.
+- Same on the phone, the widget and the watch (the watch shows the stop name in place of the
+  headsign, `"l":1` in the reply).
+- Stored on the phone only (DataStore, with each platform's coordinates from `/v1/nearby`), so
+  the server keeps no user data.
+- Candidate for a later premium feature; not gated for now.
 
 ### 6.1 Phone widget (F9) - implemented early, while waiting for the Wear Engine approval
 
@@ -449,8 +468,12 @@ switch on each). The rules below describe them.
 **Radar (bonus, F5)**
 - No map tiles: lite wearables have no map component and image transfer every few seconds
   would be too heavy. User at centre (red dot), north up, rings at 400 m and 800 m, vehicles
-  as mode badges with line number and a small heading arrow, nearest stops as hollow dots, the
-  closest stop labelled. "Aktualizováno před 4 s" / "Updated 4 s ago" at the bottom.
+  as mode badges with line number and a small arrow ahead of each badge for its direction of
+  travel, nearest stops as hollow dots, the closest stop labelled.
+- Direction of travel: the GTFS-RT `bearing` (present for about 90 % of vehicles, any angle;
+  0 is also sent by standing vehicles, so it counts as missing), else the direction to the
+  vehicle's next stop (backend, `heading` in `realtime/tracker.ts`). Lite wearables cannot rotate
+  images, so the watch picks one of 8 pre-drawn arrows (`common/images/arrow0..7.png`). "Aktualizováno před 4 s" / "Updated 4 s ago" at the bottom.
 - Implemented with a `stack` of absolutely positioned elements (or `canvas` if available on
   the device API level; check during phase 4).
 - Refresh every 15 s while visible (the source updates about every 30 s).

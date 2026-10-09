@@ -13,13 +13,18 @@ import io.github.juliajamnicka.brnomhd.data.ApiException
 import io.github.juliajamnicka.brnomhd.data.DeparturesResponse
 import io.github.juliajamnicka.brnomhd.data.NearbyResponse
 import io.github.juliajamnicka.brnomhd.data.NoLocationException
+import io.github.juliajamnicka.brnomhd.data.StopList
+import io.github.juliajamnicka.brnomhd.data.StopListEntry
+import io.github.juliajamnicka.brnomhd.data.StopListLogic
 import io.github.juliajamnicka.brnomhd.data.VehiclesResponse
 import io.github.juliajamnicka.brnomhd.widget.WidgetConfig
 import io.github.juliajamnicka.brnomhd.widget.WidgetLogic
 import io.github.juliajamnicka.brnomhd.widget.departuresFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 /** Something loaded from the backend: the last good value is kept while reloading or after an error. */
 data class Loadable<T>(
@@ -30,11 +35,16 @@ data class Loadable<T>(
 )
 
 /**
- * State of the app's own screens (departures, stops, radar). Choosing a stop works like the
- * widget: pinned until "Nearest stop" is chosen, reverse follows the opposite platform (WidgetLogic).
+ * State of the app's own screens (departures, stops, radar). Choosing a stop or a stop list works
+ * like the widget: pinned until "Nearest stop" is chosen, reverse follows the opposite platform
+ * (WidgetLogic); unpinned, a stop list shows by itself when one of its stops is nearby.
  */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
-    private val repository = (app as MhdApp).graph.repository
+    private val graph = (app as MhdApp).graph
+    private val repository = graph.repository
+
+    /** The user's stop lists (docs/SPEC.md 6.2). */
+    val stopLists: Flow<List<StopList>> = graph.settings.stopLists
 
     var config by mutableStateOf(WidgetConfig())
         private set
@@ -69,10 +79,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshDepartures()
     }
 
-    /** Pins [platform], or goes back to the nearest stop when it is null. */
+    /** Pins [platform], or goes back to automatic (nearest stop or a nearby list) when it is null. */
     fun pin(platform: String?) {
         config = WidgetConfig(pinnedPlatform = platform)
         refreshDepartures()
+    }
+
+    fun pinList(id: String) {
+        config = WidgetConfig(pinnedList = id)
+        refreshDepartures()
+    }
+
+    fun createList(name: String, first: StopListEntry?) = editLists { lists ->
+        lists + StopList(UUID.randomUUID().toString(), name.trim(), listOfNotNull(first))
+    }
+
+    fun addToList(listId: String, entry: StopListEntry) = editLists { StopListLogic.add(it, listId, entry) }
+
+    fun removeFromList(listId: String, platform: String) = editLists { StopListLogic.remove(it, listId, platform) }
+
+    fun deleteList(listId: String) {
+        if (config.pinnedList == listId) config = WidgetConfig()
+        editLists { lists -> lists.filter { it.id != listId } }
+    }
+
+    private fun editLists(change: (List<StopList>) -> List<StopList>) {
+        viewModelScope.launch { graph.settings.updateStopLists(change) }
     }
 
     fun refreshStops() {

@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeClass } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeClass, arrowFor } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -51,6 +51,14 @@ test('places radar markers north-up around the centre and drops far vehicles', (
     ['4', 233 - 24, 233 - 100 - 16, false],
     ['67', 233 - 100 - 24, 233 - 16, true],
   ]);
+});
+
+test('adds a direction arrow ahead of each vehicle with a known heading', () => {
+  const [north, unknown] = radarMarkers([['4', 'T', 0, 0, 0, 0], ['5', 'T', 0, 0, -1, 0]], 466, 200, 800);
+  assert.deepEqual([north.arrow, north.arrowLeft, north.arrowTop], ['/common/images/arrow0.png', 233 - 12, 233 - 36 - 12]);
+  assert.equal(unknown.arrow, undefined);
+  assert.equal(arrowFor(100).src, '/common/images/arrow2.png');
+  assert.equal(arrowFor(350).src, '/common/images/arrow0.png');
 });
 
 test('labels distances and texts in both languages', () => {

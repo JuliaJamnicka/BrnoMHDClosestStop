@@ -1,8 +1,8 @@
 # Android phone app
 
 Fčil for the phone (docs/SPEC.md, section 6). It works on its own, with four tabs: departures
-from the nearest stop (reverse, platform switch, pinning), nearby stops, a radar of live vehicles
-and settings. It also answers the watch's requests over Huawei Wear Engine and drives the
+from the nearest stop (reverse, platform switch, pinning) or from a stop list, nearby stops and
+the user's stop lists, a radar of live vehicles with their direction of travel, and settings. It also answers the watch's requests over Huawei Wear Engine and drives the
 home-screen widget.
 
 - Kotlin, Jetpack Compose, minSdk 26, targetSdk 35
@@ -17,7 +17,8 @@ home-screen widget.
 | `data/ApiClient.kt` | Calls `/v1/home`, `/v1/departures`, `/v1/nearby`, `/v1/vehicles` with the `x-api-key` header |
 | `data/LocationSource.kt` | Last known location if < 30 s old and < 50 m accurate, else a fresh fix (4 s timeout) |
 | `data/TransitRepository.kt` | Location + API; caches the home response for 20 s |
-| `data/Settings.kt` | Language and number of departures (DataStore) |
+| `data/Settings.kt` | Language, number of departures and stop lists (DataStore) |
+| `data/StopLists.kt` | Stop lists and which one is nearby (docs/SPEC.md 6.2) |
 | `wear/WatchProtocol.kt` | Message format between watch and phone (kept under 1000 bytes) |
 | `wear/RequestHandler.kt` | Watch request -> reply bytes, errors mapped to codes the watch shows |
 | `wear/WearBridge.kt` | Wear Engine: finds the paired watch, receives and sends P2P messages |

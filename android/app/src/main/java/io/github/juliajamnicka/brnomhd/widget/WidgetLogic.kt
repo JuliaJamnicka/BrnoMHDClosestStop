@@ -11,20 +11,27 @@ import io.github.juliajamnicka.brnomhd.data.TransitRepository
  *   platform until the home stop changes (the user walked elsewhere) or reverse is pressed again.
  * - A platform picked in the stop list is pinned until "Nearest stop" is chosen; reverse then
  *   moves the pin to the opposite platform.
+ * - A stop list can be pinned the same way; unpinned, a list shows by itself when one of its stops
+ *   is nearby (TransitRepository.departuresForPreview).
  */
 data class WidgetConfig(
     val pinnedPlatform: String? = null,
     val reversedGroup: String? = null,
+    val pinnedList: String? = null,
 )
 
 object WidgetLogic {
     sealed interface Fetch {
         data object Home : Fetch
         data class Platform(val id: String) : Fetch
+        data class List(val id: String) : Fetch
     }
 
-    fun firstFetch(config: WidgetConfig): Fetch =
-        config.pinnedPlatform?.let { Fetch.Platform(it) } ?: Fetch.Home
+    fun firstFetch(config: WidgetConfig): Fetch = when {
+        config.pinnedPlatform != null -> Fetch.Platform(config.pinnedPlatform)
+        config.pinnedList != null -> Fetch.List(config.pinnedList)
+        else -> Fetch.Home
+    }
 
     /** After loading the home stop: the config to keep and, if reversed, the platform to load instead. */
     fun afterHome(config: WidgetConfig, home: DeparturesResponse): Pair<WidgetConfig, String?> =
@@ -45,6 +52,9 @@ object WidgetLogic {
 suspend fun TransitRepository.departuresFor(config: WidgetConfig, n: Int): Pair<WidgetConfig, DeparturesResponse> =
     when (val fetch = WidgetLogic.firstFetch(config)) {
         is WidgetLogic.Fetch.Platform -> config to departures(fetch.id, n)
+        // a deleted list falls back to the nearest stop
+        is WidgetLogic.Fetch.List -> stopList(fetch.id)?.let { config to board(it, n) }
+            ?: departuresFor(WidgetConfig(), n)
         WidgetLogic.Fetch.Home -> {
             val home = departuresForPreview(n)
             val (newConfig, reversed) = WidgetLogic.afterHome(config, home)

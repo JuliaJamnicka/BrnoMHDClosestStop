@@ -185,7 +185,32 @@ describe('HTTP API', () => {
     tracker.update([vehicle({ tripId: '100', stopId: 'U1Z1', status: IN_TRANSIT_TO, ts: now, lat: 49.199, lon: 16.606 })], now);
     const app = buildApp({ timetable: tt, tracker, feed, now: () => now });
     const body = (await app.inject('/v1/vehicles?lat=49.198&lon=16.606&r=500')).json();
-    expect(body.v).toEqual([{ l: '4', m: 'T', dx: 0, dy: 111, b: 0, dl: 0, a: 0 }]);
+    // no bearing in the feed: the heading is the direction to the next stop (U1Z1, to the south)
+    expect(body.v).toEqual([{ l: '4', m: 'T', dx: 0, dy: 111, b: 176, h: 'Řečkovice', dl: 0, a: 0 }]);
+  });
+
+  it('uses the bearing from the feed when there is one', async () => {
+    const tracker = new Tracker(tt);
+    const now = at('10:03:00');
+    tracker.update([vehicle({ tripId: '100', stopId: 'U1Z1', status: IN_TRANSIT_TO, ts: now, lat: 49.199, lon: 16.606, bearing: 200 })], now);
+    expect(tracker.get('100', BASE, now)!.heading).toBe(200);
+  });
+
+  it('merges the departures of a stop list into one timeline', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed, now: () => at('9:30:00') });
+    const body = (await app.inject('/v1/board?platforms=U1Z1,U4Z1,nope&n=3')).json();
+    expect(body.dep.map((d: { l: string; sn: string; p: string }) => [d.l, d.sn, d.p])).toEqual([
+      ['N91', 'Kořískova', 'U4Z1'],
+      ['4', 'Česká', 'U1Z1'],
+      ['4', 'Česká', 'U1Z1'],
+    ]);
+    expect((await app.inject('/v1/board?platforms=nope')).statusCode).toBe(404);
+  });
+
+  it('gives platform coordinates so the phone can match its stop lists', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed });
+    const body = (await app.inject('/v1/nearby?lat=49.198&lon=16.606&limit=1')).json();
+    expect(body.stops[0].p[0]).toMatchObject({ id: 'U1Z1', la: 49.1981, lo: 16.6061 });
   });
 });
 

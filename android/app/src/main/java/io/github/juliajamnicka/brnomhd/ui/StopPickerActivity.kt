@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,8 +23,9 @@ import io.github.juliajamnicka.brnomhd.data.NearbyStop
 import io.github.juliajamnicka.brnomhd.widget.WidgetUpdater
 import kotlinx.coroutines.launch
 
-/** Opened from the widget: nearby stops and their platforms; picking one pins the widget to it. */
+/** Opened from the widget: stop lists and nearby stops; picking one pins the widget to it. */
 class StopPickerActivity : AppCompatActivity() {
+    private val graph by lazy { (application as MhdApp).graph }
     private var stops by mutableStateOf<List<NearbyStop>?>(null)
     private var error by mutableStateOf<String?>(null)
 
@@ -37,7 +39,7 @@ class StopPickerActivity : AppCompatActivity() {
         }
         lifecycleScope.launch {
             try {
-                stops = (application as MhdApp).graph.repository.nearby().stops
+                stops = graph.repository.nearby().stops
             } catch (e: Exception) {
                 error = getString(R.string.widget_stops_failed)
             }
@@ -45,7 +47,18 @@ class StopPickerActivity : AppCompatActivity() {
         setContent {
             MhdTheme {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-                    StopList(stringResource(R.string.widget_pick_stop), stops, error, selected = null) { platform ->
+                    val lists by graph.settings.stopLists.collectAsState(initial = emptyList())
+                    StopList(
+                        stringResource(R.string.widget_pick_stop),
+                        stops,
+                        error,
+                        selected = null,
+                        lists = lists,
+                        onPickList = { list ->
+                            lifecycleScope.launch { WidgetUpdater.pin(applicationContext, appWidgetId, platform = null, list = list) }
+                            finish()
+                        },
+                    ) { platform ->
                         lifecycleScope.launch {
                             WidgetUpdater.pin(applicationContext, appWidgetId, platform)
                         }

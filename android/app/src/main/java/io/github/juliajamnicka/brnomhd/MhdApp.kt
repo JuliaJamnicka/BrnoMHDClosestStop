@@ -25,7 +25,7 @@ class AppGraph(app: Application) {
     val location = FusedLocationSource(app)
     // Server URL and API key are set at build time (android/README.md)
     val api = ApiClient(config = { ApiClient.ApiConfig(BuildConfig.DEFAULT_API_URL, BuildConfig.DEFAULT_API_KEY) })
-    val repository = TransitRepository(api, location)
+    val repository = TransitRepository(api, location, stopLists = { settings.currentStopLists() })
 
     /** Language code sent to the watch: the app language if set, else the phone language. */
     fun watchLanguage(): String {

@@ -19,9 +19,31 @@ class TransitRepositoryTest {
     @Before fun start() = server.start()
     @After fun stop() = server.shutdown()
 
-    private fun repository(location: GeoPoint? = GeoPoint(49.1978, 16.6056)): TransitRepository {
+    private fun repository(location: GeoPoint? = GeoPoint(49.1978, 16.6056), lists: List<StopList> = emptyList()): TransitRepository {
         val api = ApiClient(config = { ApiClient.ApiConfig(server.url("/").toString(), "secret") })
-        return TransitRepository(api, { location }, clock = { now })
+        return TransitRepository(api, { location }, clock = { now }, stopLists = { lists })
+    }
+
+    @Test
+    fun showsAStopListWhenOneOfItsStopsIsNearby() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """{"t":1,"dep":[{"l":"12","m":"T","h":"Komárov","e":100,"s":100,"dl":0,"lv":1,"p":"U1Z2","sn":"Česká"}]}""",
+            ),
+        )
+        val list = StopList(
+            "home",
+            "Domů",
+            listOf(
+                StopListEntry("U1Z2", "Česká", "Centrum", 49.1979, 16.6059),
+                StopListEntry("U7Z1", "Grohova", "Úvoz", 49.2010, 16.5990),
+            ),
+        )
+        val board = repository(lists = listOf(list)).home(4)
+        assertEquals("/v1/board?platforms=U1Z2%2CU7Z1&n=4", server.takeRequest().path)
+        assertEquals("Domů", board.stop)
+        assertEquals("home", board.listId)
+        assertEquals("Česká", board.dep.single().sn)
     }
 
     @Test

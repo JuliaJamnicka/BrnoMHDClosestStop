@@ -20,10 +20,20 @@ data class DepartureDto(
     val dl: Int,
     /** 1 when live vehicle data was used. */
     val lv: Int,
+    /** Stop list boards only: the platform and its stop name. */
+    val p: String? = null,
+    val sn: String? = null,
 )
 
 @Serializable
-data class PlatformDto(val id: String, val dir: String, val l: String)
+data class PlatformDto(
+    val id: String,
+    val dir: String,
+    val l: String,
+    /** Coordinates (from the backend since stop lists); used to tell which stop list is nearby. */
+    val la: Double? = null,
+    val lo: Double? = null,
+)
 
 @Serializable
 data class DeparturesResponse(
@@ -36,7 +46,12 @@ data class DeparturesResponse(
     val d: Int? = null,
     val pl: List<PlatformDto> = emptyList(),
     val dep: List<DepartureDto> = emptyList(),
+    /** Set by the phone when this is a stop list's board (stop = list name, no single platform). */
+    val listId: String? = null,
 )
+
+@Serializable
+data class BoardResponse(val t: Long, val dep: List<DepartureDto> = emptyList())
 
 @Serializable
 data class NearbyStop(val id: String, val n: String, val d: Int, val m: String, val p: List<PlatformDto>)
@@ -45,7 +60,18 @@ data class NearbyStop(val id: String, val n: String, val d: Int, val m: String, 
 data class NearbyResponse(val t: Long, val stops: List<NearbyStop>)
 
 @Serializable
-data class VehicleDto(val l: String, val m: String, val dx: Int, val dy: Int, val b: Int, val dl: Int, val a: Int)
+data class VehicleDto(
+    val l: String,
+    val m: String,
+    val dx: Int,
+    val dy: Int,
+    /** Heading in degrees, 0 north; -1 when unknown. */
+    val b: Int,
+    val dl: Int,
+    val a: Int,
+    /** Headsign. */
+    val h: String = "",
+)
 
 @Serializable
 data class StopOffset(val n: String, val dx: Int, val dy: Int)

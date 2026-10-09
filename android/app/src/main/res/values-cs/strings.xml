@@ -47,4 +47,17 @@
     <string name="radar_legend">Sever nahoře. Červená tečka: vy · kruhy: 400 a 800 m · kroužky: zastávky</string>
     <string name="radar_nearest">Vozidla v okolí (%1$d)</string>
     <string name="radar_empty">Do 800 m nejsou žádná živá vozidla.</string>
+    <string name="stops_nearby">V okolí</string>
+    <string name="lists_title">Moje seznamy</string>
+    <string name="lists_hint">Seznam dá několik zastávek na jednu tabuli, třeba všechny zastávky u práce, odkud jedete domů. Zobrazí se sám, když jste u některé z nich.</string>
+    <string name="lists_new">Nový seznam</string>
+    <string name="lists_name">Název</string>
+    <string name="lists_name_example">např. Domů z práce</string>
+    <string name="lists_create">Vytvořit</string>
+    <string name="lists_add">Přidat do seznamu</string>
+    <string name="lists_remove_stop">Odebrat ze seznamu</string>
+    <string name="lists_delete">Smazat seznam</string>
+    <string name="lists_delete_title">Smazat seznam „%1$s“?</string>
+    <string name="lists_empty">Přidejte zastávky tlačítkem + v seznamu níže.</string>
+    <string name="lists_board">Můj seznam · všechny jeho zastávky</string>
 </resources>

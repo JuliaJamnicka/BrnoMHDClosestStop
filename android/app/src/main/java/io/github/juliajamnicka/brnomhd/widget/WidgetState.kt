@@ -14,17 +14,19 @@ object WidgetState {
 
     val pinnedPlatform = stringPreferencesKey("pinned_platform")
     val reversedGroup = stringPreferencesKey("reversed_group")
+    val pinnedList = stringPreferencesKey("pinned_list")
     val response = stringPreferencesKey("response")
     val updatedAt = longPreferencesKey("updated_at")
     val loading = booleanPreferencesKey("loading")
     /** One of the WidgetError names, or absent. */
     val error = stringPreferencesKey("error")
 
-    fun config(p: Preferences) = WidgetConfig(p[pinnedPlatform], p[reversedGroup])
+    fun config(p: Preferences) = WidgetConfig(p[pinnedPlatform], p[reversedGroup], p[pinnedList])
 
     fun setConfig(p: MutablePreferences, config: WidgetConfig) {
         if (config.pinnedPlatform != null) p[pinnedPlatform] = config.pinnedPlatform else p.remove(pinnedPlatform)
         if (config.reversedGroup != null) p[reversedGroup] = config.reversedGroup else p.remove(reversedGroup)
+        if (config.pinnedList != null) p[pinnedList] = config.pinnedList else p.remove(pinnedList)
     }
 
     fun response(p: Preferences): DeparturesResponse? =

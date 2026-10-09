@@ -13,6 +13,7 @@ class WidgetLogicTest {
     fun followsTheHomeStopByDefault() {
         assertEquals(Fetch.Home, WidgetLogic.firstFetch(WidgetConfig()))
         assertEquals(Fetch.Platform("U1Z2"), WidgetLogic.firstFetch(WidgetConfig(pinnedPlatform = "U1Z2")))
+        assertEquals(Fetch.List("home"), WidgetLogic.firstFetch(WidgetConfig(pinnedList = "home")))
     }
 
     @Test
