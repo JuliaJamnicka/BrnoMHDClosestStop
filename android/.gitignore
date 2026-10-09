@@ -6,3 +6,5 @@ local.properties
 .kotlin/
 *.jks
 *.keystore
+# AppGallery Connect configuration: holds a client secret; only its app id is used (app/build.gradle.kts)
+app/agconnect-services.json

@@ -92,6 +92,14 @@ The APK is attached to the workflow run as the artifact `fcil-debug-apk`.
    permission for this app (applied for in AppGallery Connect). Until then it shows an error,
    which is expected.
 
+## AppGallery Connect
+
+The app is registered in AppGallery Connect as `io.github.juliajamnicka.fcil` (app id `119274877`).
+Wear Engine reads the app id from the manifest (`com.huawei.hms.client.appid`), which
+`app/build.gradle.kts` sets directly. That is the only value the AppGallery Connect Gradle plugin
+would take from `agconnect-services.json`; the file also holds a client secret, so it is neither
+used nor committed (`.gitignore`). Override the id with `-PhmsAppId=` or `HMS_APP_ID` if needed.
+
 ## Stable signing key (needed for Wear Engine)
 
 Huawei Wear Engine identifies the phone app by package name and the SHA-256 fingerprint of its
