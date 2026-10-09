@@ -33,7 +33,7 @@ jobs:
           MHD_API_KEY: ${{ secrets.MHD_API_KEY }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          # only needed for a keystore made with another alias than "fcil" (e.g. the earlier "brnomhd")
+          # only needed for a keystore with several keys; otherwise its only key is used
           SIGNING_KEY_ALIAS: ${{ vars.SIGNING_KEY_ALIAS }}
           WATCH_FINGERPRINT: ${{ vars.WATCH_FINGERPRINT }}
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug

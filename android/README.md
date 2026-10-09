@@ -106,8 +106,8 @@ base64 -w0 fcil.jks > fcil.jks.b64                               # value for the
 
 Keep `fcil.jks` and its password safe (not in the repository). Then add GitHub
 **secrets** `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD` and `SIGNING_KEY_PASSWORD`.
-A keystore made earlier with the alias `brnomhd` keeps working: add the repository **variable**
-`SIGNING_KEY_ALIAS` = `brnomhd` (the alias is internal; the fingerprint is what Huawei sees).
+The build uses the keystore's only key whatever its alias, so a keystore made earlier with the
+alias `brnomhd` keeps working; set the variable `SIGNING_KEY_ALIAS` only for a keystore with several keys.
 
 ## Permissions
 

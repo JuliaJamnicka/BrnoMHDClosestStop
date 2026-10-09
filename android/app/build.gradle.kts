@@ -1,3 +1,4 @@
+import java.security.KeyStore
 import java.util.Properties
 
 plugins {
@@ -15,6 +16,9 @@ val localProps = Properties().apply {
 fun config(name: String, env: String, default: String): String =
     // an unset GitHub variable arrives as an empty string
     (findProperty(name) as String?) ?: localProps.getProperty(name) ?: System.getenv(env)?.takeIf { it.isNotEmpty() } ?: default
+fun onlyAlias(path: String, password: String): String? = runCatching {
+    KeyStore.getInstance(file(path), password.toCharArray()).aliases().toList().singleOrNull()
+}.getOrNull()
 fun quoted(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
@@ -41,7 +45,8 @@ android {
     val stableSigning = if (keystorePath.isNotEmpty()) signingConfigs.create("stable") {
         storeFile = file(keystorePath)
         storePassword = config("signingStorePassword", "SIGNING_STORE_PASSWORD", "")
-        keyAlias = config("signingKeyAlias", "SIGNING_KEY_ALIAS", "fcil")
+        // a keystore made for this app holds one key; use it whatever its alias (e.g. the earlier "brnomhd")
+        keyAlias = config("signingKeyAlias", "SIGNING_KEY_ALIAS", onlyAlias(keystorePath, storePassword ?: "") ?: "fcil")
         keyPassword = config("signingKeyPassword", "SIGNING_KEY_PASSWORD", "")
     } else null
 
