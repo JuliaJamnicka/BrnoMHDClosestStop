@@ -1,10 +1,12 @@
 import app from '@system.app';
 import router from '@system.router';
 import { request, now, cancel } from '../../common/link.js';
-import { departureRows, distanceLabel } from '../../common/format.js';
+import { departureRows, distanceLabel, wrapLines } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t } from '../../common/strings.js';
 import state from '../../common/state.js';
+
+const HINT_CHARS = 22; // ~15 px per character at 30 px, 400 px lines, with margin for wide letters
 
 // Page-level variables (lite wearable pages only keep data and methods on `this`).
 let reply = null;
@@ -17,7 +19,7 @@ export default {
         view: 'loading',
         loadingText: '',
         errorTitle: '',
-        errorHint: '',
+        errorLines: [],
         retryText: '',
         noDeparturesText: '',
         stop: '',
@@ -27,7 +29,6 @@ export default {
         canReverse: false,
         rows: [],
         empty: false,
-        staleClass: '',
         staleText: '',
     },
     onInit() {
@@ -79,7 +80,7 @@ export default {
                 this.render(); // keep showing the last data; it turns stale after a minute
             } else {
                 this.errorTitle = t(state.lang, 'err_' + answer.e);
-                this.errorHint = t(state.lang, 'err_' + answer.e + '_hint');
+                this.errorLines = wrapLines(t(state.lang, 'err_' + answer.e + '_hint'), HINT_CHARS);
                 this.view = 'error';
             }
         }
@@ -98,7 +99,6 @@ export default {
         this.empty = this.rows.length === 0;
         const age = receivedAt ? current - receivedAt : 0;
         const stale = age > STALE_AFTER_S;
-        this.staleClass = stale ? 'stale' : '';
         this.staleText = stale ? t(state.lang, 'stale', { m: Math.floor(age / 60) }) : '';
         this.view = 'dep';
     },

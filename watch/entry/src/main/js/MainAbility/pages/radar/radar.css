@@ -67,18 +67,6 @@
     justify-content: center;
     align-items: center;
 }
-.badge-tram {
-    background-color: #c8262c;
-    border-radius: 7px;
-}
-.badge-bus {
-    background-color: #1f7a4d;
-    border-radius: 16px;
-}
-.badge-train {
-    background-color: #1d5fd1;
-    border-radius: 2px;
-}
 .badge-text {
     width: 48px;
     height: 32px;

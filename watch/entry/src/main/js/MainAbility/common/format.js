@@ -34,11 +34,23 @@ export function isLate(delayMinutes) {
   return delayMinutes >= 2;
 }
 
-/** CSS class of a line badge: tram, bus (incl. trolleybus) and train look different. */
-export function badgeClass(mode) {
-  if (mode === 'T') return 'badge badge-tram';
-  if (mode === 'V') return 'badge badge-train';
-  return 'badge badge-bus';
+const BADGE_COLOURS = { T: '#c8262c', V: '#1d5fd1' };
+const BUS_COLOUR = '#1f7a4d';
+
+/**
+ * Line badge look for a badge [height] px high: tram rounded, bus (incl. trolleybus) a pill, train
+ * square. Lite wearables cannot bind `class`, so pages bind these as inline style values.
+ */
+export function badgeStyle(mode, height) {
+  if (mode === 'T') return { colour: BADGE_COLOURS.T, radius: Math.round(height * 0.21) };
+  if (mode === 'V') return { colour: BADGE_COLOURS.V, radius: 2 };
+  return { colour: BUS_COLOUR, radius: Math.round(height / 2) };
+}
+
+/** Departure time colour: "now" in the háček red, amber from 2 minutes late, else white. */
+export function timeColour(isNow, delayMinutes) {
+  if (isNow) return '#f0373e';
+  return isLate(delayMinutes) ? '#ffb020' : '#ffffff';
 }
 
 /** Rows of a "dep" reply ready for the home page. */
@@ -48,14 +60,16 @@ export function departureRows(reply, now, nowWord) {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const label = timeLabel(r[3], now, nowWord);
+    const badge = badgeStyle(r[1], 38);
     rows.push({
       line: r[0],
-      badge: badgeClass(r[1]),
+      badgeColour: badge.colour,
+      badgeRadius: badge.radius,
       headsign: r[2],
       big: label.big,
       unit: label.unit,
       delay: delayLabel(r[4]),
-      timeClass: label.big === nowWord ? 'time time-now' : isLate(r[4]) ? 'time time-late' : 'time',
+      timeColour: timeColour(label.big === nowWord, r[4]),
       live: r[5] === 1,
     });
   }
@@ -85,7 +99,15 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
     const y = centre - v[3] * scale;
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
-    const marker = { line: v[0], badge: badgeClass(v[1]), left: Math.round(x - 24), top: Math.round(y - 16), late: isLate(v[5]) };
+    const badge = badgeStyle(v[1], 32);
+    const marker = {
+      line: v[0],
+      badgeColour: badge.colour,
+      badgeRadius: badge.radius,
+      left: Math.round(x - 24),
+      top: Math.round(y - 16),
+      late: isLate(v[5]),
+    };
     const arrow = arrowFor(v[4]);
     if (arrow) {
       // a small arrow just ahead of the badge, in the direction of travel
@@ -104,4 +126,23 @@ export function distanceLabel(metres) {
   if (metres === undefined || metres === null) return '';
   if (metres < 1000) return metres + ' m';
   return (Math.round(metres / 100) / 10).toString().replace('.', ',') + ' km';
+}
+
+// Lite wearable <text> wraps at any character, splitting words; break at spaces ourselves
+// and render one <text> per line. maxChars is a conservative fit for the line width.
+export function wrapLines(text, maxChars) {
+  const lines = [];
+  let line = '';
+  const words = String(text).split(' ');
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    if (line && line.length + 1 + word.length > maxChars) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? line + ' ' + word : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }

@@ -36,7 +36,16 @@
     text-align: center;
 }
 .error-title {
+    width: 420px;
+    margin-bottom: 8px;
     color: #ffb020;
+}
+.hint-line {
+    width: 400px;
+    height: 40px;
+    font-size: 30px;
+    color: #aeaeb2;
+    text-align: center;
 }
 .hint {
     width: 330px;
@@ -104,9 +113,6 @@
     height: 216px;
     flex-direction: column;
 }
-.stale {
-    opacity: 0.5;
-}
 .row {
     width: 384px;
     height: 54px;
@@ -117,18 +123,6 @@
     height: 38px;
     justify-content: center;
     align-items: center;
-}
-.badge-tram {
-    background-color: #c8262c;
-    border-radius: 8px;
-}
-.badge-bus {
-    background-color: #1f7a4d;
-    border-radius: 19px;
-}
-.badge-train {
-    background-color: #1d5fd1;
-    border-radius: 2px;
 }
 .badge-text {
     width: 58px;
@@ -165,12 +159,6 @@
     font-size: 30px;
     color: #ffffff;
     text-align: right;
-}
-.time-late {
-    color: #ffb020;
-}
-.time-now {
-    color: #f0373e;
 }
 .stale-text {
     width: 300px;
