@@ -17,7 +17,7 @@ Czech or English, as chosen in the phone app (every reply carries `lg`).
 
 ```
 entry/src/main/
-  config.json                 bundle io.github.juliajamnicka.brnomhd.watch, pages, phone pairing (supportLists)
+  config.json                 bundle io.github.juliajamnicka.fcil.watch, pages, phone pairing (supportLists)
   js/MainAbility/
     app.js
     common/config.js          phone package + fingerprint, refresh intervals
@@ -40,7 +40,7 @@ No reply within 8 s counts as "phone not connected".
 2. Watch developer mode: on the watch, Settings > About, tap the software version repeatedly until
    developer options appear; enable debugging. (Menu names differ between firmware versions.)
 3. In AppGallery Connect, in the same project as the phone app, add an app of type
-   **HarmonyOS / lite wearable** with package name `io.github.juliajamnicka.brnomhd.watch`, register
+   **HarmonyOS / lite wearable** with package name `io.github.juliajamnicka.fcil.watch`, register
    the watch's UDID, and create the debug certificate (.cer) and profile (.p7b) from a CSR made in
    DevEco Studio. Then add them under *File > Project Structure > Signing Configs*.
    Never commit `*.p12`, `*.cer`, `*.p7b` or `*.csr` (they are in `.gitignore`).

@@ -1,8 +1,8 @@
 {
-  "name": "brno-mhd-backend",
+  "name": "fcil-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Departures and vehicle positions API for the Brno MHD watch app",
+  "description": "Departures and vehicle positions API for the Fčil apps",
   "type": "module",
   "engines": {
     "node": ">=22"

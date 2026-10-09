@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "io.github.juliajamnicka.brnomhd.watch",
+    "bundleName": "io.github.juliajamnicka.fcil.watch",
     "vendor": "juliajamnicka",
     "version": {
       "code": 1,
@@ -32,7 +32,7 @@
       "customizeData": [
         {
           "name": "supportLists",
-          "value": "io.github.juliajamnicka.brnomhd:PHONE_APP_FINGERPRINT",
+          "value": "io.github.juliajamnicka.fcil:PHONE_APP_FINGERPRINT",
           "extra": ""
         }
       ]

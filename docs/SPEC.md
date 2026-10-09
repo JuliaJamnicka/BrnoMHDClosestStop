@@ -1,4 +1,4 @@
-# Brno MHD Closest Stop - Technical Specification
+# Fčil - Technical Specification
 
 Status: draft v0.3 (2026-10-08) - data sources verified against live feeds (section 3), hosting fixed to Google Cloud Run, target devices known
 Target devices: Huawei Watch GT 5 46 mm (HarmonyOS lite wearable, 466 x 466) paired with a Nothing Phone (2) (Android, Google Play services)
@@ -322,7 +322,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 
 ## 6. Android phone app specification
 
-- Implemented in `android/` (see `android/README.md`). Package name `io.github.juliajamnicka.brnomhd`.
+- Implemented in `android/` (see `android/README.md`). Package name `io.github.juliajamnicka.fcil`.
 - Kotlin, minSdk 26, one main activity with four tabs + one service:
   - **Departures**: the same as the watch home screen with up to 8 departures, refreshed every
     20 s while visible; reverse button, platform chips to switch platform, pin indicator and

@@ -26,18 +26,20 @@ jobs:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         if: env.SIGNING_KEYSTORE_BASE64 != ''
         run: |
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/brnomhd.jks"
-          echo "SIGNING_STORE_FILE=$RUNNER_TEMP/brnomhd.jks" >> "$GITHUB_ENV"
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/fcil.jks"
+          echo "SIGNING_STORE_FILE=$RUNNER_TEMP/fcil.jks" >> "$GITHUB_ENV"
       - name: Test, lint and build
         env:
           MHD_API_KEY: ${{ secrets.MHD_API_KEY }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          # only needed for a keystore made with another alias than "fcil" (e.g. the earlier "brnomhd")
+          SIGNING_KEY_ALIAS: ${{ vars.SIGNING_KEY_ALIAS }}
           WATCH_FINGERPRINT: ${{ vars.WATCH_FINGERPRINT }}
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: brno-mhd-debug-apk
+          name: fcil-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
       - uses: actions/upload-artifact@v4
