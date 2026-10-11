@@ -54,14 +54,13 @@ class StopPickerActivity : AppCompatActivity() {
                         error,
                         selected = null,
                         lists = lists,
+                        // Not lifecycleScope: finish() cancels it, which used to drop the pin before it was saved.
                         onPickList = { list ->
-                            lifecycleScope.launch { WidgetUpdater.pin(applicationContext, appWidgetId, platform = null, list = list) }
+                            graph.scope.launch { WidgetUpdater.pin(applicationContext, appWidgetId, platform = null, list = list) }
                             finish()
                         },
                     ) { platform ->
-                        lifecycleScope.launch {
-                            WidgetUpdater.pin(applicationContext, appWidgetId, platform)
-                        }
+                        graph.scope.launch { WidgetUpdater.pin(applicationContext, appWidgetId, platform) }
                         finish()
                     }
                 }

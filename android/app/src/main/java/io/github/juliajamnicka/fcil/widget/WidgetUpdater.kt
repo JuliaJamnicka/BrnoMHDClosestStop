@@ -11,12 +11,18 @@ import io.github.juliajamnicka.fcil.data.ApiException
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NoLocationException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import androidx.datastore.preferences.core.Preferences
 
 /** Loads departures for widgets and stores them in their Glance state. */
 object WidgetUpdater {
     @Volatile
     private var lastRefreshAll = 0L
+
+    /** One refresh at a time: otherwise a refresh that started earlier (periodic, watch) finishes
+     *  after a pin and writes the old stop back. */
+    private val lock = Mutex()
 
     suspend fun refreshAll(context: Context, minIntervalMs: Long = 0) {
         val now = System.currentTimeMillis()
@@ -26,7 +32,10 @@ object WidgetUpdater {
         ids.forEach { refresh(context, it) }
     }
 
-    suspend fun refresh(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig = { c, _ -> c }) {
+    suspend fun refresh(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig = { c, _ -> c }) =
+        lock.withLock { refreshLocked(context, id, change) }
+
+    private suspend fun refreshLocked(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig) {
         val before = getAppWidgetState<Preferences>(context, PreferencesGlanceStateDefinition, id)
         val config = change(WidgetState.config(before), WidgetState.response(before))
         updateAppWidgetState(context, id) { p ->
