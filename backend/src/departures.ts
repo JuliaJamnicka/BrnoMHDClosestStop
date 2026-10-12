@@ -25,9 +25,11 @@ const LOOKBACK = 20 * 60; // delayed vehicles scheduled up to 20 min ago may sti
 const WINDOW = 120 * 60;
 const EXTENDED_WINDOW = 12 * 3600; // night / sparse regional stops
 
-export function departures(tt: Timetable, tracker: Tracker, stopId: string, now: number, n: number): Departure[] {
-  let result = collect(tt, tracker, stopId, now, WINDOW);
-  if (result.length === 0) result = collect(tt, tracker, stopId, now, EXTENDED_WINDOW);
+/** [hidden]: lines the user filtered out of a stop list; left out before counting to n. */
+export function departures(tt: Timetable, tracker: Tracker, stopId: string, now: number, n: number, hidden?: Set<string>): Departure[] {
+  const shown = (d: Departure) => !hidden?.has(d.l);
+  let result = collect(tt, tracker, stopId, now, WINDOW).filter(shown);
+  if (result.length === 0) result = collect(tt, tracker, stopId, now, EXTENDED_WINDOW).filter(shown);
   return result.slice(0, n);
 }
 

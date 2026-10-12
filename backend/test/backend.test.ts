@@ -207,6 +207,15 @@ describe('HTTP API', () => {
     expect((await app.inject('/v1/board?platforms=nope')).statusCode).toBe(404);
   });
 
+  it('leaves lines hidden at a platform out of the board', async () => {
+    const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed, now: () => at('9:30:00') });
+    const all = (await app.inject('/v1/board?platforms=U1Z1,U4Z1&n=8')).json();
+    const body = (await app.inject('/v1/board?platforms=U1Z1,U4Z1&n=8&hide=U1Z1:4,bad,:x,U4Z1:')).json();
+    const kept = all.dep.filter((d: { l: string; p: string }) => !(d.p === 'U1Z1' && d.l === '4'));
+    expect(kept.length).toBeLessThan(all.dep.length);
+    expect(body.dep).toEqual(kept);
+  });
+
   it('searches stops by name ignoring case and diacritics, best matches first', async () => {
     const app = buildApp({ timetable: tt, tracker: new Tracker(tt), feed });
     const body = (await app.inject('/v1/stops?q=CESKA&lat=49.198&lon=16.606')).json();

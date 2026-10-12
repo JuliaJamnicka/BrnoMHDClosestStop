@@ -3,15 +3,20 @@ package io.github.juliajamnicka.fcil.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,6 +50,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -115,6 +124,9 @@ fun ListEditorScreen(model: AppViewModel, list: StopList?, nearby: List<NearbySt
             }
 
             item { Box(Modifier.padding(top = 8.dp)) { SectionTitle(stringResource(R.string.lists_in, chosen.size)) } }
+            if (chosen.isNotEmpty()) {
+                item { Text(stringResource(R.string.lists_lines_hint), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
             item {
                 BrandCard {
                     Column {
@@ -127,8 +139,8 @@ fun ListEditorScreen(model: AppViewModel, list: StopList?, nearby: List<NearbySt
                         }
                         chosen.forEachIndexed { i, e ->
                             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-                            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.Top) {
+                                Column(Modifier.weight(1f).padding(top = 14.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
                                         "${e.stop} → ${e.dir}",
                                         fontSize = 17.sp,
@@ -136,9 +148,7 @@ fun ListEditorScreen(model: AppViewModel, list: StopList?, nearby: List<NearbySt
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    if (e.lines.isNotEmpty()) {
-                                        Text(e.lines, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
+                                    LineChips(e) { line -> chosen[i] = e.toggle(line) }
                                 }
                                 IconButton(onClick = { chosen.removeAt(i) }) {
                                     Icon(
@@ -225,6 +235,56 @@ fun ListEditorScreen(model: AppViewModel, list: StopList?, nearby: List<NearbySt
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(android.R.string.cancel)) } },
         )
     }
+}
+
+/** The platform's lines as tags: filled with a check when shown, greyed and struck through when hidden. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LineChips(entry: StopListEntry, onToggle: (String) -> Unit) {
+    val lines = entry.lineList()
+    if (lines.isEmpty()) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        lines.forEach { line ->
+            val on = line !in entry.hidden
+            val mode = modeOfLine(line)
+            val shape = RoundedCornerShape(if (mode == "T") 9.dp else if (mode == "V") 3.dp else 18.dp)
+            val state = stringResource(if (on) R.string.lists_line_shown else R.string.lists_line_hidden, line)
+            Row(
+                Modifier
+                    .heightIn(min = 36.dp)
+                    .widthIn(min = 52.dp)
+                    .clip(shape)
+                    .then(
+                        if (on) Modifier.background(modeColor(mode), shape)
+                        else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outline, shape),
+                    )
+                    .toggleable(value = on, role = Role.Checkbox, onValueChange = { onToggle(line) })
+                    .semantics { contentDescription = state }
+                    .padding(start = 8.dp, end = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+            ) {
+                if (on) Icon(painterResource(R.drawable.ic_check), null, tint = Color.White, modifier = Modifier.size(14.dp))
+                Text(
+                    line,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (on) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textDecoration = if (on) null else TextDecoration.LineThrough,
+                )
+            }
+        }
+    }
+    if (lines.all { it in entry.hidden }) {
+        Text(stringResource(R.string.lists_all_hidden), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = delayColor)
+    }
+}
+
+/** Platforms list only line names, so the tag colour is inferred: Brno trams are 1-12, trains S/R. */
+private fun modeOfLine(line: String): String = when {
+    line.toIntOrNull() in 1..12 -> "T"
+    line.startsWith("S") || line.startsWith("R") -> "V"
+    else -> "B"
 }
 
 /** A stop with its platforms; + adds a platform to the list, the filled check removes it again. */

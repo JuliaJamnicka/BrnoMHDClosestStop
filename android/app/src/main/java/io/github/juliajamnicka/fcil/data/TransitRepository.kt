@@ -54,8 +54,9 @@ class TransitRepository(
 
     /** A stop list's departures in one timeline, shaped like a single stop's response. */
     suspend fun board(list: StopList, n: Int): DeparturesResponse {
-        val board = api.board(list.entries.map { it.platform }, n)
-        return DeparturesResponse(t = board.t, g = "", stop = list.name, p = "", dir = "", dep = board.dep, listId = list.id)
+        val board = api.board(list.entries.map { it.platform }, n, StopListLogic.hideParam(list))
+        val dep = StopListLogic.visible(list, board.dep)
+        return DeparturesResponse(t = board.t, g = "", stop = list.name, p = "", dir = "", dep = dep, listId = list.id)
     }
 
     companion object {

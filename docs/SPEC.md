@@ -379,6 +379,11 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
   all stops of the network (`GET /v1/stops?q=`, case and diacritics ignored; nearby stops while
   the search is empty) where + adds a platform and the check removes it. "Save" stores the list;
   an existing list can also be deleted there.
+- Each chosen platform shows its lines as tags; tapping one hides that line from the list (greyed,
+  struck through), tapping again shows it. The hidden lines are stored, not the shown ones, so a
+  line that starts serving the platform later appears by itself. The board request sends them as
+  `hide=U1Z1:32,U1Z1:67`; the backend leaves them out before counting to `n`, and the phone filters
+  again in case the backend is older.
 
 - A list shows by itself, instead of the single nearest stop, when any of its stops is within
   500 m; if several lists qualify, the one with the closest stop wins. Pinning a stop or a list

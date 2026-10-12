@@ -32,8 +32,11 @@ class ApiClient(
             if (at != null) addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString())
         }
 
-    suspend fun board(platforms: List<String>, n: Int): BoardResponse =
-        get("v1/board") { addQueryParameter("platforms", platforms.joinToString(",")).addQueryParameter("n", n.toString()) }
+    suspend fun board(platforms: List<String>, n: Int, hide: String = ""): BoardResponse =
+        get("v1/board") {
+            addQueryParameter("platforms", platforms.joinToString(",")).addQueryParameter("n", n.toString())
+            if (hide.isNotEmpty()) addQueryParameter("hide", hide)
+        }
 
     /** Stops whose name contains [query] (case and diacritics ignored), nearest first when [at] is known. */
     suspend fun searchStops(query: String, at: GeoPoint?, limit: Int): NearbyResponse =

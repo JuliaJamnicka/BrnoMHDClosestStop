@@ -55,6 +55,10 @@
     <string name="lists_name">Název</string>
     <string name="lists_name_example">např. Domů z práce</string>
     <string name="lists_in">Zastávky ve skupině · %1$d</string>
+    <string name="lists_lines_hint">Klepnutím na linku ji skryjete nebo znovu zobrazíte.</string>
+    <string name="lists_line_shown">Linka %1$s, zobrazena</string>
+    <string name="lists_line_hidden">Linka %1$s, skryta</string>
+    <string name="lists_all_hidden">Všechny linky skryté, zastávka se nezobrazí.</string>
     <string name="lists_none_yet">Zatím žádné. Najděte zastávky níže a přidejte je tlačítkem +.</string>
     <string name="lists_search">Hledat zastávku v celé síti</string>
     <string name="lists_results">Výsledky</string>
