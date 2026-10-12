@@ -8,6 +8,9 @@ import io.github.juliajamnicka.fcil.data.Language
 import io.github.juliajamnicka.fcil.data.SettingsStore
 import io.github.juliajamnicka.fcil.data.TransitRepository
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class FcilApp : Application() {
     lateinit var graph: AppGraph
@@ -21,6 +24,8 @@ class FcilApp : Application() {
 
 /** Manual dependency wiring; small enough not to need a DI framework. */
 class AppGraph(app: Application) {
+    /** For work that must finish after the screen that started it closes (e.g. the widget's stop picker). */
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val settings = SettingsStore(app)
     val location = FusedLocationSource(app)
     // Server URL and API key are set at build time (android/README.md)
