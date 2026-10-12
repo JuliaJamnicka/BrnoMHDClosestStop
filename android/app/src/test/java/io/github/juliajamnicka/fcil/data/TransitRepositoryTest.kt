@@ -47,6 +47,29 @@ class TransitRepositoryTest {
     }
 
     @Test
+    fun hidesLinesSwitchedOffInAStopList() = runTest {
+        // an older backend ignores hide=, so the app filters too
+        server.enqueue(
+            MockResponse().setBody(
+                """{"t":1,"dep":[{"l":"32","m":"B","h":"X","e":90,"s":90,"dl":0,"lv":0,"p":"U1Z2","sn":"Česká"},
+                    {"l":"12","m":"T","h":"Komárov","e":100,"s":100,"dl":0,"lv":1,"p":"U1Z2","sn":"Česká"},
+                    {"l":"32","m":"B","h":"Y","e":110,"s":110,"dl":0,"lv":0,"p":"U7Z1","sn":"Grohova"}]}""",
+            ),
+        )
+        val list = StopList(
+            "home",
+            "Domů",
+            listOf(
+                StopListEntry("U1Z2", "Česká", "Centrum", 49.1979, 16.6059, "12 32 67", hidden = listOf("32", "67")),
+                StopListEntry("U7Z1", "Grohova", "Úvoz", 49.2010, 16.5990),
+            ),
+        )
+        val board = repository(lists = listOf(list)).home(4)
+        assertEquals("/v1/board?platforms=U1Z2%2CU7Z1&n=4&hide=U1Z2%3A32%2CU1Z2%3A67", server.takeRequest().path)
+        assertEquals(listOf("12" to "U1Z2", "32" to "U7Z1"), board.dep.map { it.l to it.p })
+    }
+
+    @Test
     fun sendsKeyAndPositionAndCachesHomeFor20Seconds() = runTest {
         server.enqueue(MockResponse().setBody(body))
         server.enqueue(MockResponse().setBody(body))

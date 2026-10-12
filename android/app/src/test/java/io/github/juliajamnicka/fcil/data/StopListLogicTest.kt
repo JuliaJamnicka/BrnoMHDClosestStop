@@ -34,4 +34,13 @@ class StopListLogicTest {
         assertEquals(listOf("far", "new"), edited.map { it.id })
         assertEquals(emptyList<StopListEntry>(), edited[0].entries)
     }
+
+    @Test
+    fun togglesHiddenLinesAndKeepsNewLinesVisible() {
+        val e = StopListEntry("U1Z2", "Česká", "Centrum", 49.0, 16.0, "1 12 32")
+        assertEquals(listOf("1", "12", "32"), e.lineList())
+        assertEquals(listOf("32"), e.toggle("32").hidden)
+        assertEquals(emptyList<String>(), e.toggle("32").toggle("32").hidden)
+        assertEquals(emptyList<String>(), StopListEntry("U1Z2", "Česká", "Centrum", 49.0, 16.0).lineList())
+    }
 }

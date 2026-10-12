@@ -57,6 +57,10 @@
     <string name="lists_name">Name</string>
     <string name="lists_name_example">e.g. Home from work</string>
     <string name="lists_in">Stops in this list · %1$d</string>
+    <string name="lists_lines_hint">Tap a line to hide it or show it again.</string>
+    <string name="lists_line_shown">Line %1$s, shown</string>
+    <string name="lists_line_hidden">Line %1$s, hidden</string>
+    <string name="lists_all_hidden">All lines hidden, this stop will not show.</string>
     <string name="lists_none_yet">None yet. Find stops below and add them with +.</string>
     <string name="lists_search">Search all stops</string>
     <string name="lists_results">Results</string>

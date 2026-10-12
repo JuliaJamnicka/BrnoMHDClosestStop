@@ -22,6 +22,7 @@ const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
 const MAX_VEHICLES = 15;
 const MAX_BOARD_PLATFORMS = 8;
+const MAX_HIDDEN_LINES = 200;
 const HOME_RADIUS = 400;
 const HOME_CANDIDATES = 12;
 const HOME_SOON = 30 * 60;
@@ -160,7 +161,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   // A user's stop list (docs/SPEC.md 6.2): the next departures of several platforms in one timeline.
   // Unknown platform ids are skipped; a new timetable export can drop a stop.
-  app.get<{ Querystring: { platforms?: string; n?: string } }>('/v1/board', async (req, reply) => {
+  // hide=U1Z1:32,U1Z1:67 leaves out lines the user switched off at a platform.
+  app.get<{ Querystring: { platforms?: string; n?: string; hide?: string } }>('/v1/board', async (req, reply) => {
     const platforms = [...new Set((req.query.platforms ?? '').split(','))]
       .slice(0, MAX_BOARD_PLATFORMS)
       .map((id) => tt.platforms.get(id))
@@ -169,8 +171,9 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const n = clampInt(req.query.n, 4, 1, MAX_DEPARTURES);
     await feed.refresh(now());
     const t = now();
+    const hidden = hiddenLines(req.query.hide);
     const dep = platforms
-      .flatMap((p) => departures(tt, tracker, p.stopId, t, n).map((d) => ({ ...d, p: p.stopId, sn: p.name })))
+      .flatMap((p) => departures(tt, tracker, p.stopId, t, n, hidden.get(p.stopId)).map((d) => ({ ...d, p: p.stopId, sn: p.name })))
       .sort((a, b) => a.e - b.e || a.s - b.s)
       .slice(0, n);
     return { t, dep };
@@ -234,4 +237,17 @@ function modesOf(platforms: Platform[]): string {
   return [...new Set(platforms.flatMap((p) => p.modes.split('')))]
     .sort((a, b) => order.indexOf(a) - order.indexOf(b))
     .join('');
+}
+
+/** Parses hide=U1Z1:32,U1Z1:67 into platform -> hidden lines. */
+function hiddenLines(value: string | undefined): Map<string, Set<string>> {
+  const result = new Map<string, Set<string>>();
+  for (const pair of (value ?? '').split(',').slice(0, MAX_HIDDEN_LINES)) {
+    const i = pair.indexOf(':');
+    if (i <= 0 || i === pair.length - 1) continue;
+    const platform = pair.slice(0, i);
+    if (!result.has(platform)) result.set(platform, new Set());
+    result.get(platform)!.add(pair.slice(i + 1));
+  }
+  return result;
 }
