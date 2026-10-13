@@ -35,16 +35,21 @@
     color: #ffffff;
     text-align: center;
 }
+.error-icon {
+    width: 88px;
+    height: 88px;
+    margin-bottom: 10px;
+}
 .error-title {
     width: 420px;
     margin-bottom: 8px;
-    color: #ffb020;
+    color: #ffffff;
 }
 .hint-line {
     width: 400px;
     height: 40px;
     font-size: 30px;
-    color: #aeaeb2;
+    color: #c3ccdd;
     text-align: center;
 }
 .hint {
@@ -57,7 +62,7 @@
 .button {
     width: 220px;
     height: 56px;
-    margin-top: 12px;
+    margin-top: 14px;
     border-radius: 28px;
     background-color: #3d7bd9;
     color: #ffffff;

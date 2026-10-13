@@ -32,7 +32,10 @@ entry/src/main/
 Protocol (same as `android/.../wear/WatchProtocol.kt`): the watch sends `{"c":"home"}`,
 `{"c":"dep","p":…}`, `{"c":"pl","p":…}`, `{"c":"near"}` or `{"c":"veh"}`; the phone answers with
 compact JSON, non-ASCII escaped as `\uXXXX`, or `{"c":"err","e":"phone|noloc|net|srv|auth|req"}`.
-No reply within 8 s counts as "phone not connected".
+Before the first request (and again after a failure) the watch asks Wear Engine `P2pClient.ping()`
+whether the phone app is installed. Watch-side errors: `noapp` (ping: not installed), `closed`
+(installed, but the message failed or got no reply within 8 s: the app is not running), `phone`
+(no link to the phone at all).
 
 ## Setup (once)
 
@@ -58,7 +61,7 @@ No reply within 8 s counts as "phone not connected".
 
 A developer has reported "Installation failed: 40" when installing a lite-wearable app on a GT 5.
 Before anything else, install this app once: even without the phone link it must open and show
-"Telefon není připojen / Phone not connected" after 8 seconds. That proves installing works.
+an error screen ("Telefon není připojen" or "Fčil není v telefonu") within 8 seconds. That proves installing works.
 
 Things to check on the real watch, because lite-wearable support differs between devices and
 could not be tested without one:
