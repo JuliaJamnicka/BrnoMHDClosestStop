@@ -6,6 +6,12 @@ import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t } from '../../common/strings.js';
 import state from '../../common/state.js';
 
+// Brand-coloured pictures for the link errors (Fčil logo when the phone app is missing).
+const ERROR_ICONS = {
+    noapp: '/common/images/err-noapp.png',
+    closed: '/common/images/err-closed.png',
+    phone: '/common/images/err-phone.png',
+};
 const HINT_CHARS = 22; // ~15 px per character at 30 px, 400 px lines, with margin for wide letters
 
 // Page-level variables (lite wearable pages only keep data and methods on `this`).
@@ -20,6 +26,7 @@ export default {
         loadingText: '',
         errorTitle: '',
         errorLines: [],
+        errorIcon: '',
         retryText: '',
         noDeparturesText: '',
         stop: '',
@@ -80,6 +87,7 @@ export default {
                 this.render(); // keep showing the last data; it turns stale after a minute
             } else {
                 this.errorTitle = t(state.lang, 'err_' + answer.e);
+                this.errorIcon = ERROR_ICONS[answer.e] || '';
                 this.errorLines = wrapLines(t(state.lang, 'err_' + answer.e + '_hint'), HINT_CHARS);
                 this.view = 'error';
             }
