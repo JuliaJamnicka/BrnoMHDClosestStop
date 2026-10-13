@@ -158,7 +158,7 @@ private fun DepartureRow(d: DepartureDto) {
         }
         Spacer(GlanceModifier.width(10.dp))
         Text(
-            if (d.sn != null) "${d.sn} · ${d.h}" else d.h,
+            d.sn ?: d.h, // a stop list's row shows only its stop; the user knows where the lines go
             style = TextStyle(color = Primary, fontSize = 15.sp),
             maxLines = 1,
             modifier = GlanceModifier.defaultWeight(),
