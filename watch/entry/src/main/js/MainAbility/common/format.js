@@ -146,3 +146,11 @@ export function wrapLines(text, maxChars) {
   if (line) lines.push(line);
   return lines;
 }
+
+// P2pClient.ping() codes (wearengine.js ErrorCode): 205 the phone app is installed (the watch cannot
+// tell whether it runs), 204 not installed, anything else (203) no usable link to the phone.
+export function pingOutcome(code) {
+  if (code === 205) return 'send';
+  if (code === 204) return 'noapp';
+  return 'phone';
+}

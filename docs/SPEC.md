@@ -517,7 +517,7 @@ switch on each). The rules below describe them.
 
 | Case | Behaviour |
 |------|-----------|
-| Phone not connected / companion not installed | Watch shows "Připojte telefon" and a hint to open the companion once. |
+| Phone not connected / companion not installed / not running | The watch pings the phone app first (Wear Engine `P2pClient.ping()`): not installed → "Fčil není v telefonu" with a hint to install it; installed but no reply within 8 s → "Fčil v telefonu neběží" with a hint to open it and turn on the watch link; no link → "Telefon není připojen" with a hint to turn on Bluetooth. Each has "Zkusit znovu". On the phone, the watch link runs as a foreground service (also after reboot), so the app normally answers while closed. |
 | No GPS fix | Use last known location if < 10 min old and mark "approx."; else error state. |
 | Realtime feed down | Backend returns scheduled times with `lv=0`; watch shows no live dots. |
 | GTFS import fails | Keep previous DB; `/health` reports it. |
