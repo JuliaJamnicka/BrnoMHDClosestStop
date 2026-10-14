@@ -3,6 +3,7 @@ package io.github.juliajamnicka.fcil.widget
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
@@ -20,6 +21,31 @@ object WidgetState {
     val loading = booleanPreferencesKey("loading")
     /** One of the WidgetError names, or absent. */
     val error = stringPreferencesKey("error")
+
+    private val styleSystem = booleanPreferencesKey("style_system")
+    private val styleBackground = intPreferencesKey("style_background")
+    private val styleAccent = intPreferencesKey("style_accent")
+    private val styleOpacity = intPreferencesKey("style_opacity")
+    private val styleText = stringPreferencesKey("style_text")
+
+    fun style(p: Preferences): WidgetStyle {
+        val d = WidgetStyle()
+        return WidgetStyle(
+            system = p[styleSystem] ?: d.system,
+            background = p[styleBackground] ?: d.background,
+            accent = p[styleAccent] ?: d.accent,
+            opacity = p[styleOpacity] ?: d.opacity,
+            text = p[styleText]?.let { runCatching { WidgetStyle.TextMode.valueOf(it) }.getOrNull() } ?: d.text,
+        )
+    }
+
+    fun setStyle(p: MutablePreferences, s: WidgetStyle) {
+        p[styleSystem] = s.system
+        p[styleBackground] = s.background
+        p[styleAccent] = s.accent
+        p[styleOpacity] = s.opacity
+        p[styleText] = s.text.name
+    }
 
     fun config(p: Preferences) = WidgetConfig(p[pinnedPlatform], p[reversedGroup], p[pinnedList])
 

@@ -7,6 +7,8 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
@@ -14,6 +16,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
+import androidx.datastore.preferences.core.Preferences
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
 import com.huawei.wearengine.HiWear
 import com.huawei.wearengine.auth.AuthCallback
@@ -22,6 +28,8 @@ import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.Language
 import io.github.juliajamnicka.fcil.wear.WatchService
+import io.github.juliajamnicka.fcil.widget.DeparturesWidget
+import io.github.juliajamnicka.fcil.widget.WidgetState
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -61,6 +69,7 @@ class MainActivity : AppCompatActivity() {
                                 disconnectWatch = { WatchService.stop(this) },
                                 setLanguage = ::setLanguage,
                                 setDepartureCount = { n -> lifecycleScope.launch { graph.settings.setDepartureCount(n) } },
+                                openWidgetStyle = ::openWidgetStyle,
                             ),
                             contentPadding = padding,
                         )
@@ -113,6 +122,30 @@ class MainActivity : AppCompatActivity() {
                 }
         } catch (e: Exception) {
             setupMessage = getString(R.string.setup_auth_failed, e.message ?: "")
+        }
+    }
+
+    /** Opens the widget style screen; with several widgets the user picks one by what it shows. */
+    private fun openWidgetStyle() {
+        lifecycleScope.launch {
+            val manager = GlanceAppWidgetManager(this@MainActivity)
+            val ids = manager.getGlanceIds(DeparturesWidget::class.java)
+            when (ids.size) {
+                0 -> Toast.makeText(this@MainActivity, R.string.widget_style_none, Toast.LENGTH_LONG).show()
+                1 -> startActivity(WidgetStyleActivity.intent(this@MainActivity, manager.getAppWidgetId(ids.single())))
+                else -> {
+                    val labels = ids.mapIndexed { i, id ->
+                        val prefs = getAppWidgetState<Preferences>(this@MainActivity, PreferencesGlanceStateDefinition, id)
+                        WidgetState.response(prefs)?.stop ?: "${getString(R.string.widget_title)} ${i + 1}"
+                    }
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle(R.string.widget_style_choose)
+                        .setItems(labels.toTypedArray()) { _, which ->
+                            startActivity(WidgetStyleActivity.intent(this@MainActivity, manager.getAppWidgetId(ids[which])))
+                        }
+                        .show()
+                }
+            }
         }
     }
 

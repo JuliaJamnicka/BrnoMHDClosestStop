@@ -10,4 +10,6 @@
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:configure="io.github.juliajamnicka.fcil.ui.WidgetStyleActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

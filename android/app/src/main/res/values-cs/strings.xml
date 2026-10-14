@@ -78,4 +78,22 @@
         <item quantity="many">%1$d zastávky</item>
         <item quantity="other">%1$d zastávek</item>
     </plurals>
+    <string name="section_widget">Widget</string>
+    <string name="widget_style_title">Vzhled widgetu</string>
+    <string name="widget_style_open_hint">Barva pozadí, textu a zvýraznění, průhlednost</string>
+    <string name="widget_style_none">Nejdřív přidejte widget Fčil na plochu.</string>
+    <string name="widget_style_choose">Který widget?</string>
+    <string name="widget_style_system">Barvy systému</string>
+    <string name="widget_style_system_hint">Podle tapety (Material You)</string>
+    <string name="widget_style_background">Pozadí</string>
+    <string name="widget_style_accent">Zvýraznění</string>
+    <string name="widget_style_hex">%1$s, hex</string>
+    <string name="widget_style_opacity">Neprůhlednost pozadí</string>
+    <string name="widget_style_text">Text</string>
+    <string name="widget_style_text_auto">Automaticky</string>
+    <string name="widget_style_text_light">Světlý</string>
+    <string name="widget_style_text_dark">Tmavý</string>
+    <string name="widget_style_text_hint">Automaticky volí světlý nebo tmavý text podle pozadí.</string>
+    <string name="widget_style_reset">Obnovit výchozí</string>
+    <string name="widget_style_apply">Použít</string>
 </resources>
