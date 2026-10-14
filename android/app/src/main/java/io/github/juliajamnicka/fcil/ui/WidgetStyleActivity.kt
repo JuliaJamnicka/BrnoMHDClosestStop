@@ -33,7 +33,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -225,6 +227,13 @@ private fun WidgetStyleScreen(
                 Text(stringResource(R.string.widget_style_text_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
             }
 
+            ColourPicker(
+                stringResource(R.string.widget_style_delay), WidgetStyle.DELAYS, style.delay, enabled = true,
+            ) { style = style.copy(delay = it) }
+            Text(stringResource(R.string.widget_style_delay_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
+
+            BadgeSets(style.badges, palette) { style = style.copy(badges = it) }
+
             TextButton(onClick = { style = WidgetStyle() }) {
                 Text(stringResource(R.string.widget_style_reset), fontWeight = FontWeight.SemiBold)
             }
@@ -283,6 +292,51 @@ private fun ColourPicker(title: String, swatches: List<Int>, value: Int, enabled
     }
 }
 
+/** The line colour sets, each shown as its tram, bus and train badges. */
+@Composable
+private fun BadgeSets(value: WidgetStyle.BadgeSet, palette: WidgetPalette, onPick: (WidgetStyle.BadgeSet) -> Unit) {
+    val names = mapOf(
+        WidgetStyle.BadgeSet.FCIL to "Fčil",
+        WidgetStyle.BadgeSet.PASTEL to stringResource(R.string.widget_style_badges_pastel),
+        WidgetStyle.BadgeSet.VIVID to stringResource(R.string.widget_style_badges_vivid),
+        WidgetStyle.BadgeSet.MUTED to stringResource(R.string.widget_style_badges_muted),
+        WidgetStyle.BadgeSet.MONO to stringResource(R.string.widget_style_badges_mono),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionTitle(stringResource(R.string.widget_style_badges))
+        BrandCard {
+            Column(Modifier.selectableGroup()) {
+                WidgetStyle.BadgeSet.entries.forEachIndexed { i, set ->
+                    // MONO follows the widget's text colour, so show it with this palette
+                    val p = WidgetColors.palette(WidgetStyle(badges = set), null).let { if (set == WidgetStyle.BadgeSet.MONO) palette else it }
+                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .selectable(set == value, role = Role.RadioButton) { onPick(set) }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        listOf("T" to "4", "B" to "44", "V" to "S3").forEach { (mode, line) ->
+                            // a mono badge is translucent: show it over the widget background, as on the widget
+                            val bg = if (set == WidgetStyle.BadgeSet.MONO) Modifier.background(Color(palette.background)) else Modifier
+                            Box(Modifier.clip(RoundedCornerShape(if (mode == "T") 6.dp else if (mode == "V") 2.dp else 10.dp)).then(bg)) {
+                                Box(
+                                    Modifier.width(40.dp).background(Color(p.badge(mode))),
+                                    contentAlignment = Alignment.Center,
+                                ) { Text(line, color = Color(p.badgeText), fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                            }
+                        }
+                        Text(names.getValue(set), Modifier.weight(1f).padding(start = 8.dp), fontSize = 17.sp)
+                        RadioButton(selected = set == value, onClick = null)
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** A Compose copy of the widget (DeparturesWidget) on a wallpaper-like backdrop. */
 @Composable
 private fun WidgetPreview(palette: WidgetPalette, title: String, rows: List<DepartureDto>) {
@@ -312,9 +366,9 @@ private fun WidgetPreview(palette: WidgetPalette, title: String, rows: List<Depa
             shown.forEach { d ->
                 Row(Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.width(40.dp).clip(RoundedCornerShape(if (d.m == "T") 6.dp else if (d.m == "V") 2.dp else 10.dp)).background(modeColor(d.m)),
+                        Modifier.width(40.dp).clip(RoundedCornerShape(if (d.m == "T") 6.dp else if (d.m == "V") 2.dp else 10.dp)).background(Color(palette.badge(d.m))),
                         contentAlignment = Alignment.Center,
-                    ) { Text(d.l, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+                    ) { Text(d.l, color = Color(palette.badgeText), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
                     Spacer(Modifier.width(10.dp))
                     Text(d.sn ?: d.h, Modifier.weight(1f), color = text, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (d.lv == 1) Text("● ", color = Color(palette.accent), fontSize = 10.sp)

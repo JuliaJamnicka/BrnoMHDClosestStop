@@ -96,4 +96,11 @@
     <string name="widget_style_text_hint">Automaticky volí světlý nebo tmavý text podle pozadí.</string>
     <string name="widget_style_reset">Obnovit výchozí</string>
     <string name="widget_style_apply">Použít</string>
+    <string name="widget_style_delay">Zpoždění</string>
+    <string name="widget_style_delay_hint">Výchozí jantarová se na světlém pozadí ztmaví.</string>
+    <string name="widget_style_badges">Barvy linek</string>
+    <string name="widget_style_badges_pastel">Pastelové</string>
+    <string name="widget_style_badges_vivid">Výrazné</string>
+    <string name="widget_style_badges_muted">Tlumené</string>
+    <string name="widget_style_badges_mono">Jednobarevné</string>
 </resources>

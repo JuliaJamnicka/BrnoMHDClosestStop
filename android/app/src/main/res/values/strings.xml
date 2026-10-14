@@ -96,4 +96,11 @@
     <string name="widget_style_text_hint">Automatic picks light or dark text to suit the background.</string>
     <string name="widget_style_reset">Reset to default</string>
     <string name="widget_style_apply">Apply</string>
+    <string name="widget_style_delay">Delays</string>
+    <string name="widget_style_delay_hint">The default amber turns darker on light backgrounds.</string>
+    <string name="widget_style_badges">Line colours</string>
+    <string name="widget_style_badges_pastel">Pastel</string>
+    <string name="widget_style_badges_vivid">Vivid</string>
+    <string name="widget_style_badges_muted">Muted</string>
+    <string name="widget_style_badges_mono">Single colour</string>
 </resources>
