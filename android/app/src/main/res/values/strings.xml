@@ -78,4 +78,22 @@
         <item quantity="one">%1$d stop</item>
         <item quantity="other">%1$d stops</item>
     </plurals>
+    <string name="section_widget">Widget</string>
+    <string name="widget_style_title">Widget style</string>
+    <string name="widget_style_open_hint">Background, text and accent colours, opacity</string>
+    <string name="widget_style_none">Add the Fčil widget to your home screen first.</string>
+    <string name="widget_style_choose">Which widget?</string>
+    <string name="widget_style_system">System colours</string>
+    <string name="widget_style_system_hint">From your wallpaper (Material You)</string>
+    <string name="widget_style_background">Background</string>
+    <string name="widget_style_accent">Accent</string>
+    <string name="widget_style_hex">%1$s, hex</string>
+    <string name="widget_style_opacity">Background opacity</string>
+    <string name="widget_style_text">Text</string>
+    <string name="widget_style_text_auto">Automatic</string>
+    <string name="widget_style_text_light">Light</string>
+    <string name="widget_style_text_dark">Dark</string>
+    <string name="widget_style_text_hint">Automatic picks light or dark text to suit the background.</string>
+    <string name="widget_style_reset">Reset to default</string>
+    <string name="widget_style_apply">Apply</string>
 </resources>

@@ -49,6 +49,17 @@
             android:exported="false"
             android:taskAffinity="" />
 
+        <!-- The widget's style screen; also its configuration activity (reconfigurable, optional at placement) -->
+        <activity
+            android:name=".ui.WidgetStyleActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".widget.DeparturesWidgetReceiver"
             android:exported="true"

@@ -1,6 +1,7 @@
 package io.github.juliajamnicka.fcil.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ class SettingsActions(
     val disconnectWatch: () -> Unit,
     val setLanguage: (Language) -> Unit,
     val setDepartureCount: (Int) -> Unit,
+    val openWidgetStyle: () -> Unit,
 )
 
 @Composable
@@ -146,6 +148,17 @@ fun SettingsScreen(
                     }
                 }
 
+                Section(stringResource(R.string.section_widget)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = actions.openWidgetStyle)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        Text(stringResource(R.string.widget_style_title), fontSize = 18.sp)
+                        Text(stringResource(R.string.widget_style_open_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
 
             Text(

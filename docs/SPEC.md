@@ -407,6 +407,12 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
   Plan: refresh on tap, on screen unlock while the widget is visible (best effort), and every
   15 min via WorkManager; "N min" labels are shown as absolute times (`HH:MM`) so they do not go stale.
 - Same backend endpoints; no backend change expected.
+- Style per widget (`WidgetStyleActivity`, opened from the widget's settings on Android 12+ or from
+  Settings > Widget): background and accent colour (8 swatches each or a hex value), or the
+  wallpaper's Material You colours on Android 12+; background opacity 0-100 %; text automatic
+  (light or dark by the background's luminance), light or dark. Secondary text, buttons and the
+  delay colour are derived from the text colour; line badges keep their mode colours. Default: the
+  Fčil night blue look. Stored in the widget's Glance state.
 
 ---
 
