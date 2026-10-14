@@ -391,8 +391,9 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
 - One merged timeline (`GET /v1/board?platforms=...`): the next departures of all its platforms
   sorted by time, each row with its stop name. No walking times: the user picked the stops and
   knows where they are.
-- Same on the phone, the widget and the watch (the watch shows the stop name in place of the
-  headsign, `"l":1` in the reply).
+- Same on the phone, the widget and the watch. The phone shows the stop under the headsign; the
+  widget and the watch show only the stop name in place of the headsign (less clutter on a small
+  screen; `"l":1` in the watch reply).
 - Stored on the phone only (DataStore, with each platform's coordinates from `/v1/nearby`), so
   the server keeps no user data.
 - Candidate for a later premium feature; not gated for now.
