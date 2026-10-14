@@ -27,6 +27,8 @@ object WidgetState {
     private val styleAccent = intPreferencesKey("style_accent")
     private val styleOpacity = intPreferencesKey("style_opacity")
     private val styleText = stringPreferencesKey("style_text")
+    private val styleDelay = intPreferencesKey("style_delay")
+    private val styleBadges = stringPreferencesKey("style_badges")
 
     fun style(p: Preferences): WidgetStyle {
         val d = WidgetStyle()
@@ -36,6 +38,8 @@ object WidgetState {
             accent = p[styleAccent] ?: d.accent,
             opacity = p[styleOpacity] ?: d.opacity,
             text = p[styleText]?.let { runCatching { WidgetStyle.TextMode.valueOf(it) }.getOrNull() } ?: d.text,
+            delay = p[styleDelay] ?: d.delay,
+            badges = p[styleBadges]?.let { runCatching { WidgetStyle.BadgeSet.valueOf(it) }.getOrNull() } ?: d.badges,
         )
     }
 
@@ -45,6 +49,8 @@ object WidgetState {
         p[styleAccent] = s.accent
         p[styleOpacity] = s.opacity
         p[styleText] = s.text.name
+        p[styleDelay] = s.delay
+        p[styleBadges] = s.badges.name
     }
 
     fun config(p: Preferences) = WidgetConfig(p[pinnedPlatform], p[reversedGroup], p[pinnedList])

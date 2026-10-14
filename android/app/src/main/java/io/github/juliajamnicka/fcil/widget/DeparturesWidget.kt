@@ -46,7 +46,7 @@ import io.github.juliajamnicka.fcil.ui.StopPickerActivity
 import java.text.DateFormat
 import java.util.Date
 
-// Colours come from the widget's style (WidgetStyle, default: Fčil night blue); line badges keep their mode colours.
+// Colours come from the widget's style (WidgetStyle, default: Fčil night blue).
 private fun provider(argb: Int) = ColorProvider(Color(argb))
 
 class DeparturesWidget : GlanceAppWidget() {
@@ -145,12 +145,12 @@ private fun DepartureRow(palette: WidgetPalette, d: DepartureDto) {
         Box(
             GlanceModifier
                 .width(40.dp)
-                .background(badgeColor(d.m))
+                .background(Color(palette.badge(d.m)))
                 .cornerRadius(if (d.m == "T") 6.dp else if (d.m == "V") 2.dp else 10.dp)
                 .padding(vertical = 2.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(d.l, style = TextStyle(color = ColorProvider(Color.White), fontSize = 14.sp, fontWeight = FontWeight.Bold), maxLines = 1)
+            Text(d.l, style = TextStyle(color = provider(palette.badgeText), fontSize = 14.sp, fontWeight = FontWeight.Bold), maxLines = 1)
         }
         Spacer(GlanceModifier.width(10.dp))
         Text(
@@ -189,12 +189,6 @@ private fun IconButton(palette: WidgetPalette, icon: Int, description: String, o
 @Composable
 private fun Message(palette: WidgetPalette, text: String) {
     Text(text, style = TextStyle(color = provider(palette.secondary), fontSize = 14.sp), modifier = GlanceModifier.padding(vertical = 8.dp))
-}
-
-private fun badgeColor(mode: String): Color = when (mode) {
-    "T" -> Color(0xFFC8262C)
-    "V" -> Color(0xFF1D5FD1)
-    else -> Color(0xFF1F7A4D)
 }
 
 private fun errorText(context: Context, error: WidgetError?): String? = when (error) {

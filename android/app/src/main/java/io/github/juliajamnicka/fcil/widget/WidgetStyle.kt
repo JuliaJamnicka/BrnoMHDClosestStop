@@ -15,15 +15,30 @@ data class WidgetStyle(
     /** Background opacity in percent; text, badges and buttons stay opaque. */
     val opacity: Int = 100,
     val text: TextMode = TextMode.AUTO,
+    /** Late departures and the pin. The default amber turns darker on light backgrounds; others are used as chosen. */
+    val delay: Int = DEFAULT_DELAY,
+    val badges: BadgeSet = BadgeSet.FCIL,
 ) {
     enum class TextMode { AUTO, LIGHT, DARK }
+
+    /** Line badge colours per mode (tram, bus incl. trolleybus, train) and their text. */
+    enum class BadgeSet(val tram: Int, val bus: Int, val train: Int, val label: Int) {
+        FCIL(0xFFC8262C.toInt(), 0xFF1F7A4D.toInt(), 0xFF1D5FD1.toInt(), 0xFFFFFFFF.toInt()),
+        PASTEL(0xFFF4A3A8.toInt(), 0xFF9FD8B5.toInt(), 0xFFA7C4F2.toInt(), 0xFF0E1B33.toInt()),
+        VIVID(0xFFFF2D55.toInt(), 0xFF00B37A.toInt(), 0xFF2F6BFF.toInt(), 0xFFFFFFFF.toInt()),
+        MUTED(0xFF8A3A3E.toInt(), 0xFF2F5E48.toInt(), 0xFF3A5A8C.toInt(), 0xFFFFFFFF.toInt()),
+        /** Badges in the widget's own text colour, no mode colours. */
+        MONO(0, 0, 0, 0),
+    }
 
     companion object {
         const val DEFAULT_BACKGROUND = 0xFF0E1B33.toInt() // Fčil night
         const val DEFAULT_ACCENT = 0xFF3D7BD9.toInt() // Fčil ring blue
+        const val DEFAULT_DELAY = 0xFFFFB020.toInt() // amber
 
         val BACKGROUNDS = listOf(0x0E1B33, 0x000000, 0x26292F, 0x3B1F2B, 0x1E3A2F, 0x1A4FA3, 0xF3F4F7, 0xFFFFFF).map(::opaque)
         val ACCENTS = listOf(0x3D7BD9, 0x6EA0EE, 0xF0373E, 0xFFB020, 0x22C55E, 0xA78BFA, 0xFFFFFF, 0x0E1B33).map(::opaque)
+        val DELAYS = listOf(0xFFB020, 0xB86E00, 0xFF7A1A, 0xF0373E, 0xFFD60A, 0xFF6FAE, 0xA78BFA, 0xFFFFFF).map(::opaque)
     }
 }
 
@@ -38,9 +53,20 @@ data class WidgetPalette(
     val muted: Int,
     val accent: Int,
     val button: Int,
-    /** Delays and the pin; darker on light backgrounds so it stays readable. */
+    /** Delays and the pin. */
     val warning: Int,
-)
+    val badgeTram: Int,
+    val badgeBus: Int,
+    val badgeTrain: Int,
+    val badgeText: Int,
+) {
+    /** Badge background for a mode as in DepartureDto.m: T tram, V train, anything else bus. */
+    fun badge(mode: String): Int = when (mode) {
+        "T" -> badgeTram
+        "V" -> badgeTrain
+        else -> badgeBus
+    }
+}
 
 object WidgetColors {
     private const val WHITE = 0xFFFFFFFF.toInt()
@@ -55,6 +81,7 @@ object WidgetColors {
             WidgetStyle.TextMode.AUTO -> luminance(background) < 0.4
         }
         val text = if (light) WHITE else NIGHT
+        val mono = style.badges == WidgetStyle.BadgeSet.MONO
         return WidgetPalette(
             background = withAlpha(background, style.opacity.coerceIn(0, 100) / 100f),
             text = text,
@@ -62,7 +89,15 @@ object WidgetColors {
             muted = withAlpha(text, 0.6f),
             accent = opaque(fromSystem?.accent ?: style.accent),
             button = withAlpha(text, 0.14f),
-            warning = if (light) 0xFFFFB020.toInt() else 0xFFB86E00.toInt(),
+            warning = when {
+                style.delay != WidgetStyle.DEFAULT_DELAY -> opaque(style.delay)
+                light -> WidgetStyle.DEFAULT_DELAY
+                else -> 0xFFB86E00.toInt()
+            },
+            badgeTram = if (mono) withAlpha(text, 0.18f) else style.badges.tram,
+            badgeBus = if (mono) withAlpha(text, 0.18f) else style.badges.bus,
+            badgeTrain = if (mono) withAlpha(text, 0.18f) else style.badges.train,
+            badgeText = if (mono) text else style.badges.label,
         )
     }
 

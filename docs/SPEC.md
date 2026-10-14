@@ -411,8 +411,9 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
   Settings > Widget): background and accent colour (8 swatches each or a hex value), or the
   wallpaper's Material You colours on Android 12+; background opacity 0-100 %; text automatic
   (light or dark by the background's luminance), light or dark. Secondary text, buttons and the
-  delay colour are derived from the text colour; line badges keep their mode colours. Default: the
-  Fčil night blue look. Stored in the widget's Glance state.
+  delay colour are derived from the text colour. Delay colour: 8 swatches or hex (the default amber
+  turns darker on light backgrounds). Line badge colour sets: Fčil, pastel, vivid, muted, single
+  colour (in the text colour). Default: the Fčil night blue look. Stored in the widget's Glance state.
 
 ---
 

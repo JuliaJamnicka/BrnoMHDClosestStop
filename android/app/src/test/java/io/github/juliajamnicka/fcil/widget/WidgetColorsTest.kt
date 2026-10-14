@@ -53,4 +53,26 @@ class WidgetColorsTest {
         assertNull(WidgetColors.parseHex("GGGGGG"))
         assertEquals("0E1B33", WidgetColors.hex(night))
     }
+
+    @Test
+    fun delayColourAdaptsOnlyWhenDefault() {
+        assertEquals(0xFFB86E00.toInt(), WidgetColors.palette(WidgetStyle(background = white), null).warning)
+        val red = 0xFFF0373E.toInt()
+        assertEquals(red, WidgetColors.palette(WidgetStyle(background = white, delay = red), null).warning)
+        assertEquals(red, WidgetColors.palette(WidgetStyle(delay = red), null).warning)
+    }
+
+    @Test
+    fun badgeSetsColourLinesByMode() {
+        val fcil = WidgetColors.palette(WidgetStyle(), null)
+        assertEquals(0xFFC8262C.toInt(), fcil.badge("T"))
+        assertEquals(0xFF1D5FD1.toInt(), fcil.badge("V"))
+        assertEquals(0xFF1F7A4D.toInt(), fcil.badge("B"))
+        assertEquals(white, fcil.badgeText)
+        val pastel = WidgetColors.palette(WidgetStyle(badges = WidgetStyle.BadgeSet.PASTEL), null)
+        assertEquals(night, pastel.badgeText)
+        val mono = WidgetColors.palette(WidgetStyle(badges = WidgetStyle.BadgeSet.MONO), null)
+        assertEquals(mono.badge("T"), mono.badge("V"))
+        assertEquals(mono.text, mono.badgeText)
+    }
 }
