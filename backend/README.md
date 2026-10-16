@@ -7,7 +7,9 @@ real-time delays, and nearby vehicles. Design: [docs/SPEC.md](../docs/SPEC.md), 
   `data/timetable.db` (~55 MB) by `npm run build-db`. The server never parses GTFS.
   The build also reads data.Brno's weekly copy of the feed to map older trip_ids (which the
   real-time feed may still use after KORDIS renumbers trips) onto the current ones; pass
-  `--alias-source none` to skip that.
+  `--alias-source none` to skip that, or a comma-separated list for other copies.
+  `--prev-source <zip>` adds the previous KORDIS export, which CI keeps in the Actions cache.
+  CI rebuilds daily and checks hourly for a new export.
 - Real-time: KORDIS GTFS-RT (`gtfsReal.dat`), fetched on demand and cached for 15 s.
   The feed has vehicle positions only; delays are derived in `src/realtime/tracker.ts`.
 

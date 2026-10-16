@@ -2,6 +2,7 @@
 // Runs offline (GitHub Actions / Docker build), never on the request path.
 //
 // Usage: node dist/build/buildDb.js [--source <url|zip|dir>] [--out <file>]
+//        [--alias-source <url|zip|dir>[,...]|none] [--prev-source <zip|dir>]
 
 import Database from 'better-sqlite3';
 import { parse } from 'csv-parse';
@@ -121,7 +122,11 @@ interface PlatformStat {
   n: number;
 }
 
-export async function buildDatabase(source: string, outFile: string, log = console.log, aliasSource?: string): Promise<void> {
+/**
+ * aliasSources: other exports of the feed (data.Brno's copy, the previous KORDIS export) whose
+ * trip_ids are mapped onto this one (buildAliases). A source that fails to load is skipped.
+ */
+export async function buildDatabase(source: string, outFile: string, log = console.log, aliasSources: string[] = []): Promise<void> {
   const files = await loadSource(source);
   for (const name of NEEDED_FILES) {
     if (!files[name]) throw new Error(`GTFS source is missing ${name}`);
@@ -252,13 +257,18 @@ export async function buildDatabase(source: string, outFile: string, log = conso
   db.exec('COMMIT');
   log(`groups: ${groupPlatforms.size}, platforms: ${platformRows.length}`);
 
-  if (aliasSource) {
+  for (const aliasSource of aliasSources) {
+    const label = /^https?:/.test(aliasSource) ? aliasSource : path.basename(aliasSource);
     try {
-      const count = await buildAliases(db, await loadSource(aliasSource));
-      log(`trip aliases: ${count}`);
+      const other = await loadSource(aliasSource);
+      if (other['trips.txt']?.equals(files['trips.txt']!) && other['stop_times.txt']?.equals(files['stop_times.txt']!)) {
+        log(`trip aliases from ${label}: same export, skipped`);
+        continue;
+      }
+      log(`trip aliases from ${label}: ${await buildAliases(db, other)}`);
     } catch (err) {
       // Aliases only improve real-time matching; never fail the build because of them.
-      log(`trip aliases skipped: ${err instanceof Error ? err.message : String(err)}`);
+      log(`trip aliases from ${label} skipped: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -390,9 +400,13 @@ function arg(name: string): string | undefined {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const source = arg('--source') ?? DEFAULT_SOURCE;
-  const aliasSource = arg('--alias-source') ?? DEFAULT_ALIAS_SOURCE;
+  const aliasArg = arg('--alias-source') ?? DEFAULT_ALIAS_SOURCE;
+  const aliasSources = aliasArg === 'none' ? [] : aliasArg.split(',').filter(Boolean);
+  // The previous KORDIS export, kept by CI: the real-time feed can use its numbering for hours.
+  const prev = arg('--prev-source');
+  if (prev && fs.existsSync(prev)) aliasSources.push(prev);
   const out = arg('--out') ?? 'data/timetable.db';
-  buildDatabase(source, out, console.log, aliasSource === 'none' ? undefined : aliasSource).catch((err) => {
+  buildDatabase(source, out, console.log, aliasSources).catch((err) => {
     console.error(err);
     process.exit(1);
   });

@@ -102,6 +102,11 @@ describe('departures', () => {
     expect(tracker.get('200', BASE, now)).toBeUndefined();
   });
 
+  it('maps trip ids of every alias source', () => {
+    expect(tt.aliasesOf('900')).toEqual(['100']);
+    expect(tt.aliasesOf('100')).toEqual(['200']);
+  });
+
   it('keeps using the trip id directly when it fits the current export', () => {
     const tracker = new Tracker(tt);
     const now = at('10:11:00');

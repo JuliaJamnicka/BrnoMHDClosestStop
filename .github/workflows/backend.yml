@@ -9,6 +9,8 @@ on:
     # Daily: KORDIS publishes new exports (seen on Fridays ~06:30 Prague time), data.Brno copies
     # them weekly, and the trip aliases between the two must follow both
     - cron: '20 5 * * *'
+    # Hourly: deploy a new KORDIS export soon after it appears (skipped while it is unchanged)
+    - cron: '50 * * * *'
   workflow_dispatch:
 
 defaults:
@@ -29,11 +31,38 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  # Deploys to Cloud Run from main (and daily with the fresh timetable).
+  # Whether this run deploys: always, except an hourly run while KORDIS's export is unchanged.
+  check:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - uses: actions/cache/restore@v4
+        with:
+          path: backend/data/exports
+          key: kordis-exports-${{ github.run_id }}
+          restore-keys: kordis-exports-
+      - id: check
+        env:
+          HOURLY: ${{ github.event.schedule == '50 * * * *' }}
+        run: |
+          modified=$(curl -fsSI https://kordis-jmk.cz/gtfs/gtfs.zip | tr -d '\r' | sed -n 's/^last-modified: //Ip')
+          if [ "$HOURLY" = true ] && [ -n "$modified" ] && [ "$modified" = "$(cat backend/data/exports/latest.modified 2>/dev/null)" ]; then
+            echo "export unchanged since $modified"
+            echo deploy=false >> "$GITHUB_OUTPUT"
+          else
+            echo deploy=true >> "$GITHUB_OUTPUT"
+          fi
+
+  # Deploys to Cloud Run from main (and with every new timetable).
   # Skipped until the repository variables in backend/README.md are set.
   deploy:
-    needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    needs: [test, check]
+    if: needs.check.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,8 +78,29 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run build
+      # The real-time feed keeps using the previous export's trip_ids for hours after KORDIS
+      # publishes a new one, so the previous export is kept between runs and mapped as aliases.
+      - uses: actions/cache/restore@v4
+        with:
+          path: backend/data/exports
+          key: kordis-exports-${{ github.run_id }}
+          restore-keys: kordis-exports-
+      - name: Download the current export, keep the previous one
+        run: |
+          mkdir -p data/exports
+          curl -fsSL -D data/headers.txt -o data/gtfs.zip https://kordis-jmk.cz/gtfs/gtfs.zip
+          if [ -f data/exports/latest.zip ] && ! cmp -s data/gtfs.zip data/exports/latest.zip; then
+            mv data/exports/latest.zip data/exports/previous.zip
+          fi
+          cp data/gtfs.zip data/exports/latest.zip
+          tr -d '\r' < data/headers.txt | sed -n 's/^last-modified: //Ip' > data/exports/latest.modified
+          ls -l data/exports
       - name: Build timetable database from the current GTFS feed
-        run: npm run build-db
+        run: npm run build-db -- --source data/gtfs.zip --prev-source data/exports/previous.zip
+      - uses: actions/cache/save@v4
+        with:
+          path: backend/data/exports
+          key: kordis-exports-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}

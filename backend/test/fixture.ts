@@ -72,6 +72,15 @@ function renumbered(): Record<string, string> {
   return { ...files, 'trips.txt': swapTrips(files['trips.txt']), 'stop_times.txt': swap(files['stop_times.txt']) };
 }
 
+/** An even older export, in which trip 100 was numbered 900. */
+function older(): Record<string, string> {
+  return {
+    ...files,
+    'trips.txt': files['trips.txt'].replace(/,100,/g, ',900,'),
+    'stop_times.txt': files['stop_times.txt'].replace(/^100,/gm, '900,'),
+  };
+}
+
 function writeFeed(content: Record<string, string>): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mhd-fixture-'));
   for (const [name, text] of Object.entries(content)) fs.writeFileSync(path.join(dir, name), text);
@@ -81,6 +90,6 @@ function writeFeed(content: Record<string, string>): string {
 export async function buildFixtureDb(): Promise<string> {
   const dir = writeFeed(files);
   const out = path.join(dir, 'timetable.db');
-  await buildDatabase(dir, out, () => {}, writeFeed(renumbered()));
+  await buildDatabase(dir, out, () => {}, [writeFeed(renumbered()), writeFeed(older())]);
   return out;
 }
