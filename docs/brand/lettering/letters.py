@@ -19,6 +19,7 @@ G = {
  'v': (["M0 100L42 200L84 100"], [], 84),
  'y': (["M0 100L44 200", "M88 100L34 265"], [], 88),
  'k': (["M0 50V200", "M70 100L4 158", "M34 132L76 200"], [], 76),
+ 'z': (["M0 100H84L0 200H84"], [], 84),
  'Z': (["M0 50H100L0 200H100"], [], 100),
  'S': (["M96 72C80 46 6 44 6 90C6 130 100 118 100 160C100 210 18 214 0 182"], [], 100),
  'R': (["M0 200V50H48A38 38 0 0 1 48 126H0", "M48 126L96 200"], [], 96),
@@ -50,5 +51,5 @@ def svg(text, blue='#1A4FA3', red='#E3242B', height=None):
 if __name__ == '__main__':
     LOGO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 20 310 195" height="72"><g fill="none" stroke="#1A4FA3" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"><path d="M30 200V95A45 45 0 0 1 75 50H85"/><path d="M8 112H66"/><path d="M185.4 114.6A50 50 0 1 0 185.4 185.4"/><path d="M230 100V200"/><path d="M275 50V200"/></g><circle cx="230" cy="62" r="14" fill="#1A4FA3"/><path d="M128 38L150 60L172 38" fill="none" stroke="#E3242B" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     h = 72 * 270 / 195
-    rows = ''.join(f'<div style="display:flex;align-items:flex-start;gap:24px;margin:8px 0">{LOGO}{svg(t, height=h)}</div>' for t in ['Zastávky', 'Radar', 'Nastavení', 'Stops', 'Settings'])
+    rows = ''.join(f'<div style="display:flex;align-items:flex-start;gap:24px;margin:8px 0">{LOGO}{svg(t, height=h)}</div>' for t in ['zastávky', 'radar', 'nastavení', 'stops', 'settings'])
     open(sys.argv[1], 'w').write(f'<!doctype html><meta charset=utf-8><body style="margin:16px;background:#F3F4F7">{rows}</body>')

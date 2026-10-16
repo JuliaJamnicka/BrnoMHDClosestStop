@@ -27,7 +27,8 @@ def vector(text, blue, red):
             f'    android:viewportWidth="{width:.0f}" android:viewportHeight="280">\n'
             + '\n'.join(groups + reds) + '\n</vector>\n')
 
-TITLES = {'title_stops': {'': 'Stops', 'cs': 'Zastávky'}, 'title_radar': {'': 'Radar'}, 'title_settings': {'': 'Settings', 'cs': 'Nastavení'}}
+# lowercase, like the wordmark
+TITLES = {'title_stops': {'': 'stops', 'cs': 'zastávky'}, 'title_radar': {'': 'radar'}, 'title_settings': {'': 'settings', 'cs': 'nastavení'}}
 COLOURS = {'': ('#1A4FA3', '#E3242B'), 'night': ('#FFFFFF', '#F0373E')}
 res = sys.argv[1]
 for name, langs in TITLES.items():

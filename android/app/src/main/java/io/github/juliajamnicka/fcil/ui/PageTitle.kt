@@ -85,9 +85,11 @@ fun PageTitle(text: String, modifier: Modifier = Modifier, fontSize: TextUnit = 
     val red = if (dark) BrightRed else BrandRed
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val layout = remember(text, fontSize, density) {
+    // lowercase, like the wordmark and the lettered titles
+    val shown = text.lowercase()
+    val layout = remember(shown, fontSize, density) {
         measurer.measure(
-            text,
+            shown,
             TextStyle(fontFamily = Comfortaa, fontWeight = FontWeight.Bold, fontSize = fontSize, letterSpacing = (-0.2).sp),
             softWrap = false,
             maxLines = 1,
@@ -101,7 +103,7 @@ fun PageTitle(text: String, modifier: Modifier = Modifier, fontSize: TextUnit = 
     Canvas(modifier.size(width, height).semantics { heading(); contentDescription = text }) {
         translate(side, top) {
             drawTitle(layout, blue, em * OUTLINE)
-            text.forEachIndexed { i, c ->
+            shown.forEachIndexed { i, c ->
                 val cut = accentCut(c) ?: return@forEachIndexed
                 val box = layout.getBoundingBox(i)
                 val baseline = layout.getLineBaseline(layout.getLineForOffset(i))

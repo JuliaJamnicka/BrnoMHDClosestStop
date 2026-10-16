@@ -1,7 +1,7 @@
 # Lettered page titles
 
-The app's main page titles (Stops / Zastávky, Radar, Settings / Nastavení) are drawn in the
-wordmark's construction rather than set in a font: monoline strokes 24 units wide with round caps
+The app's main page titles (stops / zastávky, radar, settings / nastavení; lowercase like the
+wordmark) are drawn in the wordmark's construction rather than set in a font: monoline strokes 24 units wide with round caps
 and joins, x-height 100, ascender and cap height 150, descender 65 below the baseline, accents as
 a short red stroke like the háček.
 
