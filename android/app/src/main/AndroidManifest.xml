@@ -72,6 +72,11 @@
                 android:resource="@xml/departures_widget_info" />
         </receiver>
 
+        <!-- Redraws the widgets once a minute while they show minutes (WidgetClock) -->
+        <receiver
+            android:name=".widget.WidgetTickReceiver"
+            android:exported="false" />
+
         <service
             android:name=".wear.WatchService"
             android:exported="false"

@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +39,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.DepartureDto
+import java.text.DateFormat
+import java.util.Date
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -67,11 +71,11 @@ fun LineBadge(line: String, mode: String, minWidth: Dp = 44.dp, fontSize: TextUn
 }
 
 /**
- * One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red).
- * On a stop list's board the row's stop is named under the headsign.
+ * One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red), or the
+ * clock time when [clock]. On a stop list's board the row's stop is named under the headsign.
  */
 @Composable
-fun DepartureRow(d: DepartureDto, now: Long) {
+fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         LineBadge(d.l, d.m)
         Spacer(Modifier.width(12.dp))
@@ -94,9 +98,8 @@ fun DepartureRow(d: DepartureDto, now: Long) {
         if (d.lv == 1) {
             Box(Modifier.padding(end = 6.dp).size(8.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
         }
-        val minutes = ((d.e - now) / 60).coerceAtLeast(0)
         Text(
-            if (d.e - now < 30) stringResource(R.string.now) else "$minutes min",
+            departureTimeLabel(d.e, now, clock, stringResource(R.string.now)),
             color = when {
                 d.e - now < 30 -> nowColor
                 delayMin >= 2 -> delayColor
@@ -110,6 +113,13 @@ fun DepartureRow(d: DepartureDto, now: Long) {
     }
 }
 
+/** "now" under 30 s, else "N min"; with [clock] always the clock time ("14:32"). */
+fun departureTimeLabel(expected: Long, now: Long, clock: Boolean, nowWord: String): String = when {
+    clock -> DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(expected * 1000))
+    expected - now < 30 -> nowWord
+    else -> "${(expected - now) / 60} min"
+}
+
 /** Direction of travel; [heading] in degrees, 0 north. Nothing when the heading is unknown (-1). */
 @Composable
 fun HeadingArrow(heading: Int, size: Dp = 16.dp, tint: Color = MaterialTheme.colorScheme.onSurface) {
@@ -119,6 +129,32 @@ fun HeadingArrow(heading: Int, size: Dp = 16.dp, tint: Color = MaterialTheme.col
         contentDescription = null,
         tint = tint,
         modifier = Modifier.size(size).rotate(heading.toFloat()),
+    )
+}
+
+/** The (i) button that shows or hides a page's legend ([InfoNote]). */
+@Composable
+fun InfoButton(shown: Boolean, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = if (shown) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+        ),
+    ) {
+        Icon(painterResource(R.drawable.ic_info), stringResource(R.string.legend))
+    }
+}
+
+@Composable
+fun InfoNote(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
     )
 }
 

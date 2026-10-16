@@ -27,6 +27,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -50,6 +55,8 @@ fun DeparturesScreen(
 ) {
     if (hasLocation) RefreshWhileVisible(REFRESH_MS) { model.refreshDepartures() }
     val state = model.departures
+    val clock by model.clockTimes.collectAsState(initial = false)
+    var legend by rememberSaveable { mutableStateOf(false) }
     val pinned = model.config.pinnedPlatform != null || model.config.pinnedList != null
 
     Column(
@@ -68,10 +75,12 @@ fun DeparturesScreen(
                 modifier = Modifier.height(36.dp),
             )
             Spacer(Modifier.weight(1f))
+            InfoButton(legend) { legend = !legend }
             IconButton(onClick = model::refreshDepartures, enabled = hasLocation && !state.loading) {
                 Icon(painterResource(R.drawable.ic_refresh), stringResource(R.string.widget_refresh))
             }
         }
+        if (legend) InfoNote(stringResource(R.string.preview_legend))
 
         if (!hasLocation) {
             BrandCard {
@@ -120,7 +129,7 @@ fun DeparturesScreen(
                 }
                 r.dep.forEachIndexed { i, d ->
                     if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-                    DepartureRow(d, r.t)
+                    DepartureRow(d, r.t, clock)
                 }
             }
         }
@@ -136,8 +145,6 @@ fun DeparturesScreen(
             color = if (state.error != null && !state.loading) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall,
         )
-        Text(stringResource(R.string.preview_legend), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(stringResource(R.string.attribution), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

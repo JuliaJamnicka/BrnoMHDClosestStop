@@ -156,7 +156,7 @@ private fun WidgetStyleScreen(
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().height(64.dp).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(painterResource(R.drawable.ic_back), stringResource(R.string.back)) }
-            Text(stringResource(R.string.widget_style_title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            PageTitle(stringResource(R.string.widget_style_title), fontSize = 28.sp)
         }
         WidgetPreview(palette, title ?: stringResource(R.string.widget_title), rows)
 
@@ -355,14 +355,7 @@ private fun WidgetPreview(palette: WidgetPalette, title: String, rows: List<Depa
             Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(palette.background)).padding(horizontal = 14.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, Modifier.weight(1f), color = text, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                listOf(R.drawable.ic_reverse, R.drawable.ic_list, R.drawable.ic_refresh).forEach {
-                    Box(Modifier.padding(start = 6.dp).size(32.dp).clip(CircleShape).background(Color(palette.button)), contentAlignment = Alignment.Center) {
-                        Icon(painterResource(it), null, tint = text, modifier = Modifier.size(18.dp))
-                    }
-                }
-            }
+            Text(title, color = text, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             shown.forEach { d ->
                 Row(Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -380,11 +373,26 @@ private fun WidgetPreview(palette: WidgetPalette, title: String, rows: List<Depa
                     )
                 }
             }
-            Text(
-                stringResource(R.string.widget_updated, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date())),
-                color = Color(palette.muted),
-                fontSize = 11.sp,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.widget_updated, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date())),
+                    Modifier.weight(1f),
+                    color = Color(palette.muted),
+                    fontSize = 11.sp,
+                )
+                // as in DeparturesWidget: a stop list's board (rows naming their stops) has no reverse button
+                val buttons = listOfNotNull(
+                    R.drawable.ic_reverse.takeIf { shown.none { it.sn != null } },
+                    R.drawable.ic_list,
+                    R.drawable.ic_notification,
+                    R.drawable.ic_refresh,
+                )
+                buttons.forEach {
+                    Box(Modifier.padding(start = 6.dp).size(32.dp).clip(CircleShape).background(Color(palette.button)), contentAlignment = Alignment.Center) {
+                        Icon(painterResource(it), null, tint = text, modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
         }
     }
 }

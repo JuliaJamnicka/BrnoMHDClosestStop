@@ -18,6 +18,12 @@
     <string name="preview_loading">Loading…</string>
     <string name="preview_legend">● live vehicle data · +N min: delay (amber from 2 min)</string>
     <string name="now">now</string>
+    <string name="legend">Legend</string>
+    <string name="section_departure_time">Departure time</string>
+    <string name="departure_time_minutes">In 4 min</string>
+    <string name="departure_time_clock">At 14:32</string>
+    <string name="departure_time_hint">Used in the app, the widget and on the watch.</string>
+    <string name="widget_open_app">Open the Fčil app</string>
     <string name="section_language">Language</string>
     <string name="language_system">System default</string>
     <string name="section_watch">Watch</string>

@@ -364,8 +364,16 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - Settings tab:
   - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
   - Number of departures shown (3 or 4).
+  - Departure time: minutes until departure ("4 min", "teď" under 30 s) or the clock time
+    ("14:32", including the delay). One setting for the app, the widget and the watch (`"tf":1` in
+    the watch's `dep` reply asks for clock times; the watch formats them in its own time zone).
   - The backend URL and API key are set at build time (GitHub secret `MHD_API_KEY`), not in the app.
-  - About: data attribution (CC BY 4.0, KORDIS JMK / data.Brno).
+  - About: data attribution (CC BY 4.0, KORDIS JMK / data.Brno), at the bottom of Settings only.
+- Page titles (Stops, Radar, Settings, list editor, widget style) look like the wordmark: Comfortaa
+  Bold (OFL, bundled) with a thin outline to match the wordmark's stroke, brand blue (white in dark
+  mode), accents in red. Comfortaa composes a letter and its accent into one glyph, so the title is
+  drawn twice: blue, then red clipped to the area above each accented letter (`ui/PageTitle.kt`).
+- The legends (departures, radar) sit behind an (i) button next to refresh.
 - Onboarding: grant location permission ("while in use" plus foreground service), Wear Engine
   device authorisation, backend URL/key (pre-filled).
 - Message protocol with the watch (JSON strings over P2P):
@@ -419,11 +427,14 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
 ### 6.1 Phone widget (F9) - implemented early, while waiting for the Wear Engine approval
 
 - Jetpack Glance app widget (2x2 and 4x2 sizes), showing stop, direction and the next 3-4
-  departures, with a reverse-direction button and tap-to-refresh.
+  departures. Buttons in the bottom right, next to "Updated HH:MM": opposite direction (not on a
+  stop list's board, which has none), choose a stop or list, open the app, refresh.
 - Android limits automatic widget updates (`updatePeriodMillis` minimum 30 min, WorkManager
   periodic work minimum 15 min), so a widget cannot stay "live" every 20 s in the background.
   Plan: refresh on tap, on screen unlock while the widget is visible (best effort), and every
-  15 min via WorkManager; "N min" labels are shown as absolute times (`HH:MM`) so they do not go stale.
+  15 min via WorkManager. With the minutes setting the widgets are redrawn from the stored times once
+  a minute (`WidgetClock`: a non-waking repeating alarm, so nothing runs while the screen is off),
+  and departures that have left drop off; with the clock setting the alarm is off.
 - Same backend endpoints; no backend change expected.
 - Style per widget (`WidgetStyleActivity`, opened from the widget's settings on Android 12+ or from
   Settings > Widget): background and accent colour (8 swatches each or a hex value), or the

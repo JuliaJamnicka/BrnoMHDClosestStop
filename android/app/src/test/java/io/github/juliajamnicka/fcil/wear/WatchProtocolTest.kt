@@ -49,6 +49,13 @@ class WatchProtocolTest {
     }
 
     @Test
+    fun asksForClockTimesOnlyWhenSet() {
+        val clock = Json.parseToJsonElement(WatchProtocol.departures(ceska, "cs", clock = true).decodeToString()).jsonObject
+        assertEquals("1", clock["tf"]!!.jsonPrimitive.content)
+        assertNull(Json.parseToJsonElement(WatchProtocol.departures(ceska, "cs").decodeToString()).jsonObject["tf"])
+    }
+
+    @Test
     fun sendsAStopListBoardWithStopNamesInsteadOfHeadsigns() {
         val board = DeparturesResponse(
             t = 1, g = "", stop = "Domů z práce", p = "", dir = "", listId = "home",

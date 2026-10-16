@@ -11,6 +11,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.github.juliajamnicka.fcil.FcilApp
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class DeparturesWidgetReceiver : GlanceAppWidgetReceiver() {
@@ -19,6 +21,9 @@ class DeparturesWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         RefreshWorker.refreshNow(context)
+        // also after a reboot, which clears alarms: (re)starts the minute redraw when it is needed
+        val graph = (context.applicationContext as FcilApp).graph
+        graph.scope.launch { WidgetClock.sync(context.applicationContext) }
     }
 
     override fun onEnabled(context: Context) {
@@ -29,6 +34,7 @@ class DeparturesWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         RefreshWorker.cancel(context)
+        WidgetClock.cancel(context)
     }
 }
 

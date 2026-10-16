@@ -22,6 +22,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -61,24 +65,24 @@ fun RadarScreen(model: AppViewModel, hasLocation: Boolean, contentPadding: Paddi
             .widthIn(max = 640.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        var legend by rememberSaveable { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.tab_radar), fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            PageTitle(stringResource(R.string.tab_radar))
+            Spacer(Modifier.weight(1f))
+            InfoButton(legend) { legend = !legend }
             if (hasLocation) {
                 IconButton(onClick = model::refreshRadar, enabled = !state.loading) {
                     Icon(painterResource(R.drawable.ic_refresh), stringResource(R.string.widget_refresh))
                 }
             }
         }
+        if (legend) InfoNote(stringResource(R.string.radar_legend))
         if (!hasLocation) {
             Text(stringResource(R.string.location_needed))
             return@Column
         }
         Radar(state.data)
-        Text(
-            state.error ?: stringResource(R.string.radar_legend),
-            color = if (state.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall,
-        )
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         val vehicles = state.data?.v.orEmpty().sortedBy { distance(it) }
         if (state.data != null) {
             Section(stringResource(R.string.radar_nearest, vehicles.size)) {

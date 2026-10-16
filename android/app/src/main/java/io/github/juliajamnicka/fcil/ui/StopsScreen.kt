@@ -103,7 +103,8 @@ fun StopList(
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                PageTitle(title)
+                Spacer(Modifier.weight(1f))
                 if (onRefresh != null) {
                     IconButton(onClick = onRefresh) {
                         Icon(painterResource(R.drawable.ic_refresh), stringResource(R.string.widget_refresh))

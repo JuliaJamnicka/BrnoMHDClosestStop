@@ -42,7 +42,9 @@ import androidx.glance.unit.ColorProvider
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.DepartureDto
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
+import io.github.juliajamnicka.fcil.ui.MainActivity
 import io.github.juliajamnicka.fcil.ui.StopPickerActivity
+import io.github.juliajamnicka.fcil.ui.departureTimeLabel
 import java.text.DateFormat
 import java.util.Date
 
@@ -57,6 +59,7 @@ class DeparturesWidget : GlanceAppWidget() {
         val pickerIntent = Intent(context, StopPickerActivity::class.java)
             .putExtra(StopPickerActivity.EXTRA_APP_WIDGET_ID, appWidgetId)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        val appIntent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         provideContent {
             val prefs = currentState<Preferences>()
             Content(
@@ -67,7 +70,9 @@ class DeparturesWidget : GlanceAppWidget() {
                 loading = prefs[WidgetState.loading] == true,
                 updatedAt = prefs[WidgetState.updatedAt],
                 error = prefs[WidgetState.error]?.let { runCatching { WidgetError.valueOf(it) }.getOrNull() },
+                clock = prefs[WidgetState.clockTimes] == true,
                 pickerIntent = pickerIntent,
+                appIntent = appIntent,
             )
         }
     }
@@ -82,8 +87,12 @@ private fun Content(
     loading: Boolean,
     updatedAt: Long?,
     error: WidgetError?,
+    clock: Boolean,
     pickerIntent: Intent,
+    appIntent: Intent,
 ) {
+    // read on every composition: WidgetClock recomposes the widget once a minute to recount minutes
+    val now = System.currentTimeMillis() / 1000
     Column(
         GlanceModifier
             .fillMaxSize()
@@ -113,34 +122,50 @@ private fun Content(
                 val subtitle = response?.takeIf { it.listId == null }?.let { r -> "→ ${r.dir}" + (r.d?.let { " · $it m" } ?: "") }
                 if (subtitle != null) Text(subtitle, style = TextStyle(color = provider(palette.secondary), fontSize = 13.sp), maxLines = 1)
             }
-            IconButton(palette, R.drawable.ic_reverse, context.getString(R.string.widget_reverse), actionRunCallback<ReverseAction>())
-            Spacer(GlanceModifier.width(6.dp))
-            IconButton(palette, R.drawable.ic_list, context.getString(R.string.widget_pick_stop), actionStartActivity(pickerIntent))
-            Spacer(GlanceModifier.width(6.dp))
-            IconButton(palette, R.drawable.ic_refresh, context.getString(R.string.widget_refresh), actionRunCallback<RefreshAction>())
         }
-        Spacer(GlanceModifier.height(6.dp))
+        Spacer(GlanceModifier.height(4.dp))
 
-        when {
-            response == null && loading -> Message(palette, context.getString(R.string.preview_loading))
-            response == null -> Message(palette, errorText(context, error) ?: context.getString(R.string.widget_tap_refresh))
-            response.dep.isEmpty() -> Message(palette, context.getString(R.string.no_departures))
-            else -> response.dep.forEach { DepartureRow(palette, it) }
+        // takes the space left above the buttons; rows that do not fit are cut off here, not the buttons
+        Column(GlanceModifier.fillMaxWidth().defaultWeight()) {
+            // between data loads, departures that have left drop off at the next minute redraw
+            val upcoming = response?.dep?.filter { it.e >= now - 60 }
+            when {
+                response == null && loading -> Message(palette, context.getString(R.string.preview_loading))
+                response == null -> Message(palette, errorText(context, error) ?: context.getString(R.string.widget_tap_refresh))
+                upcoming.isNullOrEmpty() -> Message(palette, context.getString(R.string.no_departures))
+                else -> upcoming.forEach { DepartureRow(context, palette, it, now, clock) }
+            }
         }
 
-        Spacer(GlanceModifier.defaultWeight())
         val footer = when {
             loading -> context.getString(R.string.preview_loading)
             error != null && response != null -> errorText(context, error)
             updatedAt != null -> context.getString(R.string.widget_updated, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(updatedAt)))
             else -> null
         }
-        if (footer != null) Text(footer, style = TextStyle(color = provider(if (error != null && !loading) palette.warning else palette.muted), fontSize = 11.sp), maxLines = 1)
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                footer ?: "",
+                style = TextStyle(color = provider(if (error != null && !loading) palette.warning else palette.muted), fontSize = 11.sp),
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight(),
+            )
+            // a stop list's board has no opposite direction
+            if (response?.listId == null) {
+                IconButton(palette, R.drawable.ic_reverse, context.getString(R.string.widget_reverse), actionRunCallback<ReverseAction>())
+                Spacer(GlanceModifier.width(6.dp))
+            }
+            IconButton(palette, R.drawable.ic_list, context.getString(R.string.widget_pick_stop), actionStartActivity(pickerIntent))
+            Spacer(GlanceModifier.width(6.dp))
+            IconButton(palette, R.drawable.ic_notification, context.getString(R.string.widget_open_app), actionStartActivity(appIntent))
+            Spacer(GlanceModifier.width(6.dp))
+            IconButton(palette, R.drawable.ic_refresh, context.getString(R.string.widget_refresh), actionRunCallback<RefreshAction>())
+        }
     }
 }
 
 @Composable
-private fun DepartureRow(palette: WidgetPalette, d: DepartureDto) {
+private fun DepartureRow(context: Context, palette: WidgetPalette, d: DepartureDto, now: Long, clock: Boolean) {
     Row(GlanceModifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             GlanceModifier
@@ -170,7 +195,7 @@ private fun DepartureRow(palette: WidgetPalette, d: DepartureDto) {
         }
         if (d.lv == 1) Text("● ", style = TextStyle(color = provider(palette.accent), fontSize = 10.sp))
         Text(
-            DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(d.e * 1000)),
+            departureTimeLabel(d.e, now, clock, context.getString(R.string.now)),
             style = TextStyle(color = provider(if (d.dl >= 120) palette.warning else palette.text), fontSize = 15.sp, fontWeight = FontWeight.Bold),
         )
     }
