@@ -106,6 +106,13 @@ Verified on 2026-10-08 by downloading the feeds and decoding them (results in se
   times (`trip_alias`). The tracker tries the feed's trip_id and its aliases and keeps the trip that
   runs that day and contains the vehicle's next stop at about that time. Result on live data: 82 %
   of vehicles matched, the same as with the export the feed itself used. The backend rebuilds daily.
+- Matching guards (seen on 2026-10-16, when the backend loaded a new export hours before the feed
+  switched to it and showed delays up to +121 min): of the candidate trips serving the vehicle's
+  stop, the one due there closest to now wins, and only within -30/+60 min; a trip matched by
+  position (no stop) must have a stop within 1 km that is due within -10/+30 min. Otherwise the
+  vehicle stays unmatched and departures show the timetable. A vehicle at or stopped at its trip's
+  last stop (400 m, bus stations are large) has finished the trip, so waiting there does not grow
+  the delay.
 - The server sends `Cache-Control: max-age=86400` although the content changes every ~30 s,
   so the backend must revalidate (`If-None-Match` with the ETag) instead of trusting caches.
 - There is no delay field, so **delay is derived** from position + schedule (5.3). A sanity

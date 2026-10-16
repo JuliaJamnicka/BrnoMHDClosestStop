@@ -116,6 +116,46 @@ describe('departures', () => {
     expect(tracker.get('100', BASE, now)!.delay).toBe(0);
   });
 
+  it('does not match a trip that does not fit the vehicle (no made-up delays)', () => {
+    const tracker = new Tracker(tt);
+    const now = at('12:00:00');
+    // The feed names trip 100 but the vehicle's stop is not on it, it is 15 km away and trip 100
+    // ended two hours ago: e.g. the feed still numbers trips like an older export.
+    tracker.update([vehicle({ tripId: '100', stopId: 'U99Z1', status: IN_TRANSIT_TO, ts: now, lat: 49.33, lon: 16.6 })], now);
+    expect(tracker.size).toBe(0);
+    // The same trip far away but on time is refused too, and so is a nearby stop two hours off.
+    tracker.update([vehicle({ tripId: '100', ts: at('10:05:00'), lat: 49.33, lon: 16.6 })], at('10:05:00'));
+    tracker.update([vehicle({ tripId: '100', ts: now, lat: 49.1981, lon: 16.6061 })], now);
+    expect(tracker.size).toBe(0);
+  });
+
+  it('refuses a trip that serves the stop but is due there over an hour earlier', () => {
+    const tracker = new Tracker(tt);
+    const now = at('11:30:00');
+    // trip 101 leaves U2Z1 at 10:20; "+70 min" is far likelier a trip_id of another export
+    tracker.update([vehicle({ tripId: '101', stopId: 'U2Z1', status: STOPPED_AT, ts: now })], now);
+    expect(tracker.size).toBe(0);
+  });
+
+  it('still matches a trip by position when it fits', () => {
+    const tracker = new Tracker(tt);
+    const now = at('10:07:00');
+    // no stop in the feed, but next to Česká (U1Z1, due 10:04) a few minutes late
+    tracker.update([vehicle({ tripId: '100', status: STOPPED_AT, ts: now, lat: 49.1981, lon: 16.6061 })], now);
+    expect(tracker.get('100', BASE, now)).toMatchObject({ delay: 120 });
+  });
+
+  it('ends a trip at its last stop instead of growing the delay while the vehicle waits there', () => {
+    const tracker = new Tracker(tt);
+    // arrives at Řečkovice (due 10:15) 2 minutes late, then waits there and is still reported
+    // as "in transit to" its last stop
+    tracker.update([vehicle({ tripId: '100', stopId: 'U3Z1', status: IN_TRANSIT_TO, ts: at('10:16:00') })], at('10:16:00'));
+    expect(tracker.get('100', BASE, at('10:16:00'))!.delay).toBe(60);
+    tracker.update([vehicle({ tripId: '100', stopId: 'U3Z1', status: IN_TRANSIT_TO, ts: at('10:17:00'), lat: 49.24, lon: 16.58 })], at('10:17:00'));
+    tracker.update([vehicle({ tripId: '100', stopId: 'U3Z1', status: STOPPED_AT, ts: at('10:30:00'), lat: 49.24, lon: 16.58 })], at('10:30:00'));
+    expect(tracker.get('100', BASE, at('10:30:00'))).toMatchObject({ delay: 60, passedSeq: 3 });
+  });
+
   it('shows trips after midnight from the previous service day', () => {
     const tracker = new Tracker(tt);
     const nextDayBase = serviceDayBase(20261009);
