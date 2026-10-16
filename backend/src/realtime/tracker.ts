@@ -52,6 +52,27 @@ interface TripMatch {
 export const LIVE_MAX_AGE = 120;
 /** Trip state is kept this long after the vehicle drops out of the feed. */
 export const STATE_MAX_AGE = 300;
+/**
+ * A trip matched without the vehicle's stop (the feed's trip_id names another trip, e.g. right after
+ * KORDIS renumbered its export) must still fit: its nearest stop this close to the vehicle and
+ * scheduled about now. Otherwise the vehicle stays unmatched rather than getting a made-up delay.
+ */
+export const FALLBACK_MAX_DISTANCE_M = 1000;
+/**
+ * A trip matched by the vehicle's stop must be due there within this window. Real delays over an
+ * hour are rare; a match that far off is almost always a trip_id of another export (seen on
+ * 2026-10-16: up to +100 min). Such a vehicle stays unmatched and its departure shows the timetable.
+ */
+export const STOP_MATCH_MAX_LATE = 60 * 60;
+export const STOP_MATCH_MAX_EARLY = 30 * 60;
+export const FALLBACK_MAX_LATE = 30 * 60;
+export const FALLBACK_MAX_EARLY = 10 * 60;
+/**
+ * A vehicle this close to its trip's last stop has finished the trip (it may idle there a while).
+ * Generous because bus stations are large: parked buses at ÚAN Zvonařka or Znojmo were 150-400 m
+ * from the stop's coordinates.
+ */
+export const TERMINUS_RADIUS_M = 400;
 
 /** Real-time stop ids are zero-padded (U01677Z02); static ones are not (U1677Z2). */
 export function normalizeStopId(id: string): string {
@@ -105,6 +126,9 @@ export class Tracker {
     let fallback: TripMatch | undefined;
     // first pass: trips running that day; second pass: any trip whose times fit
     for (const runningOnly of [true, false]) {
+      // Of the candidates serving the vehicle's stop, the one due there closest to now wins: an alias
+      // can name several trips, and a trip_id of another export can name a trip of another hour.
+      let best: { match: TripMatch; off: number } | undefined;
       for (const tripId of candidates) {
         const stops = this.timetable.tripStops(tripId);
         const trip = this.timetable.trip(tripId);
@@ -112,18 +136,42 @@ export class Tracker {
         const base = this.chooseBase(v.ts, stops, trip.serviceId, runningOnly);
         if (base === undefined) continue;
         const k = stopId ? stops.findIndex((s) => s.stopId === stopId) : -1;
-        if (k >= 0) return { tripId, stops, trip, base, k };
-        if (!fallback) {
+        if (k >= 0) {
+          const late = v.ts - (base + (v.status === STOPPED_AT ? stops[k].dep : stops[k].arr));
+          if (late > STOP_MATCH_MAX_LATE || late < -STOP_MATCH_MAX_EARLY) continue;
+          if (!best || Math.abs(late) < best.off) best = { match: { tripId, stops, trip, base, k }, off: Math.abs(late) };
+        } else if (!fallback) {
           const nearest = this.nearestStopIndex(stops, v.lat, v.lon);
-          if (nearest >= 0) fallback = { tripId, stops, trip, base, k: nearest };
+          if (nearest >= 0 && this.plausible(v, stops[nearest], base)) fallback = { tripId, stops, trip, base, k: nearest };
         }
       }
+      if (best) return best.match;
     }
     return fallback;
   }
 
   private estimate(v: RtVehicle, match: TripMatch, prev: TripState | undefined): TripState {
     const { stops, trip, base, k } = match;
+
+    const last = stops.length - 1;
+    if (k === last && (v.status === STOPPED_AT || this.atStop(v, stops[last]))) {
+      // At (or stopped at) the last stop the trip is done. The feed keeps reporting it there while
+      // the vehicle waits, which must not grow the delay.
+      return {
+        tripId: match.tripId,
+        base,
+        passedSeq: stops[last].seq,
+        delay: prev && prev.base === base ? prev.delay : 0,
+        carry: undefined,
+        ts: v.ts,
+        lat: v.lat,
+        lon: v.lon,
+        heading: this.heading(v, stops[last], prev),
+        line: trip.line,
+        mode: trip.mode,
+        headsign: trip.headsign,
+      };
+    }
 
     let passedSeq: number;
     let lower: number;
@@ -172,6 +220,19 @@ export class Tracker {
     const p = this.timetable.platforms.get(next.stopId);
     if (p && distanceM(v.lat, v.lon, p.lat, p.lon) > 30) return bearingDeg(v.lat, v.lon, p.lat, p.lon);
     return prev?.heading ?? -1;
+  }
+
+  /** Whether a trip matched by position fits: its stop near the vehicle and due about now. */
+  private plausible(v: RtVehicle, stop: TripStop, base: number): boolean {
+    const p = this.timetable.platforms.get(stop.stopId);
+    if (!p || distanceM(v.lat, v.lon, p.lat, p.lon) > FALLBACK_MAX_DISTANCE_M) return false;
+    const late = v.ts - (base + stop.arr);
+    return late <= FALLBACK_MAX_LATE && late >= -FALLBACK_MAX_EARLY;
+  }
+
+  private atStop(v: RtVehicle, stop: TripStop): boolean {
+    const p = this.timetable.platforms.get(stop.stopId);
+    return !!p && distanceM(v.lat, v.lon, p.lat, p.lon) <= TERMINUS_RADIUS_M;
   }
 
   /** Service day the trip is running on: today or yesterday (trips after midnight). */
