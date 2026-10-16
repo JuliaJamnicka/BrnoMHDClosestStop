@@ -106,6 +106,17 @@ Verified on 2026-10-08 by downloading the feeds and decoding them (results in se
   times (`trip_alias`). The tracker tries the feed's trip_id and its aliases and keeps the trip that
   runs that day and contains the vehicle's next stop at about that time. Result on live data: 82 %
   of vehicles matched, the same as with the export the feed itself used. The backend rebuilds daily.
+- **The previous KORDIS export is aliased too.** Seen on 2026-10-16: the export of 10:48 Prague time
+  was still unused by the feed at 16:12 (1693 of 1949 vehicles used the 2026-10-09 numbering, 3 the
+  new one). KORDIS numbers trips 1..n, so an id exists in both exports but means the same trip in
+  under 1 % of cases; the exports cannot be merged by trip_id, only mapped. CI keeps the previous
+  export in the Actions cache and the build maps it like the data.Brno copy. With the new export
+  and both alias sources, 1085 / 1041 of 1146 / 1129 vehicle positions matched, the same as with
+  the 2026-10-09 export alone (without the previous export: about 80). Because a new export no
+  longer breaks matching, CI checks hourly for a new export (`Last-Modified`) and deploys it.
+- The feed sends one vehicle per calendar variant of a trip (e.g. vehicles 212200-212202 at the same
+  position with trips 2903, 16936, 24096 of three service_ids). Mapped through aliases they collapse
+  into the single trip of the current export.
 - Matching guards (seen on 2026-10-16, when the backend loaded a new export hours before the feed
   switched to it and showed delays up to +121 min): of the candidate trips serving the vehicle's
   stop, the one due there closest to now wins, and only within -30/+60 min; a trip matched by
