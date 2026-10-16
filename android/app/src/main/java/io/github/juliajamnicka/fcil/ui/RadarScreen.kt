@@ -67,7 +67,7 @@ fun RadarScreen(model: AppViewModel, hasLocation: Boolean, contentPadding: Paddi
     ) {
         var legend by rememberSaveable { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            PageTitle(stringResource(R.string.tab_radar))
+            LetteredTitle(R.drawable.title_radar, stringResource(R.string.tab_radar))
             Spacer(Modifier.weight(1f))
             InfoButton(legend) { legend = !legend }
             if (hasLocation) {

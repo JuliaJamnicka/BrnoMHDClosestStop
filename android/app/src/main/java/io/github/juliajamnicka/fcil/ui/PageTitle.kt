@@ -1,6 +1,10 @@
 package io.github.juliajamnicka.fcil.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -15,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -26,8 +31,26 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.juliajamnicka.fcil.R
+
+/**
+ * A main page title drawn like the wordmark (the title_ drawables and their -cs and -night variants, made by
+ * docs/brand/lettering): at 52 dp its letters are the size of the 36 dp wordmark on Departures.
+ */
+@Composable
+fun LetteredTitle(@DrawableRes title: Int, text: String, modifier: Modifier = Modifier) {
+    val painter = painterResource(title)
+    Image(
+        painter,
+        contentDescription = text,
+        modifier = modifier
+            .semantics { heading() }
+            .height(52.dp)
+            .aspectRatio(painter.intrinsicSize.width / painter.intrinsicSize.height),
+    )
+}
 
 private val Comfortaa = FontFamily(Font(R.font.comfortaa_bold, FontWeight.Bold))
 
@@ -49,7 +72,8 @@ internal fun accentCut(c: Char): Float? = when (c) {
 }
 
 /**
- * A page title in the style of the wordmark: Comfortaa in brand blue with the accents in red.
+ * A page title for the other pages (list editor, widget style), whose text has no lettered
+ * drawable: Comfortaa in brand blue with the accents in red.
  * Comfortaa composes a letter and its accent into one glyph, so the accents cannot be coloured as
  * characters; the title is drawn in blue and again in red, clipped to above each accented letter.
  */

@@ -85,7 +85,7 @@ fun SettingsScreen(
                 .widthIn(max = 640.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            PageTitle(stringResource(R.string.settings_title))
+            LetteredTitle(R.drawable.title_settings, stringResource(R.string.settings_title))
 
             WatchCard(status, watchEnabled, hasLocation, setupMessage, actions)
 
