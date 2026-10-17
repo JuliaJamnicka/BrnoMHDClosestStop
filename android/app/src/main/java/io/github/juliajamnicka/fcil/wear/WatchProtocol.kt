@@ -57,8 +57,9 @@ object WatchProtocol {
      *
      * A stop list's board (docs/SPEC.md 6.2) has "l":1, the list name as "s", empty "p" and "r",
      * and each row's stop name in place of the headsign: the user knows where their lines go.
+     * "tf":1 asks the watch for clock times instead of minutes (the departure time setting).
      */
-    fun departures(r: DeparturesResponse, lang: String): ByteArray = fit(
+    fun departures(r: DeparturesResponse, lang: String, clock: Boolean = false): ByteArray = fit(
         buildJsonObject {
             put("c", "dep")
             put("lg", lang)
@@ -70,6 +71,7 @@ object WatchProtocol {
             r.opp?.let { put("o", it) }
             put("r", TextShortener.shorten(r.dir, 24))
             r.d?.let { put("d", it) }
+            if (clock) put("tf", 1)
         },
         r.dep.map { d ->
             buildJsonArray {

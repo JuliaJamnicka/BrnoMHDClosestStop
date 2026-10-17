@@ -1,5 +1,6 @@
 package io.github.juliajamnicka.fcil.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,7 @@ fun StopsScreen(
     val lists by model.stopLists.collectAsState(initial = emptyList())
     StopList(
         title = stringResource(R.string.tab_stops),
+        letteredTitle = R.drawable.title_stops,
         stops = model.stops.data?.stops,
         error = if (hasLocation) model.stops.error else stringResource(R.string.location_needed),
         selected = model.config.pinnedPlatform,
@@ -87,6 +89,8 @@ fun StopList(
     onNewList: (() -> Unit)? = null,
     onEditList: ((String) -> Unit)? = null,
     onPickList: (String) -> Unit = {},
+    /** The app's Stops tab shows its title lettered like the wordmark; the widget's picker does not. */
+    @DrawableRes letteredTitle: Int? = null,
     onPick: (String?) -> Unit,
 ) {
     val highlight = MaterialTheme.colorScheme.secondaryContainer
@@ -103,7 +107,8 @@ fun StopList(
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                if (letteredTitle != null) LetteredTitle(letteredTitle, title) else PageTitle(title)
+                Spacer(Modifier.weight(1f))
                 if (onRefresh != null) {
                     IconButton(onClick = onRefresh) {
                         Icon(painterResource(R.drawable.ic_refresh), stringResource(R.string.widget_refresh))

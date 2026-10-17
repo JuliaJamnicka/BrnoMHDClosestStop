@@ -12,14 +12,16 @@ class RequestHandler(
     private val source: TransitSource,
     private val departureCount: suspend () -> Int,
     private val language: () -> String,
+    /** The departure time setting: clock times instead of minutes. */
+    private val clockTimes: suspend () -> Boolean = { false },
 ) {
     suspend fun handle(raw: ByteArray): ByteArray {
         val lang = language()
         val request = WatchProtocol.parseRequest(raw) ?: return WatchProtocol.error(Error.BAD_REQUEST, lang)
         return try {
             when (request) {
-                Request.Home -> WatchProtocol.departures(source.home(departureCount()), lang)
-                is Request.Departures -> WatchProtocol.departures(source.departures(request.platform, departureCount()), lang)
+                Request.Home -> WatchProtocol.departures(source.home(departureCount()), lang, clockTimes())
+                is Request.Departures -> WatchProtocol.departures(source.departures(request.platform, departureCount()), lang, clockTimes())
                 is Request.Platforms -> WatchProtocol.platforms(source.departures(request.platform, 1), lang)
                 Request.Nearby -> WatchProtocol.nearby(source.nearby(), lang)
                 Request.Vehicles -> WatchProtocol.vehicles(source.vehicles(), lang)

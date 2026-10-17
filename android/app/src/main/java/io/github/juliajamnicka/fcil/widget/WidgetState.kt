@@ -21,6 +21,10 @@ object WidgetState {
     val loading = booleanPreferencesKey("loading")
     /** One of the WidgetError names, or absent. */
     val error = stringPreferencesKey("error")
+    /** The departure time setting (DepartureTime.CLOCK), copied here by WidgetClock. */
+    val clockTimes = booleanPreferencesKey("clock_times")
+    /** Last minute redraw (WidgetClock); changing it makes Glance recompose the widget. */
+    val redrawnAt = longPreferencesKey("redrawn_at")
 
     private val styleSystem = booleanPreferencesKey("style_system")
     private val styleBackground = intPreferencesKey("style_background")

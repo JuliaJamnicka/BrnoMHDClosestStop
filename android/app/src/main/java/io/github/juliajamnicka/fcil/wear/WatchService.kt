@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.R
+import io.github.juliajamnicka.fcil.data.DepartureTime
 import io.github.juliajamnicka.fcil.ui.MainActivity
 import io.github.juliajamnicka.fcil.widget.WidgetUpdater
 import kotlinx.coroutines.Job
@@ -51,6 +52,7 @@ class WatchService : LifecycleService() {
             source = graph.repository,
             departureCount = { graph.settings.current().departureCount },
             language = graph::watchLanguage,
+            clockTimes = { graph.settings.current().departureTime == DepartureTime.CLOCK },
         )
         ContextCompat.registerReceiver(this, unlockReceiver, IntentFilter(Intent.ACTION_USER_PRESENT), ContextCompat.RECEIVER_NOT_EXPORTED)
     }

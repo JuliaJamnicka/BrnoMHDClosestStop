@@ -17,6 +17,12 @@
     <string name="preview_loading">Načítám…</string>
     <string name="preview_legend">● živá data o vozidle · +N min: zpoždění (oranžově od 2 min)</string>
     <string name="now">teď</string>
+    <string name="legend">Vysvětlivky</string>
+    <string name="section_departure_time">Čas odjezdu</string>
+    <string name="departure_time_minutes">Za 4 min</string>
+    <string name="departure_time_clock">V 14:32</string>
+    <string name="departure_time_hint">Platí v aplikaci, ve widgetu i na hodinkách.</string>
+    <string name="widget_open_app">Otevřít aplikaci Fčil</string>
     <string name="section_language">Jazyk</string>
     <string name="language_system">Podle systému</string>
     <string name="section_watch">Hodinky</string>

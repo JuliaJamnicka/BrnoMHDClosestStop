@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.AppSettings
+import io.github.juliajamnicka.fcil.data.DepartureTime
 import io.github.juliajamnicka.fcil.data.Language
 import io.github.juliajamnicka.fcil.wear.WatchStatus
 import kotlinx.coroutines.flow.Flow
@@ -58,6 +59,7 @@ class SettingsActions(
     val disconnectWatch: () -> Unit,
     val setLanguage: (Language) -> Unit,
     val setDepartureCount: (Int) -> Unit,
+    val setDepartureTime: (DepartureTime) -> Unit,
     val openWidgetStyle: () -> Unit,
 )
 
@@ -83,7 +85,7 @@ fun SettingsScreen(
                 .widthIn(max = 640.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            Text(stringResource(R.string.settings_title), fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            LetteredTitle(R.drawable.title_settings, stringResource(R.string.settings_title))
 
             WatchCard(status, watchEnabled, hasLocation, setupMessage, actions)
 
@@ -145,6 +147,29 @@ fun SettingsScreen(
                                 ) { Text(n.toString()) }
                             }
                         }
+                    }
+                }
+
+                Section(stringResource(R.string.section_departure_time)) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            val options = listOf(
+                                DepartureTime.MINUTES to stringResource(R.string.departure_time_minutes),
+                                DepartureTime.CLOCK to stringResource(R.string.departure_time_clock),
+                            )
+                            options.forEachIndexed { i, (time, label) ->
+                                SegmentedButton(
+                                    selected = s.departureTime == time,
+                                    onClick = { actions.setDepartureTime(time) },
+                                    shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = MaterialTheme.colorScheme.primary,
+                                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                ) { Text(label) }
+                            }
+                        }
+                        Text(stringResource(R.string.departure_time_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 

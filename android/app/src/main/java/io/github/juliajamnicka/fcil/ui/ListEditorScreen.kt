@@ -97,11 +97,7 @@ fun ListEditorScreen(model: AppViewModel, list: StopList?, nearby: List<NearbySt
             IconButton(onClick = onClose) {
                 Icon(painterResource(R.drawable.ic_back), stringResource(R.string.back))
             }
-            Text(
-                stringResource(if (list == null) R.string.lists_new else R.string.lists_edit),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            PageTitle(stringResource(if (list == null) R.string.lists_new else R.string.lists_edit), fontSize = 28.sp)
         }
 
         LazyColumn(

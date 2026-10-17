@@ -29,6 +29,7 @@ import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.Language
 import io.github.juliajamnicka.fcil.wear.WatchService
 import io.github.juliajamnicka.fcil.widget.DeparturesWidget
+import io.github.juliajamnicka.fcil.widget.WidgetClock
 import io.github.juliajamnicka.fcil.widget.WidgetState
 import kotlinx.coroutines.launch
 
@@ -69,6 +70,13 @@ class MainActivity : AppCompatActivity() {
                                 disconnectWatch = { WatchService.stop(this) },
                                 setLanguage = ::setLanguage,
                                 setDepartureCount = { n -> lifecycleScope.launch { graph.settings.setDepartureCount(n) } },
+                                setDepartureTime = { time ->
+                                    // app scope: the widgets must be redrawn even if the activity closes meanwhile
+                                    graph.scope.launch {
+                                        graph.settings.setDepartureTime(time)
+                                        WidgetClock.sync(applicationContext)
+                                    }
+                                },
                                 openWidgetStyle = ::openWidgetStyle,
                             ),
                             contentPadding = padding,

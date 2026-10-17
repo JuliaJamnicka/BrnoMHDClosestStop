@@ -16,15 +16,21 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 /** "system", "cs" or "en". */
 enum class Language(val code: String) { SYSTEM("system"), CZECH("cs"), ENGLISH("en") }
 
+/** How departures show their time: minutes until departure ("4 min") or the clock time ("14:32"). */
+enum class DepartureTime { MINUTES, CLOCK }
+
 data class AppSettings(
     val language: Language = Language.SYSTEM,
     val departureCount: Int = 4,
+    /** For the app, the widget and the watch. */
+    val departureTime: DepartureTime = DepartureTime.MINUTES,
 )
 
 class SettingsStore(private val context: Context) {
     private object Keys {
         val language = stringPreferencesKey("language")
         val departureCount = intPreferencesKey("departure_count")
+        val departureTime = stringPreferencesKey("departure_time")
         val stopLists = stringPreferencesKey("stop_lists")
     }
 
@@ -47,6 +53,7 @@ class SettingsStore(private val context: Context) {
         AppSettings(
             language = Language.entries.firstOrNull { it.code == p[Keys.language] } ?: Language.SYSTEM,
             departureCount = p[Keys.departureCount] ?: 4,
+            departureTime = DepartureTime.entries.firstOrNull { it.name == p[Keys.departureTime] } ?: DepartureTime.MINUTES,
         )
     }
 
@@ -54,4 +61,5 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setLanguage(language: Language) = context.dataStore.edit { it[Keys.language] = language.code }
     suspend fun setDepartureCount(count: Int) = context.dataStore.edit { it[Keys.departureCount] = count.coerceIn(3, 4) }
+    suspend fun setDepartureTime(time: DepartureTime) = context.dataStore.edit { it[Keys.departureTime] = time.name }
 }

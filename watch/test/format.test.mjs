@@ -29,6 +29,9 @@ test('formats times like the design: now, minutes, clock time', () => {
   assert.deepEqual(timeLabel(1010, 1000, 'teď'), { big: 'teď', unit: '' });
   assert.deepEqual(timeLabel(1400, 1000, 'teď'), { big: '6', unit: 'min' });
   assert.match(timeLabel(1000 + 3 * 3600, 1000, 'teď').big, /^\d\d:\d\d$/);
+  // the clock setting: always the clock time, also for "now"
+  assert.match(timeLabel(1010, 1000, 'teď', true).big, /^\d\d:\d\d$/);
+  assert.equal(timeLabel(1400, 1000, 'teď', true).unit, '');
 });
 
 test('builds departure rows with delays, live dots, badge styles and "now" in red', () => {
@@ -42,6 +45,10 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
       ['N93', '#1f7a4d', 19, '+1', '#ffffff', false],
     ],
   );
+  // "tf":1 (clock setting): clock times, the departing one still in red
+  const clockRows = departureRows(Object.assign({}, parseReply(reply), { tf: 1 }), 1000, 'teď');
+  assert.ok(clockRows.every((r) => /^\d\d:\d\d$/.test(r.big) && r.unit === ''));
+  assert.equal(clockRows[0].timeColour, '#f0373e');
   assert.deepEqual(badgeStyle('V', 38), { colour: '#1d5fd1', radius: 2 });
   assert.equal(timeColour(false, 0), '#ffffff');
 });

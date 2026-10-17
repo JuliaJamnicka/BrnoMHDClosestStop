@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.ApiException
+import io.github.juliajamnicka.fcil.data.DepartureTime
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NearbyResponse
 import io.github.juliajamnicka.fcil.data.NearbyStop
@@ -24,6 +25,7 @@ import io.github.juliajamnicka.fcil.widget.departuresFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -46,6 +48,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** The user's stop lists (docs/SPEC.md 6.2). */
     val stopLists: Flow<List<StopList>> = graph.settings.stopLists
+
+    /** Departures show the clock time instead of minutes (the setting is shared with the widget and the watch). */
+    val clockTimes: Flow<Boolean> = graph.settings.settings.map { it.departureTime == DepartureTime.CLOCK }
 
     var config by mutableStateOf(WidgetConfig())
         private set
