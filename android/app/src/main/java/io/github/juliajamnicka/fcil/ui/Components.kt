@@ -71,25 +71,32 @@ fun LineBadge(line: String, mode: String, minWidth: Dp = 44.dp, fontSize: TextUn
 }
 
 /**
- * One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red), or the
- * clock time when [clock]. On a stop list's board the row's stop is named under the headsign.
+ * One departure: badge, headsign, live dot and minutes ("now" in the háček red) with the delay as
+ * a line under the headsign, or the clock time with "+N min" beside it when [clock]. On a stop
+ * list's board the row's stop is named under the headsign.
  */
 @Composable
 fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         LineBadge(d.l, d.m)
         Spacer(Modifier.width(12.dp))
+        val delayMin = d.dl / 60
+        val lateColor = if (delayMin >= 2) delayColor else MaterialTheme.colorScheme.onSurfaceVariant
         Column(Modifier.weight(1f)) {
             Text(d.h, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (d.sn != null) {
                 Text(d.sn, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            // minutes already include the delay; "+3 min" beside "2 min" read as two times, so it moves here
+            if (!clock && delayMin >= 1) {
+                Text(stringResource(R.string.late_by, delayMin), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = lateColor, maxLines = 1)
+            }
         }
-        val delayMin = d.dl / 60
-        if (delayMin >= 1) {
+        // next to a clock time the delay does not clash
+        if (clock && delayMin >= 1) {
             Text(
                 "+$delayMin min",
-                color = if (delayMin >= 2) delayColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = lateColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )

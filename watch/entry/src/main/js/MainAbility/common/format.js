@@ -76,7 +76,8 @@ export function departureRows(reply, now, nowWord) {
       headsign: r[2],
       big: label.big,
       unit: label.unit,
-      delay: delayLabel(r[4]),
+      // minutes already include the delay (amber from 2 min); next to a clock time it is shown
+      delay: clock ? delayLabel(r[4]) : '',
       timeColour: timeColour(r[3] - now < 30, r[4]),
       live: r[5] === 1,
     });

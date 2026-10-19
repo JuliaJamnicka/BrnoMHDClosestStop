@@ -11,6 +11,7 @@ const ERROR_ICONS = {
     noapp: '/common/images/err-noapp.png',
     closed: '/common/images/err-closed.png',
     phone: '/common/images/err-phone.png',
+    far: '/common/images/err-far.png',
 };
 const HINT_CHARS = 22; // ~15 px per character at 30 px, 400 px lines, with margin for wide letters
 

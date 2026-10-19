@@ -34,7 +34,7 @@ object WatchProtocol {
         data object Vehicles : Request
     }
 
-    enum class Error(val code: String) { NO_LOCATION("noloc"), NETWORK("net"), SERVER("srv"), AUTH("auth"), BAD_REQUEST("req") }
+    enum class Error(val code: String) { NO_LOCATION("noloc"), OUT_OF_RANGE("far"), NETWORK("net"), SERVER("srv"), AUTH("auth"), BAD_REQUEST("req") }
 
     fun parseRequest(bytes: ByteArray): Request? = try {
         val obj = Json.parseToJsonElement(bytes.decodeToString()).jsonObject

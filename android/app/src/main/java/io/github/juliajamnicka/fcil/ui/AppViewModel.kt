@@ -15,6 +15,7 @@ import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NearbyResponse
 import io.github.juliajamnicka.fcil.data.NearbyStop
 import io.github.juliajamnicka.fcil.data.NoLocationException
+import io.github.juliajamnicka.fcil.data.OutOfRangeException
 import io.github.juliajamnicka.fcil.data.StopList
 import io.github.juliajamnicka.fcil.data.StopListEntry
 import io.github.juliajamnicka.fcil.data.StopListLogic
@@ -35,6 +36,8 @@ data class Loadable<T>(
     val loading: Boolean = false,
     val error: String? = null,
     val updatedAt: Long? = null,
+    /** Departures only: the nearest stop is too far away (outside the IDS JMK area). */
+    val outOfRange: Boolean = false,
 )
 
 /**
@@ -74,6 +77,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 Loadable(response, updatedAt = System.currentTimeMillis())
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: OutOfRangeException) {
+                // no stop to show at all, not the last one from home
+                Loadable(outOfRange = true, updatedAt = System.currentTimeMillis())
             } catch (e: Exception) {
                 departures.copy(loading = false, error = errorMessage(getApplication(), e))
             }
@@ -167,6 +173,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
 fun errorMessage(context: Context, e: Exception): String = when (e) {
     is NoLocationException -> context.getString(R.string.error_no_location)
+    is OutOfRangeException -> context.getString(R.string.out_of_range_title)
     is ApiException -> when (e.kind) {
         ApiException.Kind.AUTH -> context.getString(R.string.error_auth)
         ApiException.Kind.NETWORK -> context.getString(R.string.error_network)

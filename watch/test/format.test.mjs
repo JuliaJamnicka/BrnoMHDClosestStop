@@ -41,14 +41,16 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
     rows.map((r) => [r.line, r.badgeColour, r.badgeRadius, r.delay, r.timeColour, r.live]),
     [
       ['6', '#c8262c', 8, '', '#f0373e', true],
-      ['4', '#c8262c', 8, '+3', '#ffb020', true],
-      ['N93', '#1f7a4d', 19, '+1', '#ffffff', false],
+      // with minutes the delay is only the amber colour (the minutes include it)
+      ['4', '#c8262c', 8, '', '#ffb020', true],
+      ['N93', '#1f7a4d', 19, '', '#ffffff', false],
     ],
   );
   // "tf":1 (clock setting): clock times, the departing one still in red
   const clockRows = departureRows(Object.assign({}, parseReply(reply), { tf: 1 }), 1000, 'teď');
   assert.ok(clockRows.every((r) => /^\d\d:\d\d$/.test(r.big) && r.unit === ''));
   assert.equal(clockRows[0].timeColour, '#f0373e');
+  assert.deepEqual(clockRows.map((r) => r.delay), ['', '+3', '+1']);
   assert.deepEqual(badgeStyle('V', 38), { colour: '#1d5fd1', radius: 2 });
   assert.equal(timeColour(false, 0), '#ffffff');
 });

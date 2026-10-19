@@ -1,6 +1,10 @@
 package io.github.juliajamnicka.fcil.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -89,6 +93,11 @@ fun DeparturesScreen(
                     Button(onClick = requestLocation) { Text(stringResource(R.string.grant_location)) }
                 }
             }
+            return@Column
+        }
+
+        if (state.outOfRange) {
+            OutOfRangeCard()
             return@Column
         }
 
@@ -199,3 +208,29 @@ private fun StopHeader(r: DeparturesResponse, pinned: Boolean, model: AppViewMod
 }
 
 private const val REFRESH_MS = 20_000L
+
+/** Instead of a stop 60 km away (e.g. abroad): IDS JMK has nothing for this place. */
+@Composable
+private fun OutOfRangeCard() {
+    BrandCard {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                Modifier.size(64.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(painterResource(R.drawable.ic_out_of_range), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            }
+            Text(stringResource(R.string.out_of_range_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(
+                stringResource(R.string.out_of_range_body),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}

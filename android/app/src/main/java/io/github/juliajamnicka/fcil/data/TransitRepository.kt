@@ -10,6 +10,9 @@ interface TransitSource {
 
 class NoLocationException : Exception("Location unavailable")
 
+/** The nearest stop is too far for IDS JMK to be of use here (e.g. abroad): show that instead of the stop. */
+class OutOfRangeException : Exception("Outside the IDS JMK area")
+
 class TransitRepository(
     private val api: ApiClient,
     private val location: LocationSource,
@@ -46,7 +49,9 @@ class TransitRepository(
     suspend fun departuresForPreview(n: Int): DeparturesResponse {
         val point = location.current() ?: throw NoLocationException()
         StopListLogic.nearby(stopLists(), point)?.let { return board(it, n) }
-        return api.home(point, n)
+        val home = api.home(point, n)
+        if ((home.d ?: 0) > OUT_OF_RANGE_M) throw OutOfRangeException()
+        return home
     }
 
     /** The stop list with this id, or null when it was deleted. */
@@ -61,6 +66,8 @@ class TransitRepository(
 
     companion object {
         const val HOME_CACHE_MS = 20_000L
+        /** Inside the region the nearest stop is a few km away at most; Bratislava's was 60 km. */
+        const val OUT_OF_RANGE_M = 10_000
         const val NEARBY_LIMIT = 12
         const val RADAR_RADIUS_M = 800
         const val SEARCH_LIMIT = 20
