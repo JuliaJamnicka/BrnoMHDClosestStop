@@ -365,11 +365,11 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
   - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
   - Number of departures shown in the widget and on the watch: 3, 4 or 5 (the watch shows at most
     4; five rows do not fit the round screen).
-  - Departure time: minutes until departure ("4 min", "teď" under 30 s) or the clock time
+  - Departure time: minutes until departure ("4 min", "teď" under a minute) or the clock time
     ("14:32", including the delay). One setting for the app, the widget and the watch (`"tf":1` in
     the watch's `dep` reply asks for clock times; the watch formats them in its own time zone).
     The delay: minutes already include it, so with minutes a late departure is only coloured
-    amber (from 2 min) and the app adds a line under the headsign ("o 3 min později"); beside a
+    amber (from 2 min) and the app adds a small "+3 min" under the minutes; beside a
     clock time "+3 min" stays, as it does not read as a second time.
 - Outside the IDS JMK area (nearest stop over 10 km away; Bratislava's was 60 km) the app, the
   widget and the watch say so instead of showing that stop (`OutOfRangeException`, watch error

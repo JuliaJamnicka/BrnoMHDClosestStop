@@ -21,7 +21,6 @@
     <string name="out_of_range_title">Jste mimo oblast IDS JMK</string>
     <string name="out_of_range_body">Fčil ukazuje odjezdy Integrovaného dopravního systému Jihomoravského kraje. V okolí žádná jeho zastávka není.</string>
     <string name="out_of_range_widget">V okolí není žádná zastávka IDS JMK.</string>
-    <string name="late_by">o %1$d min později</string>
     <string name="departure_count_hint">Hodinky ukážou nejvýše 4.</string>
     <string name="section_departure_time">Čas odjezdu</string>
     <string name="departure_time_minutes">Za 4 min</string>

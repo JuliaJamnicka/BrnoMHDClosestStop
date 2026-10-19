@@ -27,6 +27,9 @@ test('parses phone replies given as a string or as an SDK object', () => {
 
 test('formats times like the design: now, minutes, clock time', () => {
   assert.deepEqual(timeLabel(1010, 1000, 'teď'), { big: 'teď', unit: '' });
+  // 30-59 s used to read "0 min"
+  assert.deepEqual(timeLabel(1045, 1000, 'teď'), { big: 'teď', unit: '' });
+  assert.deepEqual(timeLabel(1060, 1000, 'teď'), { big: '1', unit: 'min' });
   assert.deepEqual(timeLabel(1400, 1000, 'teď'), { big: '6', unit: 'min' });
   assert.match(timeLabel(1000 + 3 * 3600, 1000, 'teď').big, /^\d\d:\d\d$/);
   // the clock setting: always the clock time, also for "now"

@@ -87,10 +87,6 @@ fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
             if (d.sn != null) {
                 Text(d.sn, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            // minutes already include the delay; "+3 min" beside "2 min" read as two times, so it moves here
-            if (!clock && delayMin >= 1) {
-                Text(stringResource(R.string.late_by, delayMin), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = lateColor, maxLines = 1)
-            }
         }
         // next to a clock time the delay does not clash
         if (clock && delayMin >= 1) {
@@ -105,25 +101,33 @@ fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
         if (d.lv == 1) {
             Box(Modifier.padding(end = 6.dp).size(8.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
         }
-        Text(
-            departureTimeLabel(d.e, now, clock, stringResource(R.string.now)),
-            color = when {
-                d.e - now < 30 -> nowColor
-                delayMin >= 2 -> delayColor
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.widthIn(min = 56.dp),
-            textAlign = TextAlign.End,
-        )
+        Column(Modifier.widthIn(min = 56.dp), horizontalAlignment = Alignment.End) {
+            Text(
+                departureTimeLabel(d.e, now, clock, stringResource(R.string.now)),
+                color = when {
+                    d.e - now < NOW_S -> nowColor
+                    delayMin >= 2 -> delayColor
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End,
+            )
+            // with minutes the delay goes under them, small: "+3 min" beside "2 min" read as two times
+            if (!clock && delayMin >= 1) {
+                Text("+$delayMin min", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = lateColor, maxLines = 1)
+            }
+        }
     }
 }
 
-/** "now" under 30 s, else "N min"; with [clock] always the clock time ("14:32"). */
+/** Under a minute to go a departure is "now" (never "0 min"). */
+const val NOW_S = 60
+
+/** "now" under a minute, else "N min"; with [clock] always the clock time ("14:32"). */
 fun departureTimeLabel(expected: Long, now: Long, clock: Boolean, nowWord: String): String = when {
     clock -> DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(expected * 1000))
-    expected - now < 30 -> nowWord
+    expected - now < NOW_S -> nowWord
     else -> "${(expected - now) / 60} min"
 }
 
