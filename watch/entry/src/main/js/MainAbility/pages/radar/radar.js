@@ -19,10 +19,15 @@ export default {
         arrows: [],
         stops: [],
         status: '',
+        stopName: '',
+        hasStopName: false,
     },
 
     onInit() {
         this.status = t(state.lang, 'loading');
+        // the stop of the departures page, named above the user as on the Radar board
+        this.stopName = state.lastDep ? state.lastDep.s : '';
+        this.hasStopName = this.stopName !== '';
         this.load();
         const self = this;
         timer = setInterval(function () {

@@ -1,13 +1,27 @@
 <div class="screen" onswipe="onSwipe">
+    <image class="now-mark" src="/common/images/now.png"></image>
     <text class="title">{{title}}</text>
-    <text if="{{message}}" class="hint">{{message}}</text>
+    <text if="{{hasMessage}}" class="hint">{{message}}</text>
     <list class="list">
         <list-item class="item" onclick="pickNearest">
-            <text class="name auto">{{autoText}}</text>
+            <div class="rule"></div>
+            <div class="item-content">
+                <text class="auto">{{autoText}}</text>
+            </div>
         </list-item>
         <list-item for="{{stops}}" class="item" onclick="pick($idx)">
-            <text class="name">{{$item.name}}</text>
-            <text class="detail">{{$item.detail}}</text>
+            <div class="rule"></div>
+            <div class="item-content">
+                <div class="name-column">
+                    <text class="name">{{$item.name}}</text>
+                    <div class="chips">
+                        <image if="{{$item.has0}}" class="chip" src="{{$item.c0}}" style="width: {{$item.w0}}px;"></image>
+                        <image if="{{$item.has1}}" class="chip" src="{{$item.c1}}" style="width: {{$item.w1}}px;"></image>
+                        <image if="{{$item.has2}}" class="chip" src="{{$item.c2}}" style="width: {{$item.w2}}px;"></image>
+                    </div>
+                </div>
+                <text class="distance">{{$item.distance}}</text>
+            </div>
         </list-item>
     </list>
 </div>

@@ -70,6 +70,15 @@ could not be tested without one:
 - **Event arguments:** list items use `onclick="pick($idx)"`.
 - **Bound inline styles:** radar markers use `style="left: {{…}}px"`.
 - **Circular clipping:** rows near the bottom of the round screen.
+- **Images in list items:** the stop list shows mode chips as images with a bound `width`.
+- **`if` with booleans only:** every `if` binds a boolean, in case truthy strings are not supported.
+
+## Small images
+
+Text smaller than 30 px ("min" after the minutes, the mode chips of the stop list) and the small
+icons are pre-drawn PNGs in `common/images`, in the canvas font Barlow Semi Condensed. To change
+them, edit and run `tools/images.mjs` (needs Playwright with Chromium; set `CHROMIUM` to use a
+local Chromium binary). The chip widths are also listed in `common/format.js` (`CHIPS`).
 
 ## Checks
 
