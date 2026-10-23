@@ -60,6 +60,6 @@ class SettingsStore(private val context: Context) {
     suspend fun current(): AppSettings = settings.first()
 
     suspend fun setLanguage(language: Language) = context.dataStore.edit { it[Keys.language] = language.code }
-    suspend fun setDepartureCount(count: Int) = context.dataStore.edit { it[Keys.departureCount] = count.coerceIn(3, 4) }
+    suspend fun setDepartureCount(count: Int) = context.dataStore.edit { it[Keys.departureCount] = count.coerceIn(3, 5) }
     suspend fun setDepartureTime(time: DepartureTime) = context.dataStore.edit { it[Keys.departureTime] = time.name }
 }

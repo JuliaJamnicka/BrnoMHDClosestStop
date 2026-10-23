@@ -16,7 +16,7 @@ function pad(n) {
 }
 
 /**
- * "teď"/"now" under 30 s, "N min" under 60 min, else the clock time "HH:MM"; always the clock time
+ * "teď"/"now" under a minute, "N min" under 60 min, else the clock time "HH:MM"; always the clock time
  * when [clock] (the phone's departure time setting, "tf":1).
  */
 export function timeLabel(expected, now, nowWord, clock) {
@@ -25,7 +25,8 @@ export function timeLabel(expected, now, nowWord, clock) {
     const t = new Date(expected * 1000);
     return { big: pad(t.getHours()) + ':' + pad(t.getMinutes()), unit: '' };
   }
-  if (seconds < 30) return { big: nowWord, unit: '' };
+  // under a minute it is "now", never "0 min"
+  if (seconds < 60) return { big: nowWord, unit: '' };
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return { big: '' + minutes, unit: 'min' };
   const d = new Date(expected * 1000);
@@ -76,8 +77,9 @@ export function departureRows(reply, now, nowWord) {
       headsign: r[2],
       big: label.big,
       unit: label.unit,
-      delay: delayLabel(r[4]),
-      timeColour: timeColour(r[3] - now < 30, r[4]),
+      // minutes already include the delay (amber from 2 min); next to a clock time it is shown
+      delay: clock ? delayLabel(r[4]) : '',
+      timeColour: timeColour(r[3] - now < 60, r[4]),
       live: r[5] === 1,
     });
   }

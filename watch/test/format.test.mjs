@@ -27,6 +27,9 @@ test('parses phone replies given as a string or as an SDK object', () => {
 
 test('formats times like the design: now, minutes, clock time', () => {
   assert.deepEqual(timeLabel(1010, 1000, 'teď'), { big: 'teď', unit: '' });
+  // 30-59 s used to read "0 min"
+  assert.deepEqual(timeLabel(1045, 1000, 'teď'), { big: 'teď', unit: '' });
+  assert.deepEqual(timeLabel(1060, 1000, 'teď'), { big: '1', unit: 'min' });
   assert.deepEqual(timeLabel(1400, 1000, 'teď'), { big: '6', unit: 'min' });
   assert.match(timeLabel(1000 + 3 * 3600, 1000, 'teď').big, /^\d\d:\d\d$/);
   // the clock setting: always the clock time, also for "now"
@@ -41,14 +44,16 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
     rows.map((r) => [r.line, r.badgeColour, r.badgeRadius, r.delay, r.timeColour, r.live]),
     [
       ['6', '#c8262c', 8, '', '#f0373e', true],
-      ['4', '#c8262c', 8, '+3', '#ffb020', true],
-      ['N93', '#1f7a4d', 19, '+1', '#ffffff', false],
+      // with minutes the delay is only the amber colour (the minutes include it)
+      ['4', '#c8262c', 8, '', '#ffb020', true],
+      ['N93', '#1f7a4d', 19, '', '#ffffff', false],
     ],
   );
   // "tf":1 (clock setting): clock times, the departing one still in red
   const clockRows = departureRows(Object.assign({}, parseReply(reply), { tf: 1 }), 1000, 'teď');
   assert.ok(clockRows.every((r) => /^\d\d:\d\d$/.test(r.big) && r.unit === ''));
   assert.equal(clockRows[0].timeColour, '#f0373e');
+  assert.deepEqual(clockRows.map((r) => r.delay), ['', '+3', '+1']);
   assert.deepEqual(badgeStyle('V', 38), { colour: '#1d5fd1', radius: 2 });
   assert.equal(timeColour(false, 0), '#ffffff');
 });

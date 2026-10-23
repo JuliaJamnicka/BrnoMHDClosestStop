@@ -10,6 +10,7 @@ import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.data.ApiException
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NoLocationException
+import io.github.juliajamnicka.fcil.data.OutOfRangeException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,18 +25,20 @@ object WidgetUpdater {
      *  after a pin and writes the old stop back. */
     private val lock = Mutex()
 
-    suspend fun refreshAll(context: Context, minIntervalMs: Long = 0) {
+    /** Refreshes every widget; true when any of them failed for lack of network (worth retrying). */
+    suspend fun refreshAll(context: Context, minIntervalMs: Long = 0): Boolean {
         val now = System.currentTimeMillis()
-        if (now - lastRefreshAll < minIntervalMs) return
+        if (now - lastRefreshAll < minIntervalMs) return false
         lastRefreshAll = now
         val ids = GlanceAppWidgetManager(context).getGlanceIds(DeparturesWidget::class.java)
-        ids.forEach { refresh(context, it) }
+        return ids.map { refresh(context, it) }.any { it }
     }
 
-    suspend fun refresh(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig = { c, _ -> c }) =
+    /** True when the refresh failed for lack of network. */
+    suspend fun refresh(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig = { c, _ -> c }): Boolean =
         lock.withLock { refreshLocked(context, id, change) }
 
-    private suspend fun refreshLocked(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig) {
+    private suspend fun refreshLocked(context: Context, id: GlanceId, change: (WidgetConfig, DeparturesResponse?) -> WidgetConfig): Boolean {
         val before = getAppWidgetState<Preferences>(context, PreferencesGlanceStateDefinition, id)
         val config = change(WidgetState.config(before), WidgetState.response(before))
         updateAppWidgetState(context, id) { p ->
@@ -53,8 +56,14 @@ object WidgetUpdater {
                 p[WidgetState.updatedAt] = System.currentTimeMillis()
                 p.remove(WidgetState.error)
             }.onFailure { e ->
+                // outside the area there is no stop to show, not even the last one
+                if (e is OutOfRangeException) {
+                    p.remove(WidgetState.response)
+                    p[WidgetState.updatedAt] = System.currentTimeMillis() // a real answer: no reload every minute
+                }
                 p[WidgetState.error] = when (e) {
                     is NoLocationException -> WidgetError.NO_LOCATION
+                    is OutOfRangeException -> WidgetError.OUT_OF_RANGE
                     is ApiException -> when (e.kind) {
                         ApiException.Kind.NETWORK -> WidgetError.NETWORK
                         ApiException.Kind.AUTH -> WidgetError.AUTH
@@ -65,6 +74,7 @@ object WidgetUpdater {
             }
         }
         DeparturesWidget().update(context, id)
+        return (result.exceptionOrNull() as? ApiException)?.kind == ApiException.Kind.NETWORK
     }
 
     /** Pins a widget to a platform or a stop list, or back to automatic when both are null. */

@@ -4,6 +4,7 @@ import io.github.juliajamnicka.fcil.data.ApiException
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.NearbyResponse
 import io.github.juliajamnicka.fcil.data.NoLocationException
+import io.github.juliajamnicka.fcil.data.OutOfRangeException
 import io.github.juliajamnicka.fcil.data.TransitSource
 import io.github.juliajamnicka.fcil.data.VehiclesResponse
 import kotlinx.coroutines.test.runTest
@@ -42,6 +43,14 @@ class RequestHandlerTest {
     }
 
     @Test
+    fun showsAtMostFourDeparturesOnTheWatch() = runTest {
+        // the setting allows 5 for the widget; the round screen fits 4
+        val source = FakeSource()
+        RequestHandler(source, departureCount = { 5 }, language = { "cs" }).handle("""{"c":"home"}""".toByteArray())
+        assertEquals(4, source.lastCount)
+    }
+
+    @Test
     fun passesThePlatformOfTheReverseButton() = runTest {
         val source = FakeSource()
         handler(source).handle("""{"c":"dep","p":"U1073Z2"}""".toByteArray())
@@ -52,6 +61,7 @@ class RequestHandlerTest {
     fun mapsFailuresToWatchErrorCodes() = runTest {
         suspend fun errorFor(e: Exception) = handler(FakeSource(e)).handle("""{"c":"home"}""".toByteArray()).decodeToString()
         assertEquals("""{"c":"err","lg":"cs","e":"noloc"}""", errorFor(NoLocationException()))
+        assertEquals("""{"c":"err","lg":"cs","e":"far"}""", errorFor(OutOfRangeException()))
         assertEquals("""{"c":"err","lg":"cs","e":"net"}""", errorFor(ApiException(ApiException.Kind.NETWORK, "x")))
         assertEquals("""{"c":"err","lg":"cs","e":"auth"}""", errorFor(ApiException(ApiException.Kind.AUTH, "x")))
         assertEquals("""{"c":"err","lg":"cs","e":"srv"}""", errorFor(IllegalStateException("boom")))

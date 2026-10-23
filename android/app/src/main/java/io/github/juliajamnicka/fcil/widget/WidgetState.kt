@@ -73,4 +73,4 @@ object WidgetState {
     }
 }
 
-enum class WidgetError { NO_LOCATION, NETWORK, AUTH, SERVER }
+enum class WidgetError { NO_LOCATION, OUT_OF_RANGE, NETWORK, AUTH, SERVER }

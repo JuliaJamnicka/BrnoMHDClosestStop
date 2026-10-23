@@ -363,10 +363,17 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 - The Huawei Health app must be installed and the watch paired in it; Wear Engine works through it.
 - Settings tab:
   - Language: System / Čeština / English (sent to the watch with every reply as `"lg":"cs"|"en"`).
-  - Number of departures shown (3 or 4).
-  - Departure time: minutes until departure ("4 min", "teď" under 30 s) or the clock time
+  - Number of departures shown in the widget and on the watch: 3, 4 or 5 (the watch shows at most
+    4; five rows do not fit the round screen).
+  - Departure time: minutes until departure ("4 min", "teď" under a minute) or the clock time
     ("14:32", including the delay). One setting for the app, the widget and the watch (`"tf":1` in
     the watch's `dep` reply asks for clock times; the watch formats them in its own time zone).
+    The delay: minutes already include it, so with minutes a late departure is only coloured
+    amber (from 2 min) and the app adds a small "+3 min" under the minutes; beside a
+    clock time "+3 min" stays, as it does not read as a second time.
+- Outside the IDS JMK area (nearest stop over 10 km away; Bratislava's was 60 km) the app, the
+  widget and the watch say so instead of showing that stop (`OutOfRangeException`, watch error
+  `"far"`). A pinned stop or list is still shown.
   - The backend URL and API key are set at build time (GitHub secret `MHD_API_KEY`), not in the app.
   - About: data attribution (CC BY 4.0, KORDIS JMK / data.Brno), at the bottom of Settings only.
 - Page titles are lowercase, like the wordmark. The main ones (stops / zastávky, radar,
@@ -388,7 +395,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 | `{"c":"near"}` | Stop list | `/nearby?limit=12` -> `{"c":"near", ...}` (entries dropped from the end if over the size limit) |
 | `{"c":"pl","p":"U1073Z2"}` | Platform picker | `/departures` -> `{"c":"pl", ...}` with each platform's lines and direction |
 | `{"c":"veh"}` | Radar | `/vehicles?r=800` -> `{"c":"veh", ...}` (max 15 vehicles) |
-| any | Error | `{"c":"err","e":"noloc" / "net" / "srv"}` |
+| any | Error | `{"c":"err","e":"noloc" / "far" / "net" / "srv"}` |
 
 - Location strategy: use last known location if < 30 s old and accuracy < 50 m, else request a
   single high-accuracy fix with a 4 s timeout, falling back to the last known one.
@@ -434,10 +441,14 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
   stop list's board, which has none), choose a stop or list, open the app, refresh.
 - Android limits automatic widget updates (`updatePeriodMillis` minimum 30 min, WorkManager
   periodic work minimum 15 min), so a widget cannot stay "live" every 20 s in the background.
-  Plan: refresh on tap, on screen unlock while the widget is visible (best effort), and every
-  15 min via WorkManager. With the minutes setting the widgets are redrawn from the stored times once
-  a minute (`WidgetClock`: a non-waking repeating alarm, so nothing runs while the screen is off),
-  and departures that have left drop off; with the clock setting the alarm is off.
+  Refreshes: on tap, on screen unlock and every 15 min, the last two through WorkManager with a
+  network constraint (right after waking, mobile data takes a few seconds to return; seen on
+  2026-10-19 as a widget stuck on "cannot reach the server") and retried up to 3 times on a
+  network error. Once a minute the widgets are redrawn from the stored times (`WidgetClock`, a
+  non-waking repeating alarm, so nothing runs while the screen is off): minutes are recounted,
+  departures that have left drop off, and with the screen on data older than 5 min (or with a
+  departed row, older than 1 min) is reloaded. A failed refresh keeps the last data and shows
+  "Updated HH:MM"; the error shows only without data or when the data is over 30 min old.
 - Same backend endpoints; no backend change expected.
 - Style per widget (`WidgetStyleActivity`, opened from the widget's settings on Android 12+ or from
   Settings > Widget): background and accent colour (8 swatches each or a hex value), or the

@@ -21,7 +21,7 @@ import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.DepartureTime
 import io.github.juliajamnicka.fcil.ui.MainActivity
-import io.github.juliajamnicka.fcil.widget.WidgetUpdater
+import io.github.juliajamnicka.fcil.widget.RefreshWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -40,7 +40,8 @@ class WatchService : LifecycleService() {
     // (at most once a minute); otherwise Android only allows a widget refresh every 15 minutes.
     private val unlockReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            lifecycleScope.launch { WidgetUpdater.refreshAll(applicationContext, minIntervalMs = 60_000) }
+            // through WorkManager: right after unlocking the network is often not back yet
+            RefreshWorker.refreshNow(applicationContext)
         }
     }
 

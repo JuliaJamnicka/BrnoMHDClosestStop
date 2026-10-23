@@ -133,13 +133,16 @@ fun SettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.departure_count), Modifier.weight(1f), fontSize = 18.sp)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.departure_count), fontSize = 18.sp)
+                            Text(stringResource(R.string.departure_count_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                         SingleChoiceSegmentedButtonRow {
-                            listOf(3, 4).forEachIndexed { i, n ->
+                            listOf(3, 4, 5).forEachIndexed { i, n ->
                                 SegmentedButton(
                                     selected = s.departureCount == n,
                                     onClick = { actions.setDepartureCount(n) },
-                                    shape = SegmentedButtonDefaults.itemShape(i, 2),
+                                    shape = SegmentedButtonDefaults.itemShape(i, 3),
                                     colors = SegmentedButtonDefaults.colors(
                                         activeContainerColor = MaterialTheme.colorScheme.primary,
                                         activeContentColor = MaterialTheme.colorScheme.onPrimary,

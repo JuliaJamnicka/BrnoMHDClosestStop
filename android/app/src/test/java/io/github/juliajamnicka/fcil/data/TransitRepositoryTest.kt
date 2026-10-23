@@ -70,6 +70,13 @@ class TransitRepositoryTest {
     }
 
     @Test
+    fun saysOutOfRangeWhenTheNearestStopIsFarAway() = runTest {
+        // e.g. in Bratislava the nearest IDS JMK stop was 60 km away
+        server.enqueue(MockResponse().setBody(body.replace("\"d\":20", "\"d\":60000")))
+        assertThrows(OutOfRangeException::class.java) { kotlinx.coroutines.runBlocking { repository().home(4) } }
+    }
+
+    @Test
     fun sendsKeyAndPositionAndCachesHomeFor20Seconds() = runTest {
         server.enqueue(MockResponse().setBody(body))
         server.enqueue(MockResponse().setBody(body))

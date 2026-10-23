@@ -71,25 +71,28 @@ fun LineBadge(line: String, mode: String, minWidth: Dp = 44.dp, fontSize: TextUn
 }
 
 /**
- * One departure: badge, headsign, delay, live dot and minutes ("now" in the háček red), or the
- * clock time when [clock]. On a stop list's board the row's stop is named under the headsign.
+ * One departure: badge, headsign, live dot and minutes ("now" in the háček red) with the delay as
+ * a line under the headsign, or the clock time with "+N min" beside it when [clock]. On a stop
+ * list's board the row's stop is named under the headsign.
  */
 @Composable
 fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         LineBadge(d.l, d.m)
         Spacer(Modifier.width(12.dp))
+        val delayMin = d.dl / 60
+        val lateColor = if (delayMin >= 2) delayColor else MaterialTheme.colorScheme.onSurfaceVariant
         Column(Modifier.weight(1f)) {
             Text(d.h, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (d.sn != null) {
                 Text(d.sn, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        val delayMin = d.dl / 60
-        if (delayMin >= 1) {
+        // next to a clock time the delay does not clash
+        if (clock && delayMin >= 1) {
             Text(
                 "+$delayMin min",
-                color = if (delayMin >= 2) delayColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = lateColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -98,25 +101,33 @@ fun DepartureRow(d: DepartureDto, now: Long, clock: Boolean = false) {
         if (d.lv == 1) {
             Box(Modifier.padding(end = 6.dp).size(8.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
         }
-        Text(
-            departureTimeLabel(d.e, now, clock, stringResource(R.string.now)),
-            color = when {
-                d.e - now < 30 -> nowColor
-                delayMin >= 2 -> delayColor
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.widthIn(min = 56.dp),
-            textAlign = TextAlign.End,
-        )
+        Column(Modifier.widthIn(min = 56.dp), horizontalAlignment = Alignment.End) {
+            Text(
+                departureTimeLabel(d.e, now, clock, stringResource(R.string.now)),
+                color = when {
+                    d.e - now < NOW_S -> nowColor
+                    delayMin >= 2 -> delayColor
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End,
+            )
+            // with minutes the delay goes under them, small: "+3 min" beside "2 min" read as two times
+            if (!clock && delayMin >= 1) {
+                Text("+$delayMin min", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = lateColor, maxLines = 1)
+            }
+        }
     }
 }
 
-/** "now" under 30 s, else "N min"; with [clock] always the clock time ("14:32"). */
+/** Under a minute to go a departure is "now" (never "0 min"). */
+const val NOW_S = 60
+
+/** "now" under a minute, else "N min"; with [clock] always the clock time ("14:32"). */
 fun departureTimeLabel(expected: Long, now: Long, clock: Boolean, nowWord: String): String = when {
     clock -> DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(expected * 1000))
-    expected - now < 30 -> nowWord
+    expected - now < NOW_S -> nowWord
     else -> "${(expected - now) / 60} min"
 }
 

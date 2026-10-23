@@ -49,6 +49,9 @@ import java.text.DateFormat
 import java.util.Date
 
 // Colours come from the widget's style (WidgetStyle, default: Fčil night blue).
+
+/** A failed refresh shows its error only once the data shown is this old. */
+private const val ERROR_AFTER_MS = 30 * 60_000L
 private fun provider(argb: Int) = ColorProvider(Color(argb))
 
 class DeparturesWidget : GlanceAppWidget() {
@@ -93,6 +96,8 @@ private fun Content(
 ) {
     // read on every composition: WidgetClock recomposes the widget once a minute to recount minutes
     val now = System.currentTimeMillis() / 1000
+    // the nearest stop is far away (abroad): no stop, just say so
+    val out = error == WidgetError.OUT_OF_RANGE
     Column(
         GlanceModifier
             .fillMaxSize()
@@ -113,7 +118,7 @@ private fun Content(
                         Spacer(GlanceModifier.width(4.dp))
                     }
                     Text(
-                        response?.stop ?: context.getString(R.string.widget_title),
+                        if (out) context.getString(R.string.out_of_range_title) else response?.stop ?: context.getString(R.string.widget_title),
                         style = TextStyle(color = provider(palette.text), fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         maxLines = 1,
                     )
@@ -130,6 +135,7 @@ private fun Content(
             // between data loads, departures that have left drop off at the next minute redraw
             val upcoming = response?.dep?.filter { it.e >= now - 60 }
             when {
+                out -> Message(palette, context.getString(R.string.out_of_range_widget))
                 response == null && loading -> Message(palette, context.getString(R.string.preview_loading))
                 response == null -> Message(palette, errorText(context, error) ?: context.getString(R.string.widget_tap_refresh))
                 upcoming.isNullOrEmpty() -> Message(palette, context.getString(R.string.no_departures))
@@ -137,21 +143,25 @@ private fun Content(
             }
         }
 
+        // A failed refresh keeps the last data and stays quiet (it is retried once online); the
+        // error shows only when there is nothing to show or what is shown is old.
+        val showError = error != null && !out && !loading &&
+            (response == null || updatedAt == null || System.currentTimeMillis() - updatedAt > ERROR_AFTER_MS)
         val footer = when {
             loading -> context.getString(R.string.preview_loading)
-            error != null && response != null -> errorText(context, error)
+            showError && response != null -> errorText(context, error)
             updatedAt != null -> context.getString(R.string.widget_updated, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(updatedAt)))
             else -> null
         }
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 footer ?: "",
-                style = TextStyle(color = provider(if (error != null && !loading) palette.warning else palette.muted), fontSize = 11.sp),
+                style = TextStyle(color = provider(if (showError) palette.warning else palette.muted), fontSize = 11.sp),
                 maxLines = 1,
                 modifier = GlanceModifier.defaultWeight(),
             )
-            // a stop list's board has no opposite direction
-            if (response?.listId == null) {
+            // a stop list's board has no opposite direction, and outside the area there is no stop
+            if (response?.listId == null && !out) {
                 IconButton(palette, R.drawable.ic_reverse, context.getString(R.string.widget_reverse), actionRunCallback<ReverseAction>())
                 Spacer(GlanceModifier.width(6.dp))
             }
@@ -185,7 +195,8 @@ private fun DepartureRow(context: Context, palette: WidgetPalette, d: DepartureD
             modifier = GlanceModifier.defaultWeight(),
         )
         val delayMin = d.dl / 60
-        if (delayMin >= 1) {
+        // with minutes the delay is only the colour (the minutes include it); beside a clock time it does not clash
+        if (clock && delayMin >= 1) {
             Text(
                 "+$delayMin min",
                 style = TextStyle(color = provider(if (delayMin >= 2) palette.warning else palette.muted), fontSize = 12.sp, fontWeight = FontWeight.Bold),
@@ -218,6 +229,7 @@ private fun Message(palette: WidgetPalette, text: String) {
 
 private fun errorText(context: Context, error: WidgetError?): String? = when (error) {
     WidgetError.NO_LOCATION -> context.getString(R.string.widget_no_location)
+    WidgetError.OUT_OF_RANGE -> context.getString(R.string.out_of_range_widget)
     WidgetError.NETWORK -> context.getString(R.string.error_network)
     WidgetError.AUTH -> context.getString(R.string.error_auth)
     WidgetError.SERVER -> context.getString(R.string.error_server, "")
