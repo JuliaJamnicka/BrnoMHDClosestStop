@@ -17,33 +17,37 @@
     height: 466px;
     flex-direction: column;
     align-items: center;
-    padding-top: 12px;
+    padding-top: 18px;
 }
 .now-mark {
     width: 36px;
     height: 22px;
 }
+/* Loading and error boards: picture, white title, grey text, blue pill button */
 .logo {
     width: 120px;
     height: 120px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 .title {
-    width: 360px;
+    width: 400px;
     height: 50px;
+    margin-bottom: 8px;
     font-size: 38px;
     color: #ffffff;
+    text-align: center;
+}
+.subtitle {
+    width: 360px;
+    height: 40px;
+    font-size: 30px;
+    color: #8d99b3;
     text-align: center;
 }
 .error-icon {
     width: 88px;
     height: 88px;
-    margin-bottom: 10px;
-}
-.error-title {
-    width: 420px;
-    margin-bottom: 8px;
-    color: #ffffff;
+    margin-bottom: 14px;
 }
 .hint-line {
     width: 400px;
@@ -56,14 +60,14 @@
     width: 330px;
     height: 120px;
     font-size: 30px;
-    color: #aeaeb2;
+    color: #8d99b3;
     text-align: center;
 }
 .button {
-    width: 220px;
-    height: 56px;
+    width: 230px;
+    height: 48px;
     margin-top: 14px;
-    border-radius: 28px;
+    border-radius: 24px;
     background-color: #3d7bd9;
     color: #ffffff;
     font-size: 30px;
@@ -71,16 +75,17 @@
 .header {
     width: 340px;
     height: 48px;
+    margin-top: 4px;
     justify-content: center;
     align-items: center;
 }
 .pin {
-    width: 36px;
-    height: 36px;
-    margin-right: 6px;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
 }
 .stop {
-    width: 310px;
+    width: 300px;
     height: 48px;
     font-size: 38px;
     color: #ffffff;
@@ -88,23 +93,25 @@
     text-overflow: ellipsis;
 }
 .direction-row {
-    width: 360px;
-    height: 54px;
+    width: 372px;
+    height: 44px;
+    margin-top: 4px;
     justify-content: center;
     align-items: center;
 }
 .direction {
-    width: 290px;
+    width: 300px;
     height: 40px;
+    margin-right: 12px;
     font-size: 30px;
     color: #c3ccdd;
     text-align: center;
     text-overflow: ellipsis;
 }
 .round-button {
-    width: 52px;
-    height: 52px;
-    border-radius: 26px;
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
     background-color: #1b2b4d;
     justify-content: center;
     align-items: center;
@@ -113,14 +120,26 @@
     width: 30px;
     height: 30px;
 }
+/* Departures board: 4 rows of 50 px, each under a thin rule */
 .rows {
-    width: 384px;
-    height: 216px;
+    width: 372px;
+    height: 204px;
+    margin-top: 8px;
     flex-direction: column;
 }
 .row {
-    width: 384px;
-    height: 54px;
+    width: 372px;
+    height: 51px;
+    flex-direction: column;
+}
+.rule {
+    width: 372px;
+    height: 1px;
+    background-color: #16213a;
+}
+.row-content {
+    width: 372px;
+    height: 50px;
     align-items: center;
 }
 .badge {
@@ -136,52 +155,66 @@
     color: #ffffff;
     text-align: center;
 }
+/* widths of .headsign and .time come from departureRows (common/format.js) */
 .headsign {
-    width: 170px;
     height: 40px;
     margin-left: 10px;
     font-size: 30px;
-    color: #f2f2f2;
     text-overflow: ellipsis;
 }
 .delay {
-    width: 50px;
+    width: 46px;
     height: 40px;
     font-size: 30px;
     color: #ffb020;
     text-align: right;
 }
-.live-dot {
-    width: 10px;
-    height: 10px;
-    margin-left: 4px;
-    border-radius: 5px;
-    background-color: #6ea0ee;
+.live {
+    width: 18px;
+    height: 18px;
+    margin-left: 6px;
 }
 .time {
-    width: 82px;
     height: 40px;
+    margin-left: 4px;
     font-size: 30px;
-    color: #ffffff;
     text-align: right;
 }
-.stale-text {
-    width: 300px;
-    height: 36px;
-    font-size: 30px;
-    color: #ffb020;
-    text-align: center;
+.unit {
+    width: 28px;
+    height: 20px;
+    margin-left: 4px;
+    margin-top: 6px;
 }
 .footer {
-    width: 260px;
-    height: 60px;
+    width: 300px;
+    height: 48px;
+    margin-top: 8px;
     justify-content: space-between;
     align-items: center;
 }
+.footer-middle {
+    width: 204px;
+    height: 48px;
+    justify-content: center;
+    align-items: center;
+}
+.loc {
+    width: 24px;
+    height: 24px;
+    margin-right: 4px;
+}
 .distance {
-    width: 140px;
+    width: 120px;
     height: 40px;
     font-size: 30px;
     color: #8d99b3;
+}
+/* replaces the distance in the footer: on the round screen there is no room for another line */
+.stale-text {
+    width: 204px;
+    height: 40px;
+    font-size: 30px;
+    color: #ffb020;
     text-align: center;
 }

@@ -1,11 +1,15 @@
 <stack class="screen" onswipe="onSwipe">
     <div class="ring-outer"></div>
     <div class="ring-inner"></div>
+    <div class="cross-v"></div>
+    <div class="cross-h"></div>
     <text class="north">N</text>
     <text class="label-400">400 m</text>
     <text class="label-800">800 m</text>
     <div for="{{stops}}" class="stop-dot" style="left: {{$item.left}}px; top: {{$item.top}}px;"></div>
+    <div class="halo"></div>
     <div class="me"></div>
+    <text if="{{hasStopName}}" class="stop-name">{{stopName}}</text>
     <image for="{{arrows}}" class="arrow" src="{{$item.arrow}}" style="left: {{$item.arrowLeft}}px; top: {{$item.arrowTop}}px;"></image>
     <div for="{{markers}}" class="badge" style="left: {{$item.left}}px; top: {{$item.top}}px; background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
         <text class="badge-text">{{$item.line}}</text>

@@ -9,6 +9,7 @@ export default {
     data: {
         title: '',
         message: '',
+        hasMessage: false,
         platforms: [],
     },
 
@@ -16,6 +17,7 @@ export default {
         const current = state.lastDep;
         this.title = current ? current.s : t(state.lang, 'platforms');
         this.message = t(state.lang, 'loading');
+        this.hasMessage = true;
         if (!current) {
             router.replace({ uri: 'pages/home/home' });
             return;
@@ -27,6 +29,7 @@ export default {
                 return;
             }
             self.message = '';
+            self.hasMessage = false;
             const list = reply.x || [];
             ids = [];
             const platforms = [];

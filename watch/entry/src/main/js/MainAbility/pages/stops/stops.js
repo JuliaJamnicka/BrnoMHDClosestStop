@@ -1,19 +1,20 @@
 import router from '@system.router';
 import { request, cancel } from '../../common/link.js';
-import { distanceLabel } from '../../common/format.js';
+import { distanceLabel, modeChips } from '../../common/format.js';
 import { t } from '../../common/strings.js';
 import state from '../../common/state.js';
 
-const MODE_NAMES = {
-    cs: { T: 'Tram', B: 'Bus', V: 'Vlak', L: 'Loď' },
-    en: { T: 'Tram', B: 'Bus', V: 'Train', L: 'Boat' },
-};
-
-function modesText(modes) {
-    const dict = MODE_NAMES[state.lang] || MODE_NAMES.cs;
-    const names = [];
-    for (let i = 0; i < modes.length; i++) names.push(dict[modes.charAt(i)] || modes.charAt(i));
-    return names.join(' · ');
+/** A "near" row for the list: name, distance and up to three mode chips in fixed slots. */
+function stopRow(name, metres, modes) {
+    const chips = modeChips(modes, state.lang);
+    const row = { name: name, distance: distanceLabel(metres) };
+    for (let i = 0; i < 3; i++) {
+        const c = chips[i];
+        row['has' + i] = !!c; // lite wearable `if` takes booleans
+        row['c' + i] = c ? c.src : '';
+        row['w' + i] = c ? c.w : 0;
+    }
+    return row;
 }
 
 let ids = [];
@@ -23,6 +24,7 @@ export default {
         title: '',
         autoText: '',
         message: '',
+        hasMessage: false,
         stops: [],
     },
 
@@ -30,6 +32,7 @@ export default {
         this.title = t(state.lang, 'nearest');
         this.autoText = t(state.lang, 'nearestAuto');
         this.message = t(state.lang, 'loading');
+        this.hasMessage = true;
         const self = this;
         request({ c: 'near' }, function (reply) {
             self.title = t(state.lang, 'nearest');
@@ -39,12 +42,13 @@ export default {
                 return;
             }
             self.message = '';
+            self.hasMessage = false;
             const list = reply.x || [];
             ids = [];
             const stops = [];
             for (let i = 0; i < list.length; i++) {
                 ids.push(list[i][0]);
-                stops.push({ name: list[i][1], detail: distanceLabel(list[i][2]) + '  ' + modesText(list[i][3]) });
+                stops.push(stopRow(list[i][1], list[i][2], list[i][3]));
             }
             self.stops = stops;
         });

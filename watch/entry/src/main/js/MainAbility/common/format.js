@@ -61,8 +61,31 @@ export function timeColour(isNow, delayMinutes) {
   return isLate(delayMinutes) ? '#ffb020' : '#ffffff';
 }
 
-/** Rows of a "dep" reply ready for the home page. */
-export function departureRows(reply, now, nowWord) {
+/** [hex] at half brightness, as the design dims stale rows (lite wearables have no opacity). */
+export function dim(hex) {
+  let out = '#';
+  for (let i = 1; i < 7; i += 2) out += pad2hex(Math.round(parseInt(hex.substr(i, 2), 16) / 2));
+  return out;
+}
+
+function pad2hex(n) {
+  return (n < 16 ? '0' : '') + n.toString(16);
+}
+
+// Row layout of pages/home/home.css: lite wearables have no flex-grow, so the headsign and time widths
+// are computed to keep the times right-aligned whichever optional parts a row has.
+const HEADSIGN_MAX = 196; // 372 row - 58 badge - 10 gap - 104 time with unit - 4 gap
+const DELAY_W = 46; // .delay incl. margin
+const LIVE_W = 24; // .live incl. margin
+const UNIT_W = 32; // .unit incl. margin
+
+const UNIT_IMAGES = { normal: '/common/images/min.png', late: '/common/images/min-late.png', stale: '/common/images/min-stale.png' };
+
+/**
+ * Rows of a "dep" reply ready for the home page; [stale] data is drawn at half brightness. "min" is an
+ * image (unitImage, '' without a unit): lite wearables have no font size as small as the design's.
+ */
+export function departureRows(reply, now, nowWord, stale) {
   const rows = [];
   const list = reply.x || [];
   const clock = reply.tf === 1;
@@ -70,20 +93,54 @@ export function departureRows(reply, now, nowWord) {
     const r = list[i];
     const label = timeLabel(r[3], now, nowWord, clock);
     const badge = badgeStyle(r[1], 38);
+    const colour = timeColour(r[3] - now < 60, r[4]);
+    const delay = clock ? delayLabel(r[4]) : '';
+    let unitImage = '';
+    if (label.unit) unitImage = stale ? UNIT_IMAGES.stale : isLate(r[4]) ? UNIT_IMAGES.late : UNIT_IMAGES.normal;
+    const live = r[5] === 1 && !stale;
     rows.push({
       line: r[0],
-      badgeColour: badge.colour,
+      badgeColour: stale ? dim(badge.colour) : badge.colour,
       badgeRadius: badge.radius,
       headsign: r[2],
+      headsignWidth: HEADSIGN_MAX - (delay ? DELAY_W : 0) - (live ? LIVE_W : 0),
+      headsignColour: stale ? '#797979' : '#f2f2f2',
       big: label.big,
+      timeWidth: unitImage ? 104 - UNIT_W : 104,
       unit: label.unit,
+      unitImage: unitImage,
+      hasUnit: unitImage !== '', // lite wearable `if` takes booleans, not truthy strings
       // minutes already include the delay (amber from 2 min); next to a clock time it is shown
-      delay: clock ? delayLabel(r[4]) : '',
-      timeColour: timeColour(r[3] - now < 60, r[4]),
-      live: r[5] === 1,
+      delay: delay,
+      hasDelay: delay !== '',
+      timeColour: stale ? dim(colour) : colour,
+      live: live,
     });
   }
   return rows;
+}
+
+// Mode chips of the stop list, pre-drawn (tools/images.mjs) because their text is smaller than any
+// lite wearable font; width in px. At most three fit under a stop name.
+const CHIPS = {
+  T: { src: 'chip-T', w: 44 },
+  B: { src: 'chip-B', w: 35 },
+  V: { src: { cs: 'chip-V-cs', en: 'chip-V-en' }, w: { cs: 39, en: 44 } },
+  L: { src: { cs: 'chip-L-cs', en: 'chip-L-en' }, w: { cs: 35, en: 41 } },
+};
+
+/** Up to three chips for the modes string of a "near" reply ("TB"): [{ src, w }]. */
+export function modeChips(modes, lang) {
+  const chips = [];
+  const l = lang === 'en' ? 'en' : 'cs';
+  for (let i = 0; i < modes.length && chips.length < 3; i++) {
+    const c = CHIPS[modes.charAt(i)];
+    if (!c) continue;
+    const src = typeof c.src === 'string' ? c.src : c.src[l];
+    const w = typeof c.w === 'number' ? c.w : c.w[l];
+    chips.push({ src: '/common/images/' + src + '.png', w: w });
+  }
+  return chips;
 }
 
 const ARROW_OFFSET = 36;
