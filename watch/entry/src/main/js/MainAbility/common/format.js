@@ -221,3 +221,12 @@ export function pingOutcome(code) {
   if (code === 204) return 'noapp';
   return 'phone';
 }
+
+/**
+ * Text of a script error for the screen: the watch shows no logs, so a page that fails while
+ * drawing a reply shows this instead of staying on its loading text.
+ */
+export function describeError(e) {
+  const text = e && e.message ? e.message : String(e);
+  return 'JS: ' + text;
+}

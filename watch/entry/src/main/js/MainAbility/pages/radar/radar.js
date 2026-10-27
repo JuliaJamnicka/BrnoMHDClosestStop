@@ -1,6 +1,6 @@
 import router from '@system.router';
 import { request, now, cancel } from '../../common/link.js';
-import { radarMarkers } from '../../common/format.js';
+import { radarMarkers, describeError } from '../../common/format.js';
 import { RADAR_REFRESH_MS } from '../../common/config.js';
 import { t } from '../../common/strings.js';
 import state from '../../common/state.js';
@@ -47,32 +47,44 @@ export default {
     load() {
         const self = this;
         request({ c: 'veh' }, function (reply) {
-            if (reply.c !== 'veh') {
-                self.status = t(state.lang, 'err_' + reply.e);
-                return;
+            try {
+                self.showReply(reply);
+            } catch (e) {
+                self.status = describeError(e);
             }
-            receivedAt = now();
-            const markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
-            self.markers = markers;
-            self.arrows = markers.filter(function (m) {
-                return !!m.arrow;
-            });
-            const stops = [];
-            const list = reply.s || [];
-            const scale = RADIUS_PX / RANGE_M;
-            for (let i = 0; i < list.length; i++) {
-                stops.push({
-                    left: Math.round(SIZE / 2 + list[i][1] * scale - 7),
-                    top: Math.round(SIZE / 2 - list[i][2] * scale - 7),
-                });
-            }
-            self.stops = stops;
-            self.updateStatus();
         });
     },
 
+    showReply(reply) {
+        if (reply.c !== 'veh') {
+            this.status = t(state.lang, 'err_' + reply.e);
+            return;
+        }
+        receivedAt = now();
+        const markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
+        this.markers = markers;
+        this.arrows = markers.filter(function (m) {
+            return !!m.arrow;
+        });
+        const stops = [];
+        const list = reply.s || [];
+        const scale = RADIUS_PX / RANGE_M;
+        for (let i = 0; i < list.length; i++) {
+            stops.push({
+                left: Math.round(SIZE / 2 + list[i][1] * scale - 7),
+                top: Math.round(SIZE / 2 - list[i][2] * scale - 7),
+            });
+        }
+        this.stops = stops;
+        this.updateStatus();
+    },
+
     updateStatus() {
-        if (receivedAt) this.status = t(state.lang, 'updated', { s: Math.max(0, now() - receivedAt) });
+        try {
+            if (receivedAt) this.status = t(state.lang, 'updated', { s: Math.max(0, now() - receivedAt) });
+        } catch (e) {
+            this.status = describeError(e);
+        }
     },
 
     onSwipe(e) {

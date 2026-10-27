@@ -1,7 +1,7 @@
 import app from '@system.app';
 import router from '@system.router';
 import { request, now, cancel } from '../../common/link.js';
-import { departureRows, distanceLabel, wrapLines } from '../../common/format.js';
+import { departureRows, distanceLabel, wrapLines, describeError } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t } from '../../common/strings.js';
 import state from '../../common/state.js';
@@ -56,7 +56,11 @@ export default {
             self.load();
         }, HOME_REFRESH_MS);
         tickTimer = setInterval(function () {
-            self.render();
+            try {
+                self.render();
+            } catch (e) {
+                self.showScriptError(e);
+            }
         }, 10000);
     },
 
@@ -82,6 +86,21 @@ export default {
     },
 
     onReply(answer) {
+        try {
+            this.showReply(answer);
+        } catch (e) {
+            this.showScriptError(e);
+        }
+    },
+
+    showScriptError(e) {
+        this.errorTitle = t(state.lang, 'err_req');
+        this.hasErrorIcon = false;
+        this.errorLines = wrapLines(describeError(e), HINT_CHARS);
+        this.view = 'error';
+    },
+
+    showReply(answer) {
         this.applyTexts();
         if (answer.c === 'dep') {
             reply = answer;
