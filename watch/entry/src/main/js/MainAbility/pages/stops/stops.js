@@ -61,17 +61,17 @@ export default {
     pickNearest() {
         state.pinned = null;
         state.lastDep = null;
-        router.replace({ uri: 'pages/home/home' });
+        router.replace({ uri: 'pages/index/index' });
     },
 
     pick(index) {
         if (index < 0 || index >= ids.length) return;
         state.pinned = ids[index];
         state.lastDep = null;
-        router.replace({ uri: 'pages/home/home' });
+        router.replace({ uri: 'pages/index/index' });
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/home/home' });
+        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
     },
 };

@@ -76,6 +76,6 @@ export default {
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/home/home' });
+        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
     },
 };

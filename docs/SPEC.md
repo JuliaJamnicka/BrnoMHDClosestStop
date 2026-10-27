@@ -466,7 +466,7 @@ user makes a named list of platforms (stop + direction) in the Stops tab. In Cze
 
 - Implemented in `watch/` (see `watch/README.md`); built and signed in DevEco Studio.
 - DevEco Studio, project type "Lite Wearable", JS (FA model), HML + CSS + JS (ES5).
-- Pages: `pages/home`, `pages/stops`, `pages/platforms`, `pages/radar` (data attribution is in the phone app).
+- Pages: `pages/index` (home; GT watches only start an app whose first page is `pages/index/index`), `pages/stops`, `pages/platforms`, `pages/radar` (data attribution is in the phone app).
 - Wear Engine watch-side SDK (`common/wearengine.js`, Huawei, Apache-2.0) for P2P messaging with the phone. It sends and receives text, so the phone escapes non-ASCII characters as `\uXXXX` in its JSON replies.
 - State shared between pages in `common/state.js` (pinned platform, last reply, clock offset, language).
 

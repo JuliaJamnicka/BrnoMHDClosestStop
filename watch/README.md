@@ -6,7 +6,7 @@ follows the design canvas (docs/SPEC.md 7.3).
 
 | Page | What it shows | Gestures |
 |------|---------------|----------|
-| `pages/home` | Stop, direction, 3-4 departures (`+N` delay, blue live dot, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, up: stops, right: close |
+| `pages/index` (home) | Stop, direction, 3-4 departures (`+N` delay, blue live dot, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, up: stops, right: close |
 | `pages/stops` | Nearest stops; first row "Nearest (automatic)" | tap to pin, swipe right: back |
 | `pages/platforms` | Platforms of the current stop with lines and direction | tap to pin, swipe right: back |
 | `pages/radar` | Vehicles within 800 m around you, north up, an arrow for each one's direction of travel | swipe right: back |
@@ -56,6 +56,12 @@ whether the phone app is installed. Watch-side errors: `noapp` (ping: not instal
      and add it as the GitHub repository **variable** `WATCH_FINGERPRINT`; the next phone app build uses it.
 5. Build and install from DevEco Studio onto the watch (or via the HAP file and the phone, as
    described in Huawei's lite-wearable guides).
+
+## First page must be pages/index/index
+
+The GT 5 installs an app whose first page has another name, but freezes the app list when it is
+opened (no error, no log). The home page is therefore `pages/index/index`. Found by comparing a
+working DevEco template build with ours: they differed only in the first page's name.
 
 ## First test on the GT 5
 
