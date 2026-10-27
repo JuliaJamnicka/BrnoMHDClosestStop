@@ -12,6 +12,7 @@ const RANGE_M = 800;
 let timer = null;
 let tick = null;
 let receivedAt = 0;
+let step = ''; // the statement running, for the error text (see pages/index)
 
 export default {
     data: {
@@ -50,7 +51,7 @@ export default {
             try {
                 self.showReply(reply);
             } catch (e) {
-                self.status = describeError(e);
+                self.status = describeError(e) + ' @' + step;
             }
         });
     },
@@ -60,12 +61,17 @@ export default {
             this.status = t(state.lang, 'err_' + reply.e);
             return;
         }
+        step = 'now';
         receivedAt = now();
+        step = 'markers-compute';
         const markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
+        step = 'markers-set';
         this.markers = markers;
+        step = 'arrows';
         this.arrows = markers.filter(function (m) {
             return !!m.arrow;
         });
+        step = 'stops-compute';
         const stops = [];
         const list = reply.s || [];
         const scale = RADIUS_PX / RANGE_M;
@@ -75,15 +81,19 @@ export default {
                 top: Math.round(SIZE / 2 - list[i][2] * scale - 7),
             });
         }
+        step = 'stops-set';
         this.stops = stops;
         this.updateStatus();
     },
 
     updateStatus() {
         try {
-            if (receivedAt) this.status = t(state.lang, 'updated', { s: Math.max(0, now() - receivedAt) });
+            step = 'status-text';
+            const text = receivedAt ? t(state.lang, 'updated', { s: Math.max(0, now() - receivedAt) }) : '';
+            step = 'status-set';
+            if (text) this.status = text;
         } catch (e) {
-            this.status = describeError(e);
+            this.status = describeError(e) + ' @' + step;
         }
     },
 

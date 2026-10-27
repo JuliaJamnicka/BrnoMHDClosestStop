@@ -20,6 +20,7 @@ let reply = null;
 let receivedAt = 0;
 let refreshTimer = null;
 let tickTimer = null;
+let step = '';
 
 export default {
     data: {
@@ -96,11 +97,12 @@ export default {
     showScriptError(e) {
         this.errorTitle = t(state.lang, 'err_req');
         this.hasErrorIcon = false;
-        this.errorLines = wrapLines(describeError(e), HINT_CHARS);
+        this.errorLines = wrapLines(describeError(e) + ' @' + step, HINT_CHARS);
         this.view = 'error';
     },
 
     showReply(answer) {
+        step = 'reply';
         this.applyTexts();
         if (answer.c === 'dep') {
             reply = answer;
@@ -123,21 +125,34 @@ export default {
     render() {
         const r = reply;
         if (!r) return;
+        // `step` names the statement running, for the error screen (the watch reports a bare
+        // "TypeError" without a place)
+        step = 'now';
         const current = now();
+        step = 'stop';
         this.stop = r.s;
+        step = 'direction';
         this.direction = r.r ? '→ ' + r.r : ''; // a stop list (r.l) has no single direction
+        step = 'distance';
         this.distance = distanceLabel(r.d);
+        step = 'pinned';
         this.pinned = !!state.pinned;
         this.canReverse = !!r.o;
         const age = receivedAt ? current - receivedAt : 0;
         const stale = age > STALE_AFTER_S;
-        this.rows = departureRows(r, current, t(state.lang, 'now'), stale);
-        this.empty = this.rows.length === 0;
+        step = 'rows-compute';
+        const rows = departureRows(r, current, t(state.lang, 'now'), stale);
+        step = 'rows-set';
+        this.rows = rows;
+        this.empty = rows.length === 0;
         // stale data dims the rows and takes the distance's place in the footer
+        step = 'stale';
         this.isStale = stale;
         this.staleText = stale ? t(state.lang, 'stale', { m: Math.floor(age / 60) }) : '';
         this.showDistance = !stale && this.distance !== '';
+        step = 'view';
         this.view = 'dep';
+        step = 'done';
     },
 
     reverse() {

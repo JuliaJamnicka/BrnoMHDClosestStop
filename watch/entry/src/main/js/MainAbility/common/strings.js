@@ -66,7 +66,8 @@ export function t(lang, key, values) {
   const dict = TEXTS[lang] || TEXTS.cs;
   let text = dict[key] || TEXTS.cs[key] || key;
   if (values) {
-    for (const name in values) text = text.replace('{' + name + '}', values[name]);
+    // split/join with a string, not replace() with a number: the watch's engine is strict about types
+    for (const name in values) text = text.split('{' + name + '}').join(String(values[name]));
   }
   return text;
 }
