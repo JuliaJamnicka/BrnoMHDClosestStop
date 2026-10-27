@@ -40,7 +40,7 @@
     "js": [
       {
         "pages": [
-          "pages/home/home",
+          "pages/index/index",
           "pages/stops/stops",
           "pages/platforms/platforms",
           "pages/radar/radar"

@@ -72,7 +72,7 @@ function pad2hex(n) {
   return (n < 16 ? '0' : '') + n.toString(16);
 }
 
-// Row layout of pages/home/home.css: lite wearables have no flex-grow, so the headsign and time widths
+// Row layout of pages/index/index.css: lite wearables have no flex-grow, so the headsign and time widths
 // are computed to keep the times right-aligned whichever optional parts a row has.
 const HEADSIGN_MAX = 196; // 372 row - 58 badge - 10 gap - 104 time with unit - 4 gap
 const DELAY_W = 46; // .delay incl. margin

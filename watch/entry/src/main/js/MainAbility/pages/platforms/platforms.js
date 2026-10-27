@@ -19,7 +19,7 @@ export default {
         this.message = t(state.lang, 'loading');
         this.hasMessage = true;
         if (!current) {
-            router.replace({ uri: 'pages/home/home' });
+            router.replace({ uri: 'pages/index/index' });
             return;
         }
         const self = this;
@@ -49,10 +49,10 @@ export default {
         if (index < 0 || index >= ids.length) return;
         state.pinned = ids[index];
         state.lastDep = null;
-        router.replace({ uri: 'pages/home/home' });
+        router.replace({ uri: 'pages/index/index' });
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/home/home' });
+        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
     },
 };
