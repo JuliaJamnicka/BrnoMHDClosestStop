@@ -7,6 +7,7 @@
     <text class="label-400">400 m</text>
     <text class="label-800">800 m</text>
     <div for="{{stops}}" class="stop-dot" style="left: {{$item.left}}px; top: {{$item.top}}px;"></div>
+    <text for="{{stopLabels}}" class="stop-label" style="left: {{$item.left}}px; top: {{$item.top}}px;">{{$item.text}}</text>
     <div class="halo"></div>
     <div class="me"></div>
     <text if="{{hasStopName}}" class="stop-name">{{stopName}}</text>

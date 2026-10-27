@@ -6,7 +6,7 @@ follows the design canvas (docs/SPEC.md 7.3).
 
 | Page | What it shows | Gestures |
 |------|---------------|----------|
-| `pages/index` (home) | Stop, direction, 3-4 departures (`+N` delay, blue live dot, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, up: stops, right: close |
+| `pages/index` (home) | Stop, direction, 3-5 departures as set in the phone app (4 visible, the rest scroll; `+N` delay with clock times, live mark, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, right: close |
 | `pages/stops` | Nearest stops; first row "Nearest (automatic)" | tap to pin, swipe right: back |
 | `pages/platforms` | Platforms of the current stop with lines and direction | tap to pin, swipe right: back |
 | `pages/radar` | Vehicles within 800 m around you, north up, an arrow for each one's direction of travel | swipe right: back |

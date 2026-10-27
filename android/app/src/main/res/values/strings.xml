@@ -22,7 +22,7 @@
     <string name="out_of_range_title">Outside the IDS JMK area</string>
     <string name="out_of_range_body">Fčil shows departures of the South Moravian integrated transport system. None of its stops are nearby.</string>
     <string name="out_of_range_widget">No IDS JMK stop nearby.</string>
-    <string name="departure_count_hint">The watch shows at most 4.</string>
+    <string name="departure_count_hint">The watch shows 4 at a time and scrolls the rest.</string>
     <string name="section_departure_time">Departure time</string>
     <string name="departure_time_minutes">In 4 min</string>
     <string name="departure_time_clock">At 14:32</string>

@@ -20,6 +20,9 @@ let receivedAt = 0;
 let refreshTimer = null;
 let tickTimer = null;
 let step = '';
+let shownCount = -1;
+const VISIBLE_ROWS = 4; // .rows: 4 rows of 51 px
+const ROWS_HEIGHT = 204;
 
 export default {
     data: {
@@ -41,6 +44,11 @@ export default {
         canReverse: false,
         rows: [],
         empty: false,
+        // scroll track beside the rows; scrolltop/scrollbottom are the only scroll positions a lite list reports
+        scrollable: false,
+        trackColour: '#000000',
+        thumbTop: 0,
+        thumbHeight: 0,
         staleText: '',
         isStale: false,
     },
@@ -147,6 +155,8 @@ export default {
         step = 'rows-set';
         this.rows = rows;
         this.empty = rows.length === 0;
+        step = 'scroll';
+        this.updateScroll(rows.length);
         // stale data dims the rows and takes the distance's place in the footer
         step = 'stale';
         this.isStale = stale;
@@ -155,6 +165,24 @@ export default {
         step = 'view';
         this.view = 'dep';
         step = 'done';
+    },
+
+    updateScroll(count) {
+        const scrollable = count > VISIBLE_ROWS;
+        if (scrollable === this.scrollable && count === shownCount) return;
+        shownCount = count;
+        this.scrollable = scrollable;
+        this.trackColour = scrollable ? '#16213a' : '#000000';
+        this.thumbHeight = scrollable ? Math.round((ROWS_HEIGHT * VISIBLE_ROWS) / count) : 0;
+        this.thumbTop = 0;
+    },
+
+    scrolledTop() {
+        this.thumbTop = 0;
+    },
+
+    scrolledBottom() {
+        this.thumbTop = ROWS_HEIGHT - this.thumbHeight;
     },
 
     reverse() {
@@ -183,6 +211,6 @@ export default {
     onSwipe(e) {
         if (e.direction === 'right') app.terminate();
         else if (e.direction === 'left') this.openRadar();
-        else if (e.direction === 'up') this.openStops();
+        // no swipe up for the stop list: that scrolls the departures (the ≡ button opens it)
     },
 };

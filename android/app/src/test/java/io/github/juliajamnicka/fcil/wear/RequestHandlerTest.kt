@@ -43,11 +43,11 @@ class RequestHandlerTest {
     }
 
     @Test
-    fun showsAtMostFourDeparturesOnTheWatch() = runTest {
-        // the setting allows 5 for the widget; the round screen fits 4
+    fun asksForTheSetNumberOfDeparturesAlsoAboveFour() = runTest {
+        // the watch shows 4 at once and scrolls the rest
         val source = FakeSource()
         RequestHandler(source, departureCount = { 5 }, language = { "cs" }).handle("""{"c":"home"}""".toByteArray())
-        assertEquals(4, source.lastCount)
+        assertEquals(5, source.lastCount)
     }
 
     @Test

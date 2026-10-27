@@ -20,6 +20,8 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -130,7 +132,7 @@ private fun Content(
         }
         Spacer(GlanceModifier.height(4.dp))
 
-        // takes the space left above the buttons; rows that do not fit are cut off here, not the buttons
+        // takes the space left above the buttons; rows that do not fit scroll here, the title and the buttons stay
         Column(GlanceModifier.fillMaxWidth().defaultWeight()) {
             // between data loads, departures that have left drop off at the next minute redraw
             val upcoming = response?.dep?.filter { it.e >= now - 60 }
@@ -139,7 +141,9 @@ private fun Content(
                 response == null && loading -> Message(palette, context.getString(R.string.preview_loading))
                 response == null -> Message(palette, errorText(context, error) ?: context.getString(R.string.widget_tap_refresh))
                 upcoming.isNullOrEmpty() -> Message(palette, context.getString(R.string.no_departures))
-                else -> upcoming.forEach { DepartureRow(context, palette, it, now, clock) }
+                else -> LazyColumn(GlanceModifier.fillMaxSize()) {
+                    items(upcoming) { DepartureRow(context, palette, it, now, clock) }
+                }
             }
         }
 
