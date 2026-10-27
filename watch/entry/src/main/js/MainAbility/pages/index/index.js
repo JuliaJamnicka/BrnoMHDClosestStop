@@ -1,10 +1,9 @@
 import app from '@system.app';
-import router from '@system.router';
 import { request, now, cancel } from '../../common/link.js';
 import { departureRows, distanceLabel, wrapLines, describeError } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t } from '../../common/strings.js';
-import state from '../../common/state.js';
+import state, { go, restore } from '../../common/state.js';
 
 // Brand-coloured pictures for the link errors (Fčil logo when the phone app is missing).
 const ERROR_ICONS = {
@@ -24,6 +23,7 @@ let step = '';
 
 export default {
     data: {
+        nav: '', // shared state from the previous page (common/state.js)
         view: 'loading',
         loadingText: '',
         loadingSubText: '',
@@ -45,6 +45,7 @@ export default {
         isStale: false,
     },
     onInit() {
+        restore(this);
         this.applyTexts();
         if (state.lastDep) {
             // returning from another page: show the last data at once, then refresh
@@ -168,15 +169,15 @@ export default {
     },
 
     openStops() {
-        router.replace({ uri: 'pages/stops/stops' });
+        go('pages/stops/stops');
     },
 
     openPlatforms() {
-        if (reply && reply.p) router.replace({ uri: 'pages/platforms/platforms' });
+        if (reply && reply.p) go('pages/platforms/platforms');
     },
 
     openRadar() {
-        router.replace({ uri: 'pages/radar/radar' });
+        go('pages/radar/radar');
     },
 
     onSwipe(e) {

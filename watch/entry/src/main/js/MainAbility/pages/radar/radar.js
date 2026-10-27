@@ -1,30 +1,31 @@
-import router from '@system.router';
-import { request, now, cancel } from '../../common/link.js';
+import { request, cancel } from '../../common/link.js';
 import { radarMarkers, describeError } from '../../common/format.js';
 import { RADAR_REFRESH_MS } from '../../common/config.js';
 import { t } from '../../common/strings.js';
-import state from '../../common/state.js';
+import state, { go, restore } from '../../common/state.js';
 
 const SIZE = 466;
 const RADIUS_PX = 200; // outer ring
 const RANGE_M = 800;
 
 let timer = null;
-let tick = null;
-let receivedAt = 0;
 let step = ''; // the statement running, for the error text (see pages/index)
 
 export default {
     data: {
+        nav: '', // shared state from the previous page (common/state.js)
         markers: [],
         arrows: [],
         stops: [],
+        // only while loading or after an error, in place of an "updated" line (it took the space)
         status: '',
+        hasStatus: true,
         stopName: '',
         hasStopName: false,
     },
 
     onInit() {
+        restore(this);
         this.status = t(state.lang, 'loading');
         // the stop of the departures page, named above the user as on the Radar board
         this.stopName = state.lastDep ? state.lastDep.s : '';
@@ -34,14 +35,10 @@ export default {
         timer = setInterval(function () {
             self.load();
         }, RADAR_REFRESH_MS);
-        tick = setInterval(function () {
-            self.updateStatus();
-        }, 5000);
     },
 
     onDestroy() {
         clearInterval(timer);
-        clearInterval(tick);
         cancel();
     },
 
@@ -51,18 +48,16 @@ export default {
             try {
                 self.showReply(reply);
             } catch (e) {
-                self.status = describeError(e) + ' @' + step;
+                self.showStatus(describeError(e) + ' @' + step);
             }
         });
     },
 
     showReply(reply) {
         if (reply.c !== 'veh') {
-            this.status = t(state.lang, 'err_' + reply.e);
+            this.showStatus(t(state.lang, 'err_' + reply.e));
             return;
         }
-        step = 'now';
-        receivedAt = now();
         step = 'markers-compute';
         const markers = radarMarkers(reply.x || [], SIZE, RADIUS_PX, RANGE_M);
         step = 'markers-set';
@@ -83,21 +78,15 @@ export default {
         }
         step = 'stops-set';
         this.stops = stops;
-        this.updateStatus();
+        this.hasStatus = false;
     },
 
-    updateStatus() {
-        try {
-            step = 'status-text';
-            const text = receivedAt ? t(state.lang, 'updated', { s: Math.max(0, now() - receivedAt) }) : '';
-            step = 'status-set';
-            if (text) this.status = text;
-        } catch (e) {
-            this.status = describeError(e) + ' @' + step;
-        }
+    showStatus(text) {
+        this.status = text;
+        this.hasStatus = true;
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
+        if (e.direction === 'right') go('pages/index/index');
     },
 };

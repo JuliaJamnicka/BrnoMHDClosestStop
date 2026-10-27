@@ -14,5 +14,5 @@
     <div for="{{markers}}" class="badge" style="left: {{$item.left}}px; top: {{$item.top}}px; background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
         <text class="badge-text">{{$item.line}}</text>
     </div>
-    <text class="status">{{status}}</text>
+    <text if="{{hasStatus}}" class="status">{{status}}</text>
 </stack>

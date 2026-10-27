@@ -1,12 +1,12 @@
-import router from '@system.router';
 import { request, cancel } from '../../common/link.js';
 import { t } from '../../common/strings.js';
-import state from '../../common/state.js';
+import state, { go, restore } from '../../common/state.js';
 
 let ids = [];
 
 export default {
     data: {
+        nav: '', // shared state from the previous page (common/state.js)
         title: '',
         message: '',
         hasMessage: false,
@@ -14,12 +14,13 @@ export default {
     },
 
     onInit() {
+        restore(this);
         const current = state.lastDep;
         this.title = current ? current.s : t(state.lang, 'platforms');
         this.message = t(state.lang, 'loading');
         this.hasMessage = true;
         if (!current) {
-            router.replace({ uri: 'pages/index/index' });
+            go('pages/index/index');
             return;
         }
         const self = this;
@@ -49,10 +50,10 @@ export default {
         if (index < 0 || index >= ids.length) return;
         state.pinned = ids[index];
         state.lastDep = null;
-        router.replace({ uri: 'pages/index/index' });
+        go('pages/index/index');
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
+        if (e.direction === 'right') go('pages/index/index');
     },
 };
