@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -56,6 +56,41 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
   assert.deepEqual(clockRows.map((r) => r.delay), ['', '+3', '+1']);
   assert.deepEqual(badgeStyle('V', 38), { colour: '#1d5fd1', radius: 2 });
   assert.equal(timeColour(false, 0), '#ffffff');
+});
+
+test('draws "min" as an image and keeps the times right-aligned', () => {
+  const rows = departureRows(parseReply(reply), 1000, 'teď');
+  assert.deepEqual(rows.map((r) => [r.hasUnit, r.unitImage]), [
+    [false, ''],
+    [true, '/common/images/min-late.png'],
+    // over an hour away: a clock time, no unit
+    [false, ''],
+  ]);
+  // headsign + optional parts + time always fill the same row width
+  const width = (r) => r.headsignWidth + (r.hasDelay ? 46 : 0) + (r.live ? 24 : 0) + r.timeWidth + (r.hasUnit ? 32 : 0);
+  const clockRows = departureRows(Object.assign({}, parseReply(reply), { tf: 1 }), 1000, 'teď');
+  assert.deepEqual(rows.concat(clockRows).map(width), [300, 300, 300, 300, 300, 300]);
+});
+
+test('dims stale rows to half brightness without live marks', () => {
+  const rows = departureRows(parseReply(reply), 1000, 'teď', true);
+  assert.deepEqual(rows.map((r) => [r.badgeColour, r.timeColour, r.live]), [
+    ['#641316', '#781c1f', false],
+    ['#641316', '#805810', false],
+    ['#103d27', '#808080', false],
+  ]);
+  assert.equal(rows[1].unitImage, '/common/images/min-stale.png');
+  assert.equal(dim('#ffffff'), '#808080');
+});
+
+test('picks pre-drawn mode chips in the phone language', () => {
+  assert.deepEqual(modeChips('TB', 'cs'), [
+    { src: '/common/images/chip-T.png', w: 44 },
+    { src: '/common/images/chip-B.png', w: 35 },
+  ]);
+  assert.deepEqual(modeChips('VL', 'en').map((c) => c.src), ['/common/images/chip-V-en.png', '/common/images/chip-L-en.png']);
+  assert.equal(modeChips('TBVL', 'cs').length, 3);
+  assert.deepEqual(modeChips('?', 'cs'), []);
 });
 
 test('places radar markers north-up around the centre and drops far vehicles', () => {

@@ -2,6 +2,7 @@
 const TEXTS = {
   cs: {
     loading: 'Hledám zastávku…',
+    loadingSub: 'Poloha z telefonu',
     nearest: 'Nejbližší zastávky',
     nearestAuto: 'Nejbližší (automaticky)',
     platforms: 'Nástupiště',
@@ -31,6 +32,7 @@ const TEXTS = {
   },
   en: {
     loading: 'Finding stop…',
+    loadingSub: 'Location from phone',
     nearest: 'Nearest stops',
     nearestAuto: 'Nearest (automatic)',
     platforms: 'Platforms',

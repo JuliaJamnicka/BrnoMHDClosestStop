@@ -21,6 +21,20 @@
     border-width: 2px;
     border-color: #22345a;
 }
+.cross-v {
+    left: 233px;
+    top: 40px;
+    width: 1px;
+    height: 386px;
+    background-color: #16213a;
+}
+.cross-h {
+    left: 40px;
+    top: 233px;
+    width: 386px;
+    height: 1px;
+    background-color: #16213a;
+}
 .north {
     left: 213px;
     top: 0px;
@@ -52,14 +66,36 @@
     border-radius: 7px;
     border-width: 3px;
     border-color: #8d99b3;
+    background-color: #000000;
+}
+/* the user: red dot with a soft halo (rgba(240, 55, 62, 0.25) on black), as on the Radar board */
+.halo {
+    left: 221px;
+    top: 221px;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: #3c0e10;
 }
 .me {
-    left: 223px;
-    top: 223px;
-    width: 20px;
-    height: 20px;
-    border-radius: 10px;
+    left: 226px;
+    top: 226px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    border-width: 2px;
+    border-color: #000000;
     background-color: #f0373e;
+}
+.stop-name {
+    left: 113px;
+    top: 184px;
+    width: 240px;
+    height: 36px;
+    font-size: 30px;
+    color: #c3ccdd;
+    text-align: center;
+    text-overflow: ellipsis;
 }
 .badge {
     width: 48px;

@@ -25,19 +25,23 @@ export default {
     data: {
         view: 'loading',
         loadingText: '',
+        loadingSubText: '',
         errorTitle: '',
         errorLines: [],
         errorIcon: '',
+        hasErrorIcon: false,
         retryText: '',
         noDeparturesText: '',
         stop: '',
         direction: '',
         distance: '',
+        showDistance: false,
         pinned: false,
         canReverse: false,
         rows: [],
         empty: false,
         staleText: '',
+        isStale: false,
     },
     onInit() {
         this.applyTexts();
@@ -64,6 +68,7 @@ export default {
 
     applyTexts() {
         this.loadingText = t(state.lang, 'loading');
+        this.loadingSubText = t(state.lang, 'loadingSub');
         this.retryText = t(state.lang, 'retry');
         this.noDeparturesText = t(state.lang, 'noDepartures');
     },
@@ -89,6 +94,7 @@ export default {
             } else {
                 this.errorTitle = t(state.lang, 'err_' + answer.e);
                 this.errorIcon = ERROR_ICONS[answer.e] || '';
+                this.hasErrorIcon = this.errorIcon !== '';
                 this.errorLines = wrapLines(t(state.lang, 'err_' + answer.e + '_hint'), HINT_CHARS);
                 this.view = 'error';
             }
@@ -104,11 +110,14 @@ export default {
         this.distance = distanceLabel(r.d);
         this.pinned = !!state.pinned;
         this.canReverse = !!r.o;
-        this.rows = departureRows(r, current, t(state.lang, 'now'));
-        this.empty = this.rows.length === 0;
         const age = receivedAt ? current - receivedAt : 0;
         const stale = age > STALE_AFTER_S;
+        this.rows = departureRows(r, current, t(state.lang, 'now'), stale);
+        this.empty = this.rows.length === 0;
+        // stale data dims the rows and takes the distance's place in the footer
+        this.isStale = stale;
         this.staleText = stale ? t(state.lang, 'stale', { m: Math.floor(age / 60) }) : '';
+        this.showDistance = !stale && this.distance !== '';
         this.view = 'dep';
     },
 
