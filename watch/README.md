@@ -48,9 +48,10 @@ whether the phone app is installed. Watch-side errors: `noapp` (ping: not instal
    DevEco Studio. Then add them under *File > Project Structure > Signing Configs*.
    Never commit `*.p12`, `*.cer`, `*.p7b` or `*.csr` (they are in `.gitignore`).
 4. Pairing with the phone app (both sides must name each other):
-   - **Watch side:** in `common/config.js` set `PHONE_FINGERPRINT`, and in `config.json` replace
-     `PHONE_APP_FINGERPRINT` in `supportLists` with the phone app's fingerprint
-     (from the phone keystore, see `android/README.md`).
+   - **Watch side:** `PHONE_FINGERPRINT` in `common/config.js` and `supportLists` in `config.json`
+     hold the phone app's SHA-256 signing fingerprint, upper case without colons (set for the
+     current key). After a new phone key, read it from a signed APK with
+     `apksigner verify --print-certs app-debug.apk` and register it in AppGallery Connect too.
    - **Phone side:** compute this watch app's fingerprint from its certificate
      ([Huawei guide](https://developer.huawei.com/consumer/en/doc/connectivity-guides/signature-0000001053969657))
      and add it as the GitHub repository **variable** `WATCH_FINGERPRINT`; the next phone app build uses it.
