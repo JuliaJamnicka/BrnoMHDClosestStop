@@ -49,7 +49,7 @@ export default {
         if (state.lastDep) {
             // returning from another page: show the last data at once, then refresh
             reply = state.lastDep;
-            this.render();
+            this.showDepartures();
         }
         this.load();
         const self = this;
@@ -58,7 +58,7 @@ export default {
         }, HOME_REFRESH_MS);
         tickTimer = setInterval(function () {
             try {
-                self.render();
+                self.showDepartures();
             } catch (e) {
                 self.showScriptError(e);
             }
@@ -108,10 +108,10 @@ export default {
             reply = answer;
             receivedAt = now();
             state.lastDep = answer;
-            this.render();
+            this.showDepartures();
         } else if (answer.c === 'err') {
             if (reply) {
-                this.render(); // keep showing the last data; it turns stale after a minute
+                this.showDepartures(); // keep showing the last data; it turns stale after a minute
             } else {
                 this.errorTitle = t(state.lang, 'err_' + answer.e);
                 this.errorIcon = ERROR_ICONS[answer.e] || '';
@@ -122,7 +122,8 @@ export default {
         }
     },
 
-    render() {
+    // not "render": the framework uses that name for the compiled template
+    showDepartures() {
         const r = reply;
         if (!r) return;
         // `step` names the statement running, for the error screen (the watch reports a bare

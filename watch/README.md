@@ -64,6 +64,12 @@ The GT 5 installs an app whose first page has another name, but freezes the app 
 opened (no error, no log). The home page is therefore `pages/index/index`. Found by comparing a
 working DevEco template build with ours: they differed only in the first page's name.
 
+## Reserved page method names
+
+A page method called `render` is replaced by the compiled template, and calling it throws a bare
+"TypeError" on the watch (the previewer did not show it). Pages show such script errors on screen
+as `JS: TypeError @step`.
+
 ## First test on the GT 5
 
 A developer has reported "Installation failed: 40" when installing a lite-wearable app on a GT 5.
