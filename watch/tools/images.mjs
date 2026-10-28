@@ -26,9 +26,6 @@ const IMAGES = {
   'min.png': unit('#FFFFFF'),
   'min-late.png': unit('#FFB020'),
   'min-stale.png': unit('#808080'),
-  // live data: the signal mark of the Departures board
-  'live.png': svg(18, 18, '0 0 24 24',
-    '<g fill="none" stroke="#6EA0EE" stroke-width="3" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/></g><circle cx="5" cy="19" r="2" fill="#6EA0EE"/>'),
   // location mark before the distance
   'loc.png': svg(24, 24, '0 0 24 24',
     '<g fill="none" stroke="#8D99B3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></g>'),

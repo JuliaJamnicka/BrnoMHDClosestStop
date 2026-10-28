@@ -72,12 +72,32 @@ function pad2hex(n) {
   return (n < 16 ? '0' : '') + n.toString(16);
 }
 
-// Row layout of pages/index/index.css: lite wearables have no flex-grow, so the headsign and time widths
-// are computed to keep the times right-aligned whichever optional parts a row has.
-const HEADSIGN_MAX = 196; // 372 row - 58 badge - 10 gap - 104 time with unit - 4 gap
+// Row layout of pages/index/index.css: lite wearables have no flex-grow and no auto-width text, so
+// the time gets about the width of its text (the live dot then sits right beside it) and the
+// headsign takes what is left.
+const ROW_W = 304; // 372 row - 58 badge - 10 gap
 const DELAY_W = 46; // .delay incl. margin
-const LIVE_W = 24; // .live incl. margin
+const LIVE_W = 16; // .live: 10 px dot + 6 px margin
+const TIME_GAP = 4; // .time margin
 const UNIT_W = 32; // .unit incl. margin
+const TIME_MAX = 104;
+
+/**
+ * Approximate width in px of [text] in the watch's system font at [size] px, for boxes that should
+ * fit their text (narrow and wide letters differ; digits are about 0.56 em).
+ */
+export function textWidth(text, size) {
+  let em = 0;
+  const s = String(text);
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charAt(i);
+    if (' .,:;\'!|iíjlľtťfr'.indexOf(c) >= 0) em += 0.3;
+    else if ('mwMWŠŽ'.indexOf(c) >= 0) em += 0.85;
+    else if (c >= 'A' && c <= 'Z') em += 0.65;
+    else em += 0.56;
+  }
+  return Math.ceil(em * size);
+}
 
 const UNIT_IMAGES = { normal: '/common/images/min.png', late: '/common/images/min-late.png', stale: '/common/images/min-stale.png' };
 
@@ -98,15 +118,16 @@ export function departureRows(reply, now, nowWord, stale) {
     let unitImage = '';
     if (label.unit) unitImage = stale ? UNIT_IMAGES.stale : isLate(r[4]) ? UNIT_IMAGES.late : UNIT_IMAGES.normal;
     const live = r[5] === 1 && !stale;
+    const timeWidth = Math.min(TIME_MAX, textWidth(label.big, 30) + 2);
     rows.push({
       line: r[0],
       badgeColour: stale ? dim(badge.colour) : badge.colour,
       badgeRadius: badge.radius,
       headsign: r[2],
-      headsignWidth: HEADSIGN_MAX - (delay ? DELAY_W : 0) - (live ? LIVE_W : 0),
+      headsignWidth: ROW_W - (delay ? DELAY_W : 0) - (live ? LIVE_W : 0) - TIME_GAP - timeWidth - (unitImage ? UNIT_W : 0),
       headsignColour: stale ? '#797979' : '#f2f2f2',
       big: label.big,
-      timeWidth: unitImage ? 104 - UNIT_W : 104,
+      timeWidth: timeWidth,
       unit: label.unit,
       unitImage: unitImage,
       hasUnit: unitImage !== '', // lite wearable `if` takes booleans, not truthy strings
@@ -167,11 +188,14 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
     const badge = badgeStyle(v[1], 38); // pages/radar .badge height
+    // as wide as the line number ("301" does not fit the 48 px of a short one)
+    const width = Math.max(48, textWidth(v[0], 30) + 12);
     const marker = {
       line: v[0],
       badgeColour: badge.colour,
       badgeRadius: badge.radius,
-      left: Math.round(x - 24),
+      width: width,
+      left: Math.round(x - width / 2),
       top: Math.round(y - 19),
       late: isLate(v[5]),
     };
@@ -189,30 +213,16 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
 }
 
 /**
- * A few letters for a stop on the radar (30 px text leaves room for no more): initials of a name of
- * several words ("Konečného náměstí" -> "KN", "Brno-Královo Pole" -> "BKP"), else its first three
- * letters ("Grohova" -> "Gro"), or the whole of a name of up to four ("Úvoz").
+ * A stop's name on the radar: up to five letters, with a dot when the name is longer
+ * ("Konečného náměstí" -> "Koneč.", "Brno-Královo Pole" -> "Brno.", "Úvoz" stays).
  */
 export function shortStopName(name) {
-  // plain split/join rather than a regular expression, which the watch's engine may lack
-  const plain = String(name).split('…').join('').split('-').join(' ').split(',').join(' ').split('.').join(' ');
-  const words = plain.split(' ').filter(function (w) {
-    return w.length > 0;
-  });
-  if (words.length > 1) {
-    let initials = '';
-    for (let i = 0; i < words.length && i < 3; i++) initials += words[i].charAt(0).toUpperCase();
-    return initials;
-  }
-  const word = words.length ? words[0] : '';
-  return word.length <= 4 ? word : word.substring(0, 3);
-}
-
-/** Whether two possibly shortened ("…") names are the same stop. */
-export function sameStop(a, b) {
-  const x = String(a).split('…').join('');
-  const y = String(b).split('…').join('');
-  return x.length > 0 && y.length > 0 && (x.indexOf(y) === 0 || y.indexOf(x) === 0);
+  const plain = String(name).split('…').join('').trim();
+  if (plain.length <= 5) return plain;
+  let cut = plain.substring(0, 5);
+  // no space, hyphen or comma right before the dot
+  while (cut.length > 0 && ' -,.'.indexOf(cut.charAt(cut.length - 1)) >= 0) cut = cut.substring(0, cut.length - 1);
+  return cut + '.';
 }
 
 /** "85 m" / "1,2 km" */

@@ -68,12 +68,12 @@
     border-color: #8d99b3;
     background-color: #000000;
 }
-/* a few letters beside each stop but the departures page's own (named above the user) */
+/* up to five letters beside each stop, a little dimmer than the other radar labels */
 .stop-label {
-    width: 70px;
+    width: 100px;
     height: 36px;
     font-size: 30px;
-    color: #8d99b3;
+    color: #6f7890;
 }
 /* the user: red dot with a soft halo (rgba(240, 55, 62, 0.25) on black), as on the Radar board */
 .halo {
@@ -94,25 +94,14 @@
     border-color: #000000;
     background-color: #f0373e;
 }
-.stop-name {
-    left: 113px;
-    top: 184px;
-    width: 240px;
-    height: 36px;
-    font-size: 30px;
-    color: #c3ccdd;
-    text-align: center;
-    text-overflow: ellipsis;
-}
-/* as on the departures page: taller than the text, which sits at the top, so the number is centred */
+/* as on the departures page: taller than the text, which sits at the top, so the number is centred;
+   the width comes from radarMarkers (common/format.js), as wide as the line number */
 .badge {
-    width: 48px;
     height: 38px;
     justify-content: center;
     align-items: flex-start;
 }
 .badge-text {
-    width: 48px;
     height: 32px;
     font-size: 30px;
     color: #ffffff;

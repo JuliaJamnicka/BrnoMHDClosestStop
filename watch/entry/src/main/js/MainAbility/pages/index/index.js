@@ -1,6 +1,6 @@
 import app from '@system.app';
 import { request, now, cancel } from '../../common/link.js';
-import { departureRows, distanceLabel, wrapLines, describeError } from '../../common/format.js';
+import { departureRows, distanceLabel, wrapLines, describeError, textWidth } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t } from '../../common/strings.js';
 import state, { go, restore } from '../../common/state.js';
@@ -37,6 +37,7 @@ export default {
         retryText: '',
         noDeparturesText: '',
         stop: '',
+        stopWidth: 300,
         direction: '',
         distance: '',
         showDistance: false,
@@ -147,6 +148,9 @@ export default {
         this.distance = distanceLabel(r.d);
         step = 'pinned';
         this.pinned = !!state.pinned;
+        // centred in the header; with the pin beside it the name's box fits the name (300 px at most
+        // with the 36 px pin), so the pin is not left out at the edge of the round screen
+        this.stopWidth = this.pinned ? Math.min(264, textWidth(r.s, 38) + 4) : 300;
         this.canReverse = !!r.o;
         const age = receivedAt ? current - receivedAt : 0;
         const stale = age > STALE_AFTER_S;

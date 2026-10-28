@@ -16,7 +16,7 @@
         <image class="now-mark" src="/common/images/now.png"></image>
         <div class="header">
             <image if="{{pinned}}" class="pin" src="/common/images/pin.png" onclick="unpin"></image>
-            <text class="stop" onclick="openPlatforms">{{stop}}</text>
+            <text class="stop" style="width: {{stopWidth}}px;" onclick="openPlatforms">{{stop}}</text>
         </div>
         <div class="direction-row">
             <text class="direction">{{direction}}</text>
@@ -36,7 +36,7 @@
                             </div>
                             <text class="headsign" style="width: {{$item.headsignWidth}}px; color: {{$item.headsignColour}};">{{$item.headsign}}</text>
                             <text if="{{$item.hasDelay}}" class="delay">{{$item.delay}}</text>
-                            <image if="{{$item.live}}" class="live" src="/common/images/live.png"></image>
+                            <div if="{{$item.live}}" class="live"></div>
                             <text class="time" style="width: {{$item.timeWidth}}px; color: {{$item.timeColour}};">{{$item.big}}</text>
                             <image if="{{$item.hasUnit}}" class="unit" src="{{$item.unitImage}}"></image>
                         </div>

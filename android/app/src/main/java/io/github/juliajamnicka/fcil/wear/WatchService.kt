@@ -35,6 +35,8 @@ class WatchService : LifecycleService() {
     private lateinit var bridge: WearBridge
     private lateinit var handler: RequestHandler
     private var connectJob: Job? = null
+    /** Replies in a row that did not reach the watch. */
+    private var sendFailures = 0
 
     // While the watch link runs anyway, also refresh home-screen widgets when the phone is unlocked
     // (at most once a minute); otherwise Android only allows a widget refresh every 15 minutes.
@@ -91,7 +93,12 @@ class WatchService : LifecycleService() {
         lifecycleScope.launch {
             WatchStatus.update { it.copy(lastRequestAt = System.currentTimeMillis()) }
             val reply = handler.handle(bytes)
-            if (!bridge.send(reply)) {
+            if (bridge.send(reply)) {
+                sendFailures = 0
+                // a later reply got through: an earlier failure no longer matters
+                WatchStatus.update { if (it.lastError == getString(R.string.status_send_failed)) it.copy(lastError = null) else it }
+            } else if (++sendFailures >= SEND_FAILURES_SHOWN) {
+                // a single lost reply is normal (the watch left the page or closed the app before it came)
                 WatchStatus.update { it.copy(lastError = getString(R.string.status_send_failed)) }
             }
         }
@@ -132,6 +139,8 @@ class WatchService : LifecycleService() {
         private const val CHANNEL_ID = "watch_link"
         private const val NOTIFICATION_ID = 1
         private const val RETRY_MS = 60_000L
+        /** Lost replies in a row before the app reports it. */
+        private const val SEND_FAILURES_SHOWN = 3
         private const val PREFS = "watch_service"
         private const val KEY_ENABLED = "enabled"
 

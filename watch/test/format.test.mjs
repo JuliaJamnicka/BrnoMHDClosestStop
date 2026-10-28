@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, sameStop } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -66,10 +66,12 @@ test('draws "min" as an image and keeps the times right-aligned', () => {
     // over an hour away: a clock time, no unit
     [false, ''],
   ]);
-  // headsign + optional parts + time always fill the same row width
-  const width = (r) => r.headsignWidth + (r.hasDelay ? 46 : 0) + (r.live ? 24 : 0) + r.timeWidth + (r.hasUnit ? 32 : 0);
+  // headsign + optional parts + time always fill the same row width (372 - badge 58 - gap 10)
+  const width = (r) => r.headsignWidth + (r.hasDelay ? 46 : 0) + (r.live ? 16 : 0) + 4 + r.timeWidth + (r.hasUnit ? 32 : 0);
   const clockRows = departureRows(Object.assign({}, parseReply(reply), { tf: 1 }), 1000, 'teď');
-  assert.deepEqual(rows.concat(clockRows).map(width), [300, 300, 300, 300, 300, 300]);
+  assert.deepEqual(rows.concat(clockRows).map(width), [304, 304, 304, 304, 304, 304]);
+  // the time's box is about as wide as its text, so the live dot sits right beside it
+  assert.ok(rows[1].timeWidth < 40 && clockRows[0].timeWidth > rows[1].timeWidth);
 });
 
 test('dims stale rows to half brightness without live marks', () => {
@@ -130,12 +132,23 @@ test('maps Wear Engine ping results to send or an error to show', () => {
   assert.equal(pingOutcome(undefined), 'phone');
 });
 
-test('shortens stop names for the radar to initials or a few letters', () => {
-  assert.equal(shortStopName('Konečného náměstí'), 'KN');
-  assert.equal(shortStopName('Brno-Královo Pole'), 'BKP');
-  assert.equal(shortStopName('Grohova'), 'Gro');
+test('shortens stop names for the radar to five letters and a dot', () => {
+  assert.equal(shortStopName('Konečného náměstí'), 'Koneč.');
+  assert.equal(shortStopName('Brno-Královo Pole'), 'Brno.');
+  assert.equal(shortStopName('Grohova'), 'Groho.');
   assert.equal(shortStopName('Úvoz'), 'Úvoz');
-  assert.equal(shortStopName('Technologický p…'), 'TP');
-  assert.ok(sameStop('Konečného nám…', 'Konečného náměstí'));
-  assert.ok(!sameStop('Česká', 'Grohova'));
+  assert.equal(shortStopName('Česká'), 'Česká');
+  assert.equal(shortStopName('Technologický p…'), 'Techn.');
+});
+
+test('estimates text widths for boxes that fit their text', () => {
+  assert.equal(textWidth('12', 30), Math.ceil(2 * 0.56 * 30));
+  assert.ok(textWidth('Mendlovo náměstí', 38) > textWidth('Česká', 38));
+});
+
+test('widens radar badges for long line numbers', () => {
+  const [short, long] = radarMarkers([['4', 'T', 0, 0, -1, 0], ['301', 'B', 0, 0, -1, 0]], 466, 200, 800);
+  assert.equal(short.width, 48);
+  assert.ok(long.width > 48 && long.width >= textWidth('301', 30) + 12);
+  assert.equal(long.left, Math.round(233 - long.width / 2));
 });
