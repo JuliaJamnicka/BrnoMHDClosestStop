@@ -2,8 +2,8 @@ import app from '@system.app';
 import { request, now, cancel } from '../../common/link.js';
 import { departureRows, distanceLabel, wrapLines, describeError, textWidth } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
-import { t } from '../../common/strings.js';
-import state, { go, restore } from '../../common/state.js';
+import { t, errorKey } from '../../common/strings.js';
+import state, { go, restore, loadLang } from '../../common/state.js';
 
 // Brand-coloured pictures for the link errors (Fčil logo when the phone app is missing).
 const ERROR_ICONS = {
@@ -20,9 +20,7 @@ let receivedAt = 0;
 let refreshTimer = null;
 let tickTimer = null;
 let step = '';
-let shownCount = -1;
-const VISIBLE_ROWS = 4; // .rows: 4 rows of 51 px
-const ROWS_HEIGHT = 204;
+let crownOnRows = false; // the crown scrolls the departures once their list is shown
 
 export default {
     data: {
@@ -45,24 +43,27 @@ export default {
         canReverse: false,
         rows: [],
         empty: false,
-        // scroll track beside the rows; scrolltop/scrollbottom are the only scroll positions a lite list reports
-        scrollable: false,
-        trackColour: '#000000',
-        thumbTop: 0,
-        thumbHeight: 0,
         staleText: '',
         isStale: false,
     },
     onInit() {
+        crownOnRows = false;
         restore(this);
-        this.applyTexts();
+        const self = this;
+        if (this.nav) {
+            this.applyTexts(); // from another page, with the language
+        } else {
+            // app start: the loading text stays empty until the language of the last run is read
+            loadLang(function () {
+                if (self.view === 'loading') self.applyTexts();
+            });
+        }
         if (state.lastDep) {
             // returning from another page: show the last data at once, then refresh
             reply = state.lastDep;
             this.showDepartures();
         }
         this.load();
-        const self = this;
         refreshTimer = setInterval(function () {
             self.load();
         }, HOME_REFRESH_MS);
@@ -105,10 +106,14 @@ export default {
     },
 
     showScriptError(e) {
-        this.errorTitle = t(state.lang, 'err_req');
+        this.errorTitle = t(state.lang, 'err_other');
         this.hasErrorIcon = false;
-        this.errorLines = wrapLines(describeError(e) + ' @' + step, HINT_CHARS);
+        // "Try again" first; the technical detail last, small enough to ignore but there for a bug report
+        this.errorLines = wrapLines(t(state.lang, 'err_other_hint'), HINT_CHARS).concat(
+            wrapLines(describeError(e) + ' @' + step, HINT_CHARS),
+        );
         this.view = 'error';
+        crownOnRows = false;
     },
 
     showReply(answer) {
@@ -123,11 +128,12 @@ export default {
             if (reply) {
                 this.showDepartures(); // keep showing the last data; it turns stale after a minute
             } else {
-                this.errorTitle = t(state.lang, 'err_' + answer.e);
+                this.errorTitle = t(state.lang, errorKey(answer.e));
                 this.errorIcon = ERROR_ICONS[answer.e] || '';
                 this.hasErrorIcon = this.errorIcon !== '';
-                this.errorLines = wrapLines(t(state.lang, 'err_' + answer.e + '_hint'), HINT_CHARS);
+                this.errorLines = wrapLines(t(state.lang, errorKey(answer.e) + '_hint'), HINT_CHARS);
                 this.view = 'error';
+                crownOnRows = false;
             }
         }
     },
@@ -159,8 +165,6 @@ export default {
         step = 'rows-set';
         this.rows = rows;
         this.empty = rows.length === 0;
-        step = 'scroll';
-        this.updateScroll(rows.length);
         // stale data dims the rows and takes the distance's place in the footer
         step = 'stale';
         this.isStale = stale;
@@ -168,25 +172,24 @@ export default {
         this.showDistance = !stale && this.distance !== '';
         step = 'view';
         this.view = 'dep';
+        this.focusCrown();
         step = 'done';
     },
 
-    updateScroll(count) {
-        const scrollable = count > VISIBLE_ROWS;
-        if (scrollable === this.scrollable && count === shownCount) return;
-        shownCount = count;
-        this.scrollable = scrollable;
-        this.trackColour = scrollable ? '#16213a' : '#000000';
-        this.thumbHeight = scrollable ? Math.round((ROWS_HEIGHT * VISIBLE_ROWS) / count) : 0;
-        this.thumbTop = 0;
-    },
-
-    scrolledTop() {
-        this.thumbTop = 0;
-    },
-
-    scrolledBottom() {
-        this.thumbTop = ROWS_HEIGHT - this.thumbHeight;
+    // The list exists only while the departures are shown; once it is there, the crown scrolls it.
+    focusCrown() {
+        if (crownOnRows) return;
+        const self = this;
+        setTimeout(function () {
+            try {
+                if (self.$refs.rows) {
+                    self.$refs.rows.rotation({ focus: true });
+                    crownOnRows = true;
+                }
+            } catch (e) {
+                // no crown support: swiping still scrolls
+            }
+        }, 100);
     },
 
     reverse() {
@@ -215,6 +218,10 @@ export default {
     onSwipe(e) {
         if (e.direction === 'right') app.terminate();
         else if (e.direction === 'left') this.openRadar();
-        // no swipe up for the stop list: that scrolls the departures (the ≡ button opens it)
+        // swipe up on the departures scrolls them; below them it opens the stop list (bottomSwipe)
+    },
+
+    bottomSwipe(e) {
+        if (e.direction === 'up') this.openStops();
     },
 };

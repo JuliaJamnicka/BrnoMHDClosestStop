@@ -1,8 +1,8 @@
 // Request/reply over Wear Engine P2P with the phone app (protocol: android/.../wear/WatchProtocol.kt).
 import { P2pClient, Message, Builder } from './wearengine.js';
 import { PHONE_PACKAGE, PHONE_FINGERPRINT, REQUEST_TIMEOUT_MS } from './config.js';
-import { parseReply, pingOutcome } from './format.js';
-import state from './state.js';
+import { parseReply, pingOutcome, replyMatches } from './format.js';
+import state, { setLang } from './state.js';
 
 let client = null;
 let registered = false;
@@ -14,7 +14,7 @@ function finish(reply) {
   const p = pending;
   pending = null;
   clearTimeout(p.timer);
-  if (reply && reply.lg) state.lang = reply.lg;
+  if (reply && reply.lg) setLang(reply.lg);
   if (reply && reply.t) state.clockOffset = reply.t - Math.floor(Date.now() / 1000);
   p.onReply(reply);
 }
@@ -37,7 +37,8 @@ function ensureReceiver() {
     onReceiveMessage: function (data) {
       if (data && data.isFileType) return;
       const reply = parseReply(data);
-      if (reply) finish(reply);
+      // only the answer to the pending request (a late reply to another page's request is dropped)
+      if (reply && pending && replyMatches(pending.kind, reply)) finish(reply);
     },
   });
 }
@@ -60,6 +61,7 @@ export function request(body, onReply) {
     return;
   }
   pending = {
+    kind: body.c,
     onReply: onReply,
     sent: false,
     timer: setTimeout(function () {

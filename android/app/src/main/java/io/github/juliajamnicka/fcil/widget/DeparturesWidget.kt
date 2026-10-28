@@ -180,7 +180,8 @@ private fun Content(
 
 @Composable
 private fun DepartureRow(context: Context, palette: WidgetPalette, d: DepartureDto, now: Long, clock: Boolean) {
-    Row(GlanceModifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+    // end padding keeps the times clear of the list's scroll bar, which is drawn over the rows
+    Row(GlanceModifier.fillMaxWidth().padding(top = 3.dp, bottom = 3.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             GlanceModifier
                 .width(40.dp)

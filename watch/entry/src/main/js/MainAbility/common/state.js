@@ -2,6 +2,7 @@
 // Each page is bundled separately with its own copy of this module, so the state does not survive
 // a page change by itself: go() carries it in the router params and restore() reads it back.
 import router from '@system.router';
+import storage from '@system.storage';
 
 const state = {
   /** Platform chosen in the stop list / platform picker / reverse button; null = follow the nearest stop. */
@@ -28,5 +29,39 @@ export function restore(page) {
     for (const key in saved) state[key] = saved[key];
   } catch (e) {
     // keep the defaults
+  }
+}
+
+const LANG_KEY = 'lang';
+
+/**
+ * Reads the phone app's language from the last run (replies carry it, but the first screen shows
+ * before the first reply); calls [done] either way.
+ */
+export function loadLang(done) {
+  try {
+    storage.get({
+      key: LANG_KEY,
+      default: '',
+      success: function (value) {
+        if (value === 'cs' || value === 'en') state.lang = value;
+      },
+      complete: function () {
+        done();
+      },
+    });
+  } catch (e) {
+    done();
+  }
+}
+
+/** Takes the language of a reply and keeps it for the next start. */
+export function setLang(lang) {
+  if (!lang || lang === state.lang) return;
+  state.lang = lang;
+  try {
+    storage.set({ key: LANG_KEY, value: lang });
+  } catch (e) {
+    // the next start shows Czech until the first reply
   }
 }

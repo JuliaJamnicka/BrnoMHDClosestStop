@@ -2,7 +2,7 @@
     <image class="now-mark" src="/common/images/now.png"></image>
     <text class="title">{{title}}</text>
     <text if="{{hasMessage}}" class="hint">{{message}}</text>
-    <list class="list">
+    <list ref="list" class="list">
         <list-item class="item" onclick="pickNearest">
             <div class="rule"></div>
             <div class="item-content">

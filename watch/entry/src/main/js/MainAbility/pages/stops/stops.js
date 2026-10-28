@@ -1,6 +1,6 @@
 import { request, cancel } from '../../common/link.js';
 import { distanceLabel, modeChips } from '../../common/format.js';
-import { t } from '../../common/strings.js';
+import { t, errorKey } from '../../common/strings.js';
 import state, { go, restore } from '../../common/state.js';
 
 /** A "near" row for the list: name, distance and up to three mode chips in fixed slots. */
@@ -39,7 +39,7 @@ export default {
             self.title = t(state.lang, 'nearest');
             self.autoText = t(state.lang, 'nearestAuto');
             if (reply.c !== 'near') {
-                self.message = t(state.lang, 'err_' + reply.e);
+                self.message = t(state.lang, errorKey(reply.e));
                 return;
             }
             self.message = '';
@@ -53,6 +53,15 @@ export default {
             }
             self.stops = stops;
         });
+    },
+
+    // the crown scrolls the list
+    onShow() {
+        try {
+            this.$refs.list.rotation({ focus: true });
+        } catch (e) {
+            // no crown support: swiping still scrolls
+        }
     },
 
     onDestroy() {
