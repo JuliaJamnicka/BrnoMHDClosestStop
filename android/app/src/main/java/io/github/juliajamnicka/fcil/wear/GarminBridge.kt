@@ -16,7 +16,10 @@ import kotlin.coroutines.resumeWithException
  * watch app's id ([BuildConfig.GARMIN_APP_ID], the id in garmin/manifest.xml) is all that pairs them.
  */
 class GarminBridge(private val context: Context) : WatchLink {
-    private val connectIQ = ConnectIQ.getInstance(context.applicationContext, ConnectIQ.IQConnectType.WIRELESS)
+    private val connectIQ = ConnectIQ.getInstance(
+        context.applicationContext,
+        if (BuildConfig.GARMIN_TETHERED) ConnectIQ.IQConnectType.TETHERED else ConnectIQ.IQConnectType.WIRELESS,
+    )
     private val app = IQApp(BuildConfig.GARMIN_APP_ID)
     private var device: IQDevice? = null
     private var initialized = false
