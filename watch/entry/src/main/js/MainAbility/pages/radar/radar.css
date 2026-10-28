@@ -97,7 +97,7 @@
 /* as on the departures page: taller than the text, which sits at the top, so the number is centred;
    the width comes from radarMarkers (common/format.js), as wide as the line number */
 .badge {
-    height: 38px;
+    height: 36px;
     justify-content: center;
     align-items: flex-start;
 }

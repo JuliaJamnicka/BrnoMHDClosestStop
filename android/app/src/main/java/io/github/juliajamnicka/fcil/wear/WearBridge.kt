@@ -20,7 +20,7 @@ import kotlin.coroutines.resumeWithException
  * the Wear Engine permission granted (see AuthClient in MainActivity) and the watch app's
  * package name + signing fingerprint (BuildConfig.WATCH_PACKAGE / WATCH_FINGERPRINT).
  */
-class WearBridge(context: Context) {
+class WearBridge(context: Context) : WatchLink {
     private val deviceClient = HiWear.getDeviceClient(context)
     private val monitorClient = HiWear.getMonitorClient(context)
     private val p2pClient = HiWear.getP2pClient(context)
@@ -31,10 +31,9 @@ class WearBridge(context: Context) {
     private var receiver: Receiver? = null
     private var monitor: MonitorListener? = null
 
-    val deviceName: String? get() = device?.name
+    override val deviceName: String? get() = device?.name
 
-    /** Finds the paired watch and starts listening for its messages. */
-    suspend fun connect(onMessage: (ByteArray) -> Unit, onConnectionChanged: (Boolean) -> Unit) {
+    override suspend fun connect(onRequest: (ByteArray) -> Unit, onConnectionChanged: (Boolean) -> Unit) {
         disconnect()
         val devices = deviceClient.bondedDevices.await()
         val watch = devices.firstOrNull { it.isConnected } ?: devices.firstOrNull()
@@ -44,7 +43,7 @@ class WearBridge(context: Context) {
         // The lite-wearable SDK sends text (Builder.setDescription); accept it as data or description.
         val r = Receiver { message ->
             if (message.type != Message.MESSAGE_TYPE_FILE) {
-                (message.data ?: message.description?.encodeToByteArray())?.let(onMessage)
+                (message.data ?: message.description?.encodeToByteArray())?.let(onRequest)
             }
         }
         p2pClient.registerReceiver(watch, r).await()
@@ -55,8 +54,7 @@ class WearBridge(context: Context) {
             .onSuccess { monitor = m }
     }
 
-    /** Sends a reply; returns true when the watch acknowledged it. */
-    suspend fun send(payload: ByteArray): Boolean {
+    override suspend fun send(payload: ByteArray): Boolean {
         val watch = device ?: return false
         val message = Message.Builder().setPayload(payload).build()
         return suspendCancellableCoroutine { cont ->
@@ -69,7 +67,7 @@ class WearBridge(context: Context) {
         }
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         receiver?.let { runCatching { p2pClient.unregisterReceiver(it) } }
         monitor?.let { runCatching { monitorClient.unregister(it) } }
         receiver = null

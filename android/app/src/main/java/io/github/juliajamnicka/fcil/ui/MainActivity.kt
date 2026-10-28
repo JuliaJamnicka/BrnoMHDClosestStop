@@ -27,6 +27,7 @@ import com.huawei.wearengine.auth.Permission
 import io.github.juliajamnicka.fcil.FcilApp
 import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.Language
+import io.github.juliajamnicka.fcil.wear.WatchKind
 import io.github.juliajamnicka.fcil.wear.WatchService
 import io.github.juliajamnicka.fcil.widget.DeparturesWidget
 import io.github.juliajamnicka.fcil.widget.WidgetClock
@@ -60,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                         SettingsScreen(
                             settingsFlow = graph.settings.settings,
                             watchEnabled = WatchService.isEnabled(this),
+                            watchKind = WatchService.kind(this),
                             hasLocation = hasLocation,
                             hasBackgroundLocation = hasBackgroundLocation,
                             setupMessage = setupMessage,
@@ -111,14 +113,21 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) singlePermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
-    /** Asks Huawei Health for the Wear Engine permission, then starts the watch link service. */
-    private fun connectWatch() {
+    /**
+     * Starts the watch link service. Huawei: after asking Huawei Health for the Wear Engine
+     * permission. Garmin: right away, Connect IQ has no permission to ask for.
+     */
+    private fun connectWatch(kind: WatchKind) {
         setupMessage = null
+        if (kind == WatchKind.GARMIN) {
+            WatchService.start(this, WatchKind.GARMIN)
+            return
+        }
         try {
             HiWear.getAuthClient(this)
                 .requestPermission(object : AuthCallback {
                     override fun onOk(permissions: Array<out Permission>?) {
-                        runOnUiThread { WatchService.start(this@MainActivity) }
+                        runOnUiThread { WatchService.start(this@MainActivity, WatchKind.HUAWEI) }
                     }
 
                     override fun onCancel() {

@@ -122,7 +122,7 @@ export function departureRows(reply, now, nowWord, stale) {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const label = timeLabel(r[3], now, nowWord, clock);
-    const badge = badgeStyle(r[1], 44); // pages/index .badge height
+    const badge = badgeStyle(r[1], 42); // pages/index .badge height
     const colour = timeColour(r[3] - now < 60, r[4]);
     const delay = clock ? delayLabel(r[4]) : '';
     let unitImage = '';
@@ -197,7 +197,7 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
     const y = centre - v[3] * scale;
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
-    const badge = badgeStyle(v[1], 38); // pages/radar .badge height
+    const badge = badgeStyle(v[1], 36); // pages/radar .badge height
     // as wide as the line number ("301" does not fit the 48 px of a short one)
     const width = Math.max(48, textWidth(v[0], 30) + 12);
     const marker = {
@@ -206,7 +206,7 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
       badgeRadius: badge.radius,
       width: width,
       left: Math.round(x - width / 2),
-      top: Math.round(y - 19),
+      top: Math.round(y - 18),
       late: isLate(v[5]),
     };
     const arrow = arrowFor(v[4]);
@@ -233,6 +233,11 @@ export function shortStopName(name) {
   // no space, hyphen or comma right before the dot
   while (cut.length > 0 && ' -,.'.indexOf(cut.charAt(cut.length - 1)) >= 0) cut = cut.substring(0, cut.length - 1);
   return cut + '.';
+}
+
+/** "17:05": the watch's time of day for the departures page. */
+export function clockLabel(date) {
+  return pad(date.getHours()) + ':' + pad(date.getMinutes());
 }
 
 /** "85 m" / "1,2 km" */

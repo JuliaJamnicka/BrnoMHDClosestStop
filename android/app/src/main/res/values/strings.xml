@@ -113,4 +113,14 @@
     <string name="widget_style_badges_vivid">Vivid</string>
     <string name="widget_style_badges_muted">Muted</string>
     <string name="widget_style_badges_mono">Single colour</string>
+    <string name="watch_pick_title">Which watch?</string>
+    <string name="watch_huawei_models">Watch GT, Watch Fit and more</string>
+    <string name="watch_huawei_via">Through the Huawei Health app</string>
+    <string name="watch_garmin_models">Forerunner, Fenix, Venu, Vívoactive…</string>
+    <string name="watch_garmin_via">Through the Garmin Connect app</string>
+    <string name="watch_pick_note">The watch needs the Fčil app too: for Garmin, from the Connect IQ Store.</string>
+    <string name="garmin_no_watch">No watch is paired in the Garmin Connect app.</string>
+    <string name="garmin_connect_missing">Install the Garmin Connect app and pair the watch in it.</string>
+    <string name="garmin_connect_update">Update the Garmin Connect app.</string>
+    <string name="garmin_connect_error">Garmin Connect is not available (%1$s).</string>
 </resources>
