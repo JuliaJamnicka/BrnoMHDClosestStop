@@ -26,6 +26,13 @@ class FusedLocationSource(private val context: Context) : LocationSource {
         if (!hasPermission()) return null
         val last = runCatching { client.lastLocation.await() }.getOrNull()
         if (last != null && ageSeconds(last) < 30 && last.accuracy < 50) return last.toPoint()
+        // A fix up to 2 minutes old answers at once (waiting for a fresh one took seconds, e.g. for
+        // the first watch request with the phone in a pocket); a fresh fix is still requested, so
+        // the next request (the watch refreshes every 20 s) uses it.
+        if (last != null && ageSeconds(last) < QUICK_AGE_S && last.accuracy < 100) {
+            runCatching { client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token) }
+            return last.toPoint()
+        }
 
         val token = CancellationTokenSource()
         val fresh = withTimeoutOrNull(4_000) {
@@ -48,3 +55,6 @@ class FusedLocationSource(private val context: Context) : LocationSource {
 
     private fun Location.toPoint(approximate: Boolean = false) = GeoPoint(latitude, longitude, approximate)
 }
+
+/** A last known fix this young is used at once while a fresh one is requested (FusedLocationSource). */
+private const val QUICK_AGE_S = 120

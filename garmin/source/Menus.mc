@@ -43,11 +43,11 @@ class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
         } else if (id == :reverse) {
             var r = _view.reply;
             if (r != null && r["o"] != null) {
-                app.pinned = r["o"].toString();
+                app.setPinned(r["o"].toString());
                 _view.reload();
             }
         } else if (id == :unpin) {
-            app.pinned = null;
+            app.setPinned(null);
             _view.reload();
         } else if (id == :radar) {
             var radar = new RadarView();
@@ -141,7 +141,7 @@ class PickDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         var app = getFcil();
-        app.pinned = id == null || id == :auto ? null : id.toString();
+        app.setPinned(id == null || id == :auto ? null : id.toString());
         app.lastDep = null;
         WatchUi.popView(WatchUi.SLIDE_DOWN);
         _view.reload();

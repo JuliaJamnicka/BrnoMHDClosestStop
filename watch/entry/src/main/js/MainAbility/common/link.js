@@ -4,10 +4,14 @@ import { PHONE_PACKAGE, PHONE_FINGERPRINT, REQUEST_TIMEOUT_MS } from './config.j
 import { parseReply, pingOutcome, replyMatches } from './format.js';
 import state, { setLang } from './state.js';
 
+/** How long the diagnosis after a failed request may take. */
+const PING_TIMEOUT_MS = 3000;
+/** Longest wait for the SDK to learn the Wear Engine version before the first send. */
+const VERSION_WAIT_MS = 1000;
+
 let client = null;
 let registered = false;
-let pending = null; // { onReply, timer, sent }
-let installed = false; // set once ping found the phone app; checked again after a failure
+let pending = null; // { kind, onReply, timer, sent }
 
 function finish(reply) {
   if (!pending) return;
@@ -68,43 +72,51 @@ export function request(body, onReply) {
       failed();
     }, REQUEST_TIMEOUT_MS),
   };
-  if (installed) {
-    send(body);
+  // Straight to the phone: asking Wear Engine first whether the phone app is installed cost a
+  // Bluetooth round trip on every page's first request. That question is now asked only when no
+  // reply comes, to say what is wrong.
+  const mine = pending;
+  whenReady(function () {
+    if (pending === mine) send(body);
+  }, 0);
+}
+
+// The SDK picks its send method by the Wear Engine version, which it gets asynchronously when the
+// client is created: wait for it (briefly; after that the SDK's fallback is used).
+function whenReady(action, waited) {
+  if (client.version !== undefined || waited >= VERSION_WAIT_MS) {
+    action();
     return;
   }
-  // Ask Wear Engine first whether the phone app is there at all, so the watch can say what to do.
-  const mine = pending;
-  try {
-    ping(mine, body);
-  } catch (e) {
-    send(body); // no ping on this watch: just try
-  }
+  setTimeout(function () {
+    whenReady(action, waited + 50);
+  }, 50);
 }
 
-function ping(mine, body) {
-  client.ping({
-    onSuccess: function () {},
-    onFailure: function () {},
-    onPingResult: function (result) {
-      if (pending !== mine) return; // replaced or timed out meanwhile
-      const outcome = pingOutcome(result && result.code);
-      if (outcome === 'send') {
-        installed = true;
-        send(body);
-      } else {
-        finish({ c: 'err', e: outcome });
-      }
-    },
-  });
-}
-
-// The phone app is installed (ping) but did not take or answer the message: most likely it is not
-// running. Without a sent message the link itself is the problem. Ping again on the next request.
+// No reply (or the message did not go out): ask Wear Engine why. Phone app installed: it is not
+// running ("closed"); not installed: "noapp"; no answer either: no link to the phone ("phone").
 function failed() {
-  if (!pending) return;
-  const wasSent = pending.sent;
-  installed = false;
-  finish({ c: 'err', e: wasSent ? 'closed' : 'phone' });
+  if (!pending || pending.diagnosing) return;
+  const mine = pending;
+  mine.diagnosing = true;
+  clearTimeout(mine.timer);
+  const fallback = mine.sent ? 'closed' : 'phone';
+  mine.timer = setTimeout(function () {
+    if (pending === mine) finish({ c: 'err', e: fallback });
+  }, PING_TIMEOUT_MS);
+  try {
+    client.ping({
+      onSuccess: function () {},
+      onFailure: function () {},
+      onPingResult: function (result) {
+        if (pending !== mine) return; // replaced or answered meanwhile
+        const outcome = pingOutcome(result && result.code);
+        finish({ c: 'err', e: outcome === 'send' ? 'closed' : outcome });
+      },
+    });
+  } catch (e) {
+    finish({ c: 'err', e: fallback });
+  }
 }
 
 function send(body) {

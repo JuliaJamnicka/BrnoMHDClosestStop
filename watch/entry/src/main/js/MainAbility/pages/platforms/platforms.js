@@ -1,6 +1,6 @@
 import { request, cancel } from '../../common/link.js';
 import { t, errorKey } from '../../common/strings.js';
-import state, { go, restore } from '../../common/state.js';
+import state, { go, restore, setPinned } from '../../common/state.js';
 
 let ids = [];
 
@@ -57,7 +57,7 @@ export default {
 
     pick(index) {
         if (index < 0 || index >= ids.length) return;
-        state.pinned = ids[index];
+        setPinned(ids[index]);
         state.lastDep = null;
         go('pages/index/index');
     },

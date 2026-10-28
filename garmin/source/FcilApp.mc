@@ -15,6 +15,17 @@ class FcilApp extends Application.AppBase {
     function initialize() {
         AppBase.initialize();
         link = new Link();
+        // the stop or direction chosen last run
+        var saved = Application.Storage.getValue("pinned");
+        if (saved instanceof String && saved.length() > 0) {
+            pinned = saved;
+        }
+    }
+
+    //! Chooses a platform (null: the nearest stop again) and keeps the choice for the next start.
+    function setPinned(platform as String or Null) as Void {
+        pinned = platform;
+        Application.Storage.setValue("pinned", platform != null ? platform : "");
     }
 
     function onStart(state as Dictionary?) as Void {

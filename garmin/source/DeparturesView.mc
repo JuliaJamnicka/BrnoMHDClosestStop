@@ -199,7 +199,8 @@ class DeparturesView extends WatchUi.View {
         y += 4;
 
         // departures, as many as fit above the footer
-        var footerH = dc.getFontHeight(smallFont) + (round ? h * 0.07 : h * 0.03).toNumber();
+        // footer: distance (or a note) and under it the time of day
+        var footerH = 2 * dc.getFontHeight(smallFont) + (round ? h * 0.05 : h * 0.02).toNumber();
         var rowFont = Graphics.FONT_TINY;
         var rowH = dc.getFontHeight(rowFont) + 8;
         _visible = (h - footerH - y) / rowH;
@@ -231,6 +232,10 @@ class DeparturesView extends WatchUi.View {
         }
         dc.setColor(footerColour, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, footerY, smallFont, Format.fit(dc, footer, smallFont, (w * 0.6).toNumber()), Graphics.TEXT_JUSTIFY_CENTER);
+        var time = System.getClockTime();
+        dc.setColor(Format.GREY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, footerY + dc.getFontHeight(smallFont), smallFont,
+            time.hour.format("%02d") + ":" + time.min.format("%02d"), Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     //! Half the usable width of a row: on a round screen the chord at the row's edge farther from
