@@ -35,7 +35,7 @@ To reach the phone app from the simulator: build the phone app with `garminTethe
 simulator's **Connection** menu. Connect IQ SDK 9.1 and 9.2 have a known simulator crash when the watch sends
 to the phone over this link
 ([bug report](https://forums.garmin.com/developer/connect-iq/i/bug-reports/connect-iq-simulator-9-1-0-crashes-on-first-communications-transmit-over-tethered-connection));
-an 8.x SDK avoids it.
+if it happens, try another SDK version in the SDK Manager.
 
 ## On the watch
 
