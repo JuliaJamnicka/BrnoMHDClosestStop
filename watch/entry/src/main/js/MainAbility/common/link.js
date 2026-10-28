@@ -2,7 +2,7 @@
 import { P2pClient, Message, Builder } from './wearengine.js';
 import { PHONE_PACKAGE, PHONE_FINGERPRINT, REQUEST_TIMEOUT_MS } from './config.js';
 import { parseReply, pingOutcome } from './format.js';
-import state from './state.js';
+import state, { setLang } from './state.js';
 
 let client = null;
 let registered = false;
@@ -14,7 +14,7 @@ function finish(reply) {
   const p = pending;
   pending = null;
   clearTimeout(p.timer);
-  if (reply && reply.lg) state.lang = reply.lg;
+  if (reply && reply.lg) setLang(reply.lg);
   if (reply && reply.t) state.clockOffset = reply.t - Math.floor(Date.now() / 1000);
   p.onReply(reply);
 }

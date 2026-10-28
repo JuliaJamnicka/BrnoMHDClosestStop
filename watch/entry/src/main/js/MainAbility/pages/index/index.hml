@@ -24,10 +24,10 @@
                 <image class="icon" src="/common/images/reverse.png"></image>
             </div>
         </div>
-        <!-- 4 rows fit; more scroll (the phone app's departure count), header and footer stay -->
+        <!-- 4 rows fit; more scroll (swipe or crown; the phone app's departure count), header and footer stay -->
         <div class="rows-box">
             <stack class="rows-area">
-                <list class="rows" onscrolltop="scrolledTop" onscrollbottom="scrolledBottom">
+                <list ref="rows" class="rows">
                     <list-item for="{{rows}}" class="row">
                         <div class="rule"></div>
                         <div class="row-content">
@@ -44,22 +44,21 @@
                 </list>
                 <text if="{{empty}}" class="hint">{{noDeparturesText}}</text>
             </stack>
-            <!-- scroll position, only when the rows do not fit -->
-            <div class="track" style="background-color: {{trackColour}};">
-                <div if="{{scrollable}}" class="thumb" style="margin-top: {{thumbTop}}px; height: {{thumbHeight}}px;"></div>
-            </div>
         </div>
-        <div class="footer">
-            <div class="round-button" onclick="openStops">
-                <image class="icon" src="/common/images/list.png"></image>
-            </div>
-            <div class="footer-middle">
-                <text if="{{isStale}}" class="stale-text">{{staleText}}</text>
-                <image if="{{showDistance}}" class="loc" src="/common/images/loc.png"></image>
-                <text if="{{showDistance}}" class="distance">{{distance}}</text>
-            </div>
-            <div class="round-button" onclick="openRadar">
-                <image class="icon" src="/common/images/radar.png"></image>
+        <!-- everything below the departures: swiping up here opens the stop list (up on the rows scrolls them) -->
+        <div class="bottom" onswipe="bottomSwipe">
+            <div class="footer">
+                <div class="round-button" onclick="openStops">
+                    <image class="icon" src="/common/images/list.png"></image>
+                </div>
+                <div class="footer-middle">
+                    <text if="{{isStale}}" class="stale-text">{{staleText}}</text>
+                    <image if="{{showDistance}}" class="loc" src="/common/images/loc.png"></image>
+                    <text if="{{showDistance}}" class="distance">{{distance}}</text>
+                </div>
+                <div class="round-button" onclick="openRadar">
+                    <image class="icon" src="/common/images/radar.png"></image>
+                </div>
             </div>
         </div>
     </div>

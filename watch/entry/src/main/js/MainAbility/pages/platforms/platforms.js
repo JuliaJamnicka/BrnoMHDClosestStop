@@ -42,6 +42,15 @@ export default {
         });
     },
 
+    // the crown scrolls the list
+    onShow() {
+        try {
+            this.$refs.list.rotation({ focus: true });
+        } catch (e) {
+            // no crown support: swiping still scrolls
+        }
+    },
+
     onDestroy() {
         cancel();
     },
