@@ -113,4 +113,14 @@
     <string name="widget_style_badges_vivid">Výrazné</string>
     <string name="widget_style_badges_muted">Tlumené</string>
     <string name="widget_style_badges_mono">Jednobarevné</string>
+    <string name="watch_pick_title">Které hodinky?</string>
+    <string name="watch_huawei_models">Watch GT, Watch Fit a další</string>
+    <string name="watch_huawei_via">Přes aplikaci Huawei Zdraví</string>
+    <string name="watch_garmin_models">Forerunner, Fenix, Venu, Vívoactive…</string>
+    <string name="watch_garmin_via">Přes aplikaci Garmin Connect</string>
+    <string name="watch_pick_note">Do hodinek je potřeba nainstalovat aplikaci Fčil: u Garminu z obchodu Connect IQ.</string>
+    <string name="garmin_no_watch">V aplikaci Garmin Connect nejsou spárované žádné hodinky.</string>
+    <string name="garmin_connect_missing">Nainstalujte aplikaci Garmin Connect a spárujte v ní hodinky.</string>
+    <string name="garmin_connect_update">Aktualizujte aplikaci Garmin Connect.</string>
+    <string name="garmin_connect_error">Garmin Connect není k dispozici (%1$s).</string>
 </resources>
