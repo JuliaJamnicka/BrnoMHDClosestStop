@@ -43,10 +43,10 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
   assert.deepEqual(
     rows.map((r) => [r.line, r.badgeColour, r.badgeRadius, r.delay, r.timeColour, r.live]),
     [
-      ['6', '#c8262c', 8, '', '#f0373e', true],
+      ['6', '#c8262c', 9, '', '#f0373e', true],
       // with minutes the delay is only the amber colour (the minutes include it)
-      ['4', '#c8262c', 8, '', '#ffb020', true],
-      ['N93', '#1f7a4d', 19, '', '#ffffff', false],
+      ['4', '#c8262c', 9, '', '#ffb020', true],
+      ['N93', '#1f7a4d', 22, '', '#ffffff', false],
     ],
   );
   // "tf":1 (clock setting): clock times, the departing one still in red
@@ -96,8 +96,8 @@ test('picks pre-drawn mode chips in the phone language', () => {
 test('places radar markers north-up around the centre and drops far vehicles', () => {
   const markers = radarMarkers([['4', 'T', 0, 400, 0, 0], ['1', 'T', 900, 0, 0, 0], ['67', 'B', -400, 0, 0, 2]], 466, 200, 800);
   assert.deepEqual(markers.map((m) => [m.line, m.left, m.top, m.late]), [
-    ['4', 233 - 24, 233 - 100 - 16, false],
-    ['67', 233 - 100 - 24, 233 - 16, true],
+    ['4', 233 - 24, 233 - 100 - 19, false],
+    ['67', 233 - 100 - 24, 233 - 19, true],
   ]);
 });
 

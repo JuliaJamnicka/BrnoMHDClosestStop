@@ -92,7 +92,7 @@ export function departureRows(reply, now, nowWord, stale) {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const label = timeLabel(r[3], now, nowWord, clock);
-    const badge = badgeStyle(r[1], 38);
+    const badge = badgeStyle(r[1], 44); // pages/index .badge height
     const colour = timeColour(r[3] - now < 60, r[4]);
     const delay = clock ? delayLabel(r[4]) : '';
     let unitImage = '';
@@ -166,13 +166,13 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
     const y = centre - v[3] * scale;
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
-    const badge = badgeStyle(v[1], 32);
+    const badge = badgeStyle(v[1], 38); // pages/radar .badge height
     const marker = {
       line: v[0],
       badgeColour: badge.colour,
       badgeRadius: badge.radius,
       left: Math.round(x - 24),
-      top: Math.round(y - 16),
+      top: Math.round(y - 19),
       late: isLate(v[5]),
     };
     const arrow = arrowFor(v[4]);
