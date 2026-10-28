@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, sameStop } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -128,4 +128,14 @@ test('maps Wear Engine ping results to send or an error to show', () => {
   assert.equal(pingOutcome(204), 'noapp');
   assert.equal(pingOutcome(203), 'phone');
   assert.equal(pingOutcome(undefined), 'phone');
+});
+
+test('shortens stop names for the radar to initials or a few letters', () => {
+  assert.equal(shortStopName('Konečného náměstí'), 'KN');
+  assert.equal(shortStopName('Brno-Královo Pole'), 'BKP');
+  assert.equal(shortStopName('Grohova'), 'Gro');
+  assert.equal(shortStopName('Úvoz'), 'Úvoz');
+  assert.equal(shortStopName('Technologický p…'), 'TP');
+  assert.ok(sameStop('Konečného nám…', 'Konečného náměstí'));
+  assert.ok(!sameStop('Česká', 'Grohova'));
 });

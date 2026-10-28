@@ -68,6 +68,13 @@
     border-color: #8d99b3;
     background-color: #000000;
 }
+/* a few letters beside each stop but the departures page's own (named above the user) */
+.stop-label {
+    width: 70px;
+    height: 36px;
+    font-size: 30px;
+    color: #8d99b3;
+}
 /* the user: red dot with a soft halo (rgba(240, 55, 62, 0.25) on black), as on the Radar board */
 .halo {
     left: 221px;

@@ -9,7 +9,6 @@ const TEXTS = {
     now: 'teď',
     stale: 'Data před {m} min',
     noDepartures: 'Žádné odjezdy',
-    updated: 'Aktualizováno před {s} s',
     retry: 'Zkusit znovu',
     err_phone: 'Telefon není připojen',
     err_phone_hint: 'Zapněte Bluetooth a jednou otevřete aplikaci Fčil v telefonu.',
@@ -39,7 +38,6 @@ const TEXTS = {
     now: 'now',
     stale: 'Data {m} min old',
     noDepartures: 'No departures',
-    updated: 'Updated {s} s ago',
     retry: 'Try again',
     err_phone: 'Phone not connected',
     err_phone_hint: 'Turn on Bluetooth and open the Fčil app on your phone once.',
@@ -66,7 +64,8 @@ export function t(lang, key, values) {
   const dict = TEXTS[lang] || TEXTS.cs;
   let text = dict[key] || TEXTS.cs[key] || key;
   if (values) {
-    for (const name in values) text = text.replace('{' + name + '}', values[name]);
+    // split/join with a string, not replace() with a number: the watch's engine is strict about types
+    for (const name in values) text = text.split('{' + name + '}').join(String(values[name]));
   }
   return text;
 }

@@ -1,8 +1,7 @@
-import router from '@system.router';
 import { request, cancel } from '../../common/link.js';
 import { distanceLabel, modeChips } from '../../common/format.js';
 import { t } from '../../common/strings.js';
-import state from '../../common/state.js';
+import state, { go, restore } from '../../common/state.js';
 
 /** A "near" row for the list: name, distance and up to three mode chips in fixed slots. */
 function stopRow(name, metres, modes) {
@@ -21,6 +20,7 @@ let ids = [];
 
 export default {
     data: {
+        nav: '', // shared state from the previous page (common/state.js)
         title: '',
         autoText: '',
         message: '',
@@ -29,6 +29,7 @@ export default {
     },
 
     onInit() {
+        restore(this);
         this.title = t(state.lang, 'nearest');
         this.autoText = t(state.lang, 'nearestAuto');
         this.message = t(state.lang, 'loading');
@@ -61,17 +62,17 @@ export default {
     pickNearest() {
         state.pinned = null;
         state.lastDep = null;
-        router.replace({ uri: 'pages/index/index' });
+        go('pages/index/index');
     },
 
     pick(index) {
         if (index < 0 || index >= ids.length) return;
         state.pinned = ids[index];
         state.lastDep = null;
-        router.replace({ uri: 'pages/index/index' });
+        go('pages/index/index');
     },
 
     onSwipe(e) {
-        if (e.direction === 'right') router.replace({ uri: 'pages/index/index' });
+        if (e.direction === 'right') go('pages/index/index');
     },
 };

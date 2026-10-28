@@ -24,20 +24,29 @@
                 <image class="icon" src="/common/images/reverse.png"></image>
             </div>
         </div>
-        <div class="rows">
-            <text if="{{empty}}" class="hint">{{noDeparturesText}}</text>
-            <div for="{{rows}}" class="row">
-                <div class="rule"></div>
-                <div class="row-content">
-                    <div class="badge" style="background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
-                        <text class="badge-text">{{$item.line}}</text>
-                    </div>
-                    <text class="headsign" style="width: {{$item.headsignWidth}}px; color: {{$item.headsignColour}};">{{$item.headsign}}</text>
-                    <text if="{{$item.hasDelay}}" class="delay">{{$item.delay}}</text>
-                    <image if="{{$item.live}}" class="live" src="/common/images/live.png"></image>
-                    <text class="time" style="width: {{$item.timeWidth}}px; color: {{$item.timeColour}};">{{$item.big}}</text>
-                    <image if="{{$item.hasUnit}}" class="unit" src="{{$item.unitImage}}"></image>
-                </div>
+        <!-- 4 rows fit; more scroll (the phone app's departure count), header and footer stay -->
+        <div class="rows-box">
+            <stack class="rows-area">
+                <list class="rows" onscrolltop="scrolledTop" onscrollbottom="scrolledBottom">
+                    <list-item for="{{rows}}" class="row">
+                        <div class="rule"></div>
+                        <div class="row-content">
+                            <div class="badge" style="background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
+                                <text class="badge-text">{{$item.line}}</text>
+                            </div>
+                            <text class="headsign" style="width: {{$item.headsignWidth}}px; color: {{$item.headsignColour}};">{{$item.headsign}}</text>
+                            <text if="{{$item.hasDelay}}" class="delay">{{$item.delay}}</text>
+                            <image if="{{$item.live}}" class="live" src="/common/images/live.png"></image>
+                            <text class="time" style="width: {{$item.timeWidth}}px; color: {{$item.timeColour}};">{{$item.big}}</text>
+                            <image if="{{$item.hasUnit}}" class="unit" src="{{$item.unitImage}}"></image>
+                        </div>
+                    </list-item>
+                </list>
+                <text if="{{empty}}" class="hint">{{noDeparturesText}}</text>
+            </stack>
+            <!-- scroll position, only when the rows do not fit -->
+            <div class="track" style="background-color: {{trackColour}};">
+                <div if="{{scrollable}}" class="thumb" style="margin-top: {{thumbTop}}px; height: {{thumbHeight}}px;"></div>
             </div>
         </div>
         <div class="footer">

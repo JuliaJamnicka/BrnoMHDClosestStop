@@ -7,6 +7,7 @@
     <text class="label-400">400 m</text>
     <text class="label-800">800 m</text>
     <div for="{{stops}}" class="stop-dot" style="left: {{$item.left}}px; top: {{$item.top}}px;"></div>
+    <text for="{{stopLabels}}" class="stop-label" style="left: {{$item.left}}px; top: {{$item.top}}px;">{{$item.text}}</text>
     <div class="halo"></div>
     <div class="me"></div>
     <text if="{{hasStopName}}" class="stop-name">{{stopName}}</text>
@@ -14,5 +15,5 @@
     <div for="{{markers}}" class="badge" style="left: {{$item.left}}px; top: {{$item.top}}px; background-color: {{$item.badgeColour}}; border-radius: {{$item.badgeRadius}}px;">
         <text class="badge-text">{{$item.line}}</text>
     </div>
-    <text class="status">{{status}}</text>
+    <text if="{{hasStatus}}" class="status">{{status}}</text>
 </stack>

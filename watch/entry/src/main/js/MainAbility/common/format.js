@@ -188,6 +188,33 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
   return markers;
 }
 
+/**
+ * A few letters for a stop on the radar (30 px text leaves room for no more): initials of a name of
+ * several words ("Konečného náměstí" -> "KN", "Brno-Královo Pole" -> "BKP"), else its first three
+ * letters ("Grohova" -> "Gro"), or the whole of a name of up to four ("Úvoz").
+ */
+export function shortStopName(name) {
+  // plain split/join rather than a regular expression, which the watch's engine may lack
+  const plain = String(name).split('…').join('').split('-').join(' ').split(',').join(' ').split('.').join(' ');
+  const words = plain.split(' ').filter(function (w) {
+    return w.length > 0;
+  });
+  if (words.length > 1) {
+    let initials = '';
+    for (let i = 0; i < words.length && i < 3; i++) initials += words[i].charAt(0).toUpperCase();
+    return initials;
+  }
+  const word = words.length ? words[0] : '';
+  return word.length <= 4 ? word : word.substring(0, 3);
+}
+
+/** Whether two possibly shortened ("…") names are the same stop. */
+export function sameStop(a, b) {
+  const x = String(a).split('…').join('');
+  const y = String(b).split('…').join('');
+  return x.length > 0 && y.length > 0 && (x.indexOf(y) === 0 || y.indexOf(x) === 0);
+}
+
 /** "85 m" / "1,2 km" */
 export function distanceLabel(metres) {
   if (metres === undefined || metres === null) return '';
@@ -220,4 +247,13 @@ export function pingOutcome(code) {
   if (code === 205) return 'send';
   if (code === 204) return 'noapp';
   return 'phone';
+}
+
+/**
+ * Text of a script error for the screen: the watch shows no logs, so a page that fails while
+ * drawing a reply shows this instead of staying on its loading text.
+ */
+export function describeError(e) {
+  const text = e && e.message ? e.message : String(e);
+  return 'JS: ' + text;
 }

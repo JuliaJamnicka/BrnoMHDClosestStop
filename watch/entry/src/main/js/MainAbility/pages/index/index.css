@@ -57,6 +57,8 @@
     text-align: center;
 }
 .hint {
+    left: 21px;
+    top: 42px;
     width: 330px;
     height: 120px;
     font-size: 30px;
@@ -120,12 +122,21 @@
     width: 30px;
     height: 30px;
 }
-/* Departures board: 4 rows of 50 px, each under a thin rule */
+/* Departures board: 4 rows of 50 px visible, each under a thin rule; more rows scroll. The box is
+   10 px wider on the left so the rows stay centred beside the scroll track. */
+.rows-box {
+    width: 392px;
+    height: 204px;
+    margin-top: 8px;
+    padding-left: 10px;
+}
+.rows-area {
+    width: 372px;
+    height: 204px;
+}
 .rows {
     width: 372px;
     height: 204px;
-    margin-top: 8px;
-    flex-direction: column;
 }
 .row {
     width: 372px;
@@ -136,6 +147,18 @@
     width: 372px;
     height: 1px;
     background-color: #16213a;
+}
+.track {
+    width: 4px;
+    height: 204px;
+    margin-left: 6px;
+    border-radius: 2px;
+    flex-direction: column;
+}
+.thumb {
+    width: 4px;
+    border-radius: 2px;
+    background-color: #6ea0ee;
 }
 .row-content {
     width: 372px;

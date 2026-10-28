@@ -6,7 +6,7 @@ follows the design canvas (docs/SPEC.md 7.3).
 
 | Page | What it shows | Gestures |
 |------|---------------|----------|
-| `pages/index` (home) | Stop, direction, 3-4 departures (`+N` delay, blue live dot, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, up: stops, right: close |
+| `pages/index` (home) | Stop, direction, 3-5 departures as set in the phone app (4 visible, the rest scroll; `+N` delay with clock times, live mark, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe left: radar, right: close |
 | `pages/stops` | Nearest stops; first row "Nearest (automatic)" | tap to pin, swipe right: back |
 | `pages/platforms` | Platforms of the current stop with lines and direction | tap to pin, swipe right: back |
 | `pages/radar` | Vehicles within 800 m around you, north up, an arrow for each one's direction of travel | swipe right: back |
@@ -63,6 +63,12 @@ whether the phone app is installed. Watch-side errors: `noapp` (ping: not instal
 The GT 5 installs an app whose first page has another name, but freezes the app list when it is
 opened (no error, no log). The home page is therefore `pages/index/index`. Found by comparing a
 working DevEco template build with ours: they differed only in the first page's name.
+
+## Reserved page method names
+
+A page method called `render` is replaced by the compiled template, and calling it throws a bare
+"TypeError" on the watch (the previewer did not show it). Pages show such script errors on screen
+as `JS: TypeError @step`.
 
 ## First test on the GT 5
 
