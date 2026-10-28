@@ -165,11 +165,13 @@
     height: 50px;
     align-items: center;
 }
+/* 30 px text draws its digits low in its box, leaving no room below them: the badge is 6 px taller
+   than the text, which sits at the top, so the space under the number matches the space above */
 .badge {
     width: 58px;
-    height: 38px;
+    height: 44px;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 }
 .badge-text {
     width: 58px;
@@ -178,16 +180,17 @@
     color: #ffffff;
     text-align: center;
 }
-/* widths of .headsign and .time come from departureRows (common/format.js) */
+/* widths of .headsign and .time come from departureRows (common/format.js); they are as tall as
+   .badge so their text lines up with the line number */
 .headsign {
-    height: 40px;
+    height: 44px;
     margin-left: 10px;
     font-size: 30px;
     text-overflow: ellipsis;
 }
 .delay {
     width: 46px;
-    height: 40px;
+    height: 44px;
     font-size: 30px;
     color: #ffb020;
     text-align: right;
@@ -198,7 +201,7 @@
     margin-left: 6px;
 }
 .time {
-    height: 40px;
+    height: 44px;
     margin-left: 4px;
     font-size: 30px;
     text-align: right;
