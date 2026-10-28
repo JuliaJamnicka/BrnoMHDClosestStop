@@ -86,8 +86,8 @@
     height: 28px;
     margin-right: 8px;
 }
+/* width from showDepartures: with a pin it fits the name, so the pin sits right before it */
 .stop {
-    width: 300px;
     height: 48px;
     font-size: 38px;
     color: #ffffff;
@@ -195,10 +195,13 @@
     color: #ffb020;
     text-align: right;
 }
+/* live data: the blue dot of the phone app and the widget, right beside the time */
 .live {
-    width: 18px;
-    height: 18px;
+    width: 10px;
+    height: 10px;
     margin-left: 6px;
+    border-radius: 5px;
+    background-color: #6ea0ee;
 }
 .time {
     height: 44px;
