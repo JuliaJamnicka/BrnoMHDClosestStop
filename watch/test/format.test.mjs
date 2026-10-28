@@ -11,8 +11,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
-const { t } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { t, errorKey } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
 const reply = '{"c":"dep","lg":"cs","t":1000,"g":"U1073N2860","s":"\\u010cesk\\u00e1","p":"U1073Z1","o":"U1073Z2",' +
@@ -151,4 +151,20 @@ test('widens radar badges for long line numbers', () => {
   assert.equal(short.width, 48);
   assert.ok(long.width > 48 && long.width >= textWidth('301', 30) + 12);
   assert.equal(long.left, Math.round(233 - long.width / 2));
+});
+
+test('takes only the answer to the pending request, or an error', () => {
+  assert.ok(replyMatches('home', { c: 'dep' }));
+  assert.ok(replyMatches('near', { c: 'near' }));
+  // a late departures reply must not reach the stop list
+  assert.ok(!replyMatches('near', { c: 'dep' }));
+  assert.ok(replyMatches('veh', { c: 'err', e: 'net' }));
+  assert.ok(!replyMatches('veh', null));
+});
+
+test('shows a friendly text for unknown error codes', () => {
+  assert.equal(errorKey('net'), 'err_net');
+  assert.equal(errorKey(undefined), 'err_other');
+  assert.equal(t('cs', errorKey(undefined)), 'Něco se nepovedlo');
+  assert.equal(t('en', errorKey('xyz') + '_hint'), 'Please try again.');
 });

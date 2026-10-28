@@ -1,5 +1,5 @@
 import { request, cancel } from '../../common/link.js';
-import { t } from '../../common/strings.js';
+import { t, errorKey } from '../../common/strings.js';
 import state, { go, restore } from '../../common/state.js';
 
 let ids = [];
@@ -26,7 +26,7 @@ export default {
         const self = this;
         request({ c: 'pl', p: current.p }, function (reply) {
             if (reply.c !== 'pl') {
-                self.message = t(state.lang, 'err_' + reply.e);
+                self.message = t(state.lang, errorKey(reply.e));
                 return;
             }
             self.message = '';

@@ -11,6 +11,16 @@ export function parseReply(raw) {
   }
 }
 
+/**
+ * Whether [reply] answers a request of kind [requestKind] ("home" is answered by "dep"); an error
+ * answers any. A late reply to an earlier page's request must not be taken for this page's.
+ */
+export function replyMatches(requestKind, reply) {
+  if (!reply) return false;
+  if (reply.c === 'err') return true;
+  return reply.c === (requestKind === 'home' ? 'dep' : requestKind);
+}
+
 function pad(n) {
   return n < 10 ? '0' + n : '' + n;
 }

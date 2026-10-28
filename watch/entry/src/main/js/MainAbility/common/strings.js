@@ -28,6 +28,8 @@ const TEXTS = {
     err_auth_hint: 'Aktualizujte aplikaci Fčil v telefonu.',
     err_req: 'Chyba aplikace',
     err_req_hint: 'Aktualizujte aplikaci Fčil v telefonu.',
+    err_other: 'Něco se nepovedlo',
+    err_other_hint: 'Zkuste to znovu.',
   },
   en: {
     loading: 'Finding stop…',
@@ -57,6 +59,8 @@ const TEXTS = {
     err_auth_hint: 'Update the Fčil app on your phone.',
     err_req: 'App error',
     err_req_hint: 'Update the Fčil app on your phone.',
+    err_other: 'Something went wrong',
+    err_other_hint: 'Please try again.',
   },
 };
 
@@ -68,4 +72,9 @@ export function t(lang, key, values) {
     for (const name in values) text = text.split('{' + name + '}').join(String(values[name]));
   }
   return text;
+}
+
+/** The text key of an error code from a reply or the link; codes without a text read "something went wrong". */
+export function errorKey(code) {
+  return TEXTS.cs['err_' + code] ? 'err_' + code : 'err_other';
 }

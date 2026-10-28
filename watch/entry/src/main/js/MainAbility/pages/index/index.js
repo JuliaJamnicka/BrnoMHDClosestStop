@@ -2,7 +2,7 @@ import app from '@system.app';
 import { request, now, cancel } from '../../common/link.js';
 import { departureRows, distanceLabel, wrapLines, describeError, textWidth } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
-import { t } from '../../common/strings.js';
+import { t, errorKey } from '../../common/strings.js';
 import state, { go, restore, loadLang } from '../../common/state.js';
 
 // Brand-coloured pictures for the link errors (Fčil logo when the phone app is missing).
@@ -106,9 +106,12 @@ export default {
     },
 
     showScriptError(e) {
-        this.errorTitle = t(state.lang, 'err_req');
+        this.errorTitle = t(state.lang, 'err_other');
         this.hasErrorIcon = false;
-        this.errorLines = wrapLines(describeError(e) + ' @' + step, HINT_CHARS);
+        // "Try again" first; the technical detail last, small enough to ignore but there for a bug report
+        this.errorLines = wrapLines(t(state.lang, 'err_other_hint'), HINT_CHARS).concat(
+            wrapLines(describeError(e) + ' @' + step, HINT_CHARS),
+        );
         this.view = 'error';
         crownOnRows = false;
     },
@@ -125,10 +128,10 @@ export default {
             if (reply) {
                 this.showDepartures(); // keep showing the last data; it turns stale after a minute
             } else {
-                this.errorTitle = t(state.lang, 'err_' + answer.e);
+                this.errorTitle = t(state.lang, errorKey(answer.e));
                 this.errorIcon = ERROR_ICONS[answer.e] || '';
                 this.hasErrorIcon = this.errorIcon !== '';
-                this.errorLines = wrapLines(t(state.lang, 'err_' + answer.e + '_hint'), HINT_CHARS);
+                this.errorLines = wrapLines(t(state.lang, errorKey(answer.e) + '_hint'), HINT_CHARS);
                 this.view = 'error';
                 crownOnRows = false;
             }

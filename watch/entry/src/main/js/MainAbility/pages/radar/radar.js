@@ -1,7 +1,7 @@
 import { request, cancel } from '../../common/link.js';
 import { radarMarkers, describeError, shortStopName } from '../../common/format.js';
 import { RADAR_REFRESH_MS } from '../../common/config.js';
-import { t } from '../../common/strings.js';
+import { t, errorKey } from '../../common/strings.js';
 import state, { go, restore } from '../../common/state.js';
 
 const SIZE = 466;
@@ -51,7 +51,7 @@ export default {
 
     showReply(reply) {
         if (reply.c !== 'veh') {
-            this.showStatus(t(state.lang, 'err_' + reply.e));
+            this.showStatus(t(state.lang, errorKey(reply.e)));
             return;
         }
         step = 'markers-compute';
