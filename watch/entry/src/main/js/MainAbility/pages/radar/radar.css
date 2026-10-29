@@ -35,27 +35,26 @@
     height: 1px;
     background-color: #16213a;
 }
+/* left and top from the page: north moves round the outer ring as the watch turns */
 .north {
-    left: 213px;
-    top: 0px;
     width: 40px;
     height: 36px;
     font-size: 30px;
     color: #ffffff;
     text-align: center;
 }
-.label-400 {
+.label-inner {
     left: 300px;
     top: 150px;
-    width: 90px;
+    width: 100px;
     height: 36px;
     font-size: 30px;
     color: #8d99b3;
 }
-.label-800 {
+.label-outer {
     left: 340px;
     top: 66px;
-    width: 100px;
+    width: 110px;
     height: 36px;
     font-size: 30px;
     color: #8d99b3;
@@ -104,8 +103,56 @@
 .badge-text {
     height: 32px;
     font-size: 30px;
+    text-align: center;
+}
+/* a tapped vehicle: line, headsign, delay and distance; tap it to close */
+.card {
+    left: 83px;
+    top: 286px;
+    width: 300px;
+    height: 104px;
+    padding: 10px 12px;
+    border-radius: 24px;
+    background-color: #1b2233;
+    flex-direction: column;
+}
+.card-row {
+    width: 276px;
+    height: 44px;
+    flex-direction: row;
+    align-items: flex-start;
+}
+.card-badge {
+    height: 42px;
+    margin-right: 10px;
+    justify-content: center;
+    align-items: flex-start;
+}
+.card-badge-text {
+    height: 36px;
+    font-size: 30px;
     color: #ffffff;
     text-align: center;
+}
+.card-headsign {
+    height: 42px;
+    font-size: 30px;
+    color: #ffffff;
+    text-overflow: ellipsis;
+}
+.card-info {
+    width: 276px;
+    height: 38px;
+    font-size: 30px;
+}
+/* zoom (400 m, 800 m, 1,5 km): turn the crown, which reaches only sliders and lists on this watch */
+.zoom {
+    left: 183px;
+    top: 432px;
+    width: 100px;
+    height: 8px;
+    color: #22345a;
+    selected-color: #8d99b3;
 }
 .status {
     left: 83px;

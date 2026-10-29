@@ -20,7 +20,7 @@ export interface AppOptions {
 const MAX_NEARBY = 20;
 const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
-const MAX_VEHICLES = 15;
+const MAX_VEHICLES = 30;
 const MAX_BOARD_PLATFORMS = 8;
 const MAX_HIDDEN_LINES = 200;
 const HOME_RADIUS = 400;

@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches, clockLabel } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches, clockLabel, turn, angleDiff, vehicleCard, findVehicle, ownLines, RADAR_RANGES } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t, errorKey } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -172,4 +172,44 @@ test('shows a friendly text for unknown error codes', () => {
 test('shows the time of day as HH:MM', () => {
   assert.equal(clockLabel(new Date(2026, 9, 28, 7, 5)), '07:05');
   assert.equal(clockLabel(new Date(2026, 9, 28, 17, 42)), '17:42');
+});
+
+test('turns the radar to the watch heading: what is ahead is drawn at the top', () => {
+  // facing east, a vehicle 100 m east is straight ahead
+  const [x, y] = turn(100, 0, 90);
+  assert.ok(Math.abs(x) < 1e-9 && Math.abs(y - 100) < 1e-9);
+  assert.deepEqual(turn(30, 40, 0), [30, 40]);
+  assert.equal(angleDiff(355, 5), 10);
+  assert.equal(angleDiff(90, 270), 180);
+  const [east] = radarMarkers([['4', 'T', 400, 0, 90, 0]], 466, 200, 800, { rotation: 90 });
+  assert.deepEqual([east.left, east.top, east.arrow], [233 - 24, 233 - 100 - 18, '/common/images/arrow0.png']);
+});
+
+test('dims vehicles that are not the departures page lines and draws those last', () => {
+  const vehicles = [['4', 'T', 0, 100, -1, 0, 'Bystrc', 1], ['9', 'T', 0, 50, 0, 0, 'Lesn\u00e1', 0]];
+  const markers = radarMarkers(vehicles, 466, 200, 800, { highlight: true });
+  assert.deepEqual(markers.map((m) => [m.line, m.index, m.textColour]), [['9', 1, '#808080'], ['4', 0, '#ffffff']]);
+  assert.equal(markers[0].badgeColour, dim('#c8262c'));
+  assert.equal(markers[0].arrow, '/common/images/arrowd0.png');
+  // without highlight every vehicle is in full colour
+  assert.ok(radarMarkers(vehicles, 466, 200, 800).every((m) => m.textColour === '#ffffff'));
+  assert.deepEqual(RADAR_RANGES, [400, 800, 1500]);
+});
+
+test('describes a tapped vehicle and finds it again after a refresh', () => {
+  const card = vehicleCard(['4', 'T', 300, 400, 90, 3, 'Bystrc', 1], 'on time');
+  assert.equal(card.headsign, 'Bystrc');
+  assert.equal(card.info, '+3 min \u00b7 500 m');
+  assert.equal(card.infoColour, '#ffb020');
+  assert.equal(vehicleCard(['4', 'T', 0, 50, 90, 0, 'Bystrc', 1], 'on time').info, 'on time \u00b7 50 m');
+  const later = [['4', 'T', 900, 0, 90, 0, 'N\u00e1m\u011bst\u00ed M\u00edru', 0], ['4', 'T', 280, 420, 90, 3, 'Bystrc', 1], ['4', 'T', -500, 0, 90, 0, 'Bystrc', 1]];
+  assert.equal(findVehicle(later, ['4', 'T', 300, 400, 90, 3, 'Bystrc', 1]), 1);
+  assert.equal(findVehicle(later, ['6', 'T', 300, 400, 90, 3, 'Bystrc', 1]), -1);
+});
+
+test('asks the phone to mark the departures page lines', () => {
+  assert.deepEqual(ownLines(parseReply(reply)), [['6', 'Star\u00fd L\u00edskovec, sm.'], ['4', 'N\u00e1m\u011bst\u00ed M\u00edru'], ['N93', '\u00dat\u011bchov']]);
+  // a stop list's rows name stops: any direction of their lines
+  assert.deepEqual(ownLines({ c: 'dep', l: 1, x: [['12', 'T', '\u010cesk\u00e1', 1, 0, 1], ['12', 'T', 'Kom\u00e1rov', 2, 0, 1]] }), [['12', '']]);
+  assert.deepEqual(ownLines(null), []);
 });
