@@ -306,7 +306,7 @@ trip, which is what the watch home screen uses.
 { "t": 1791480000,
   "v": [ { "l": "4", "m": "T", "dx": -120, "dy": 340, "b": 90, "dl": 60 } ] }
 ```
-`dx/dy` = metres east/north of the user (so the watch needs no geodesy).
+`dx/dy` = metres east/north of the user (so the watch needs no geodesy). At most 30 vehicles, nearest first.
 
 `GET /v1/health` - import date, realtime age, vehicle count.
 
@@ -394,7 +394,7 @@ Render (1 min wake-up [S18]), Fly.io (no free tier [S19]).
 | `{"c":"dep","g":"g1234","p":"1234Z2"}` | Departures for given platform | `/departures` -> `{"c":"dep", ...}` |
 | `{"c":"near"}` | Stop list | `/nearby?limit=12` -> `{"c":"near", ...}` (entries dropped from the end if over the size limit) |
 | `{"c":"pl","p":"U1073Z2"}` | Platform picker | `/departures` -> `{"c":"pl", ...}` with each platform's lines and direction |
-| `{"c":"veh"}` | Radar | `/vehicles?r=800` -> `{"c":"veh", ...}` (max 15 vehicles) |
+| `{"c":"veh","r":800,"m":[["4","Bystrc"]]}` | Radar at the chosen zoom (`r` 100-2000 m, default 800); `m` = the lines (and headsigns, "" for any) of the watch's departures | `/vehicles?r=..` -> `{"c":"veh", ...}` (max 30 vehicles); each with its headsign and a "mine" flag, the watch's own lines first |
 | any | Error | `{"c":"err","e":"noloc" / "far" / "net" / "srv"}` |
 
 - Location strategy: use last known location if < 30 s old and accuracy < 50 m, else request a

@@ -12,6 +12,8 @@ const state = {
   /** Difference phone clock - watch clock in seconds, from the last reply. */
   clockOffset: 0,
   lang: 'cs',
+  /** Radar zoom: index into RADAR_RANGES (common/format.js). */
+  radarZoom: 1,
 };
 
 export default state;
