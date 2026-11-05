@@ -1,12 +1,11 @@
-import sensor from '@system.sensor';
 import { request, cancel } from '../../common/link.js';
 import {
     radarMarkers,
     describeError,
     shortStopName,
-    distanceLabel,
-    turn,
-    angleDiff,
+    ringLabel,
+    placeStopLabels,
+    textWidth,
     vehicleCard,
     findVehicle,
     ownLines,
@@ -18,16 +17,21 @@ import state, { go, restore } from '../../common/state.js';
 
 const SIZE = 466;
 const RADIUS_PX = 200; // outer ring
-const NORTH_RADIUS_PX = 214; // the "N" just outside the outer ring
-/** The map turns with the watch only by this much at once, so it does not redraw for every tremor. */
-const TURN_STEP = 8;
+// Where pages/radar/radar.css puts the ring labels, "N", the user's dot and the zoom slider: stop
+// names keep clear of them
+const INNER_LABEL = { left: 300, top: 150 };
+const OUTER_LABEL = { left: 296, top: 66 };
+const FIXED_BOXES = [
+    { left: 213, top: 0, width: 40, height: 36 },
+    { left: 216, top: 216, width: 34, height: 34 },
+    { left: 183, top: 426, width: 100, height: 16 },
+];
 
 let timer = null;
 let step = ''; // the statement running, for the error text (see pages/index)
-let lastReply = null; // for redrawing on zoom or turn without asking the phone
+let lastReply = null; // for redrawing on zoom without asking the phone
 let shown = []; // the vehicles behind the markers, by marker index
 let cardVehicle = null; // the tapped vehicle, found again after each refresh
-let rotation = 0; // the watch's heading in degrees; 0 (north up) without a compass
 
 export default {
     data: {
@@ -39,8 +43,6 @@ export default {
         zoom: 1,
         innerLabel: '',
         outerLabel: '',
-        northLeft: 213,
-        northTop: 0,
         card: {},
         hasCard: false,
         // only while loading or after an error, in place of an "updated" line (it took the space)
@@ -53,17 +55,14 @@ export default {
         lastReply = null;
         shown = [];
         cardVehicle = null;
-        rotation = 0;
         this.zoom = state.radarZoom >= 0 && state.radarZoom < RADAR_RANGES.length ? state.radarZoom : 1;
         this.showRange();
-        this.placeNorth();
         this.status = t(state.lang, 'loading');
         this.load();
         const self = this;
         timer = setInterval(function () {
             self.load();
         }, RADAR_REFRESH_MS);
-        this.followCompass();
     },
 
     onShow() {
@@ -80,11 +79,6 @@ export default {
     onDestroy() {
         clearInterval(timer);
         cancel();
-        try {
-            sensor.unsubscribeCompass();
-        } catch (e) {
-            // never subscribed
-        }
     },
 
     load() {
@@ -108,7 +102,7 @@ export default {
         this.hasStatus = false;
     },
 
-    // Vehicles, stops and the card from the last reply at the current zoom and heading.
+    // Vehicles, stops and the card from the last reply at the current zoom.
     draw() {
         if (!lastReply) return;
         const range = RADAR_RANGES[this.zoom];
@@ -116,7 +110,7 @@ export default {
         step = 'markers-compute';
         // the departures page's lines stand out; a phone app without the "mine" flag dims nothing
         const highlight = ownLines(state.lastDep).length > 0 && vehicles.length > 0 && vehicles[0].length > 7;
-        const markers = radarMarkers(vehicles, SIZE, RADIUS_PX, range, { rotation: rotation, highlight: highlight });
+        const markers = radarMarkers(vehicles, SIZE, RADIUS_PX, range, { highlight: highlight });
         shown = markers.map(function (m) {
             return vehicles[m.index];
         });
@@ -128,25 +122,25 @@ export default {
         });
         step = 'stops-compute';
         const stops = [];
-        const labels = [];
+        const points = [];
         const list = lastReply.s || [];
         const scale = RADIUS_PX / range;
         for (let i = 0; i < list.length; i++) {
-            const p = turn(list[i][1], list[i][2], rotation);
-            if (Math.sqrt(p[0] * p[0] + p[1] * p[1]) > range) continue;
-            const x = Math.round(SIZE / 2 + p[0] * scale);
-            const y = Math.round(SIZE / 2 - p[1] * scale);
+            if (Math.sqrt(list[i][1] * list[i][1] + list[i][2] * list[i][2]) > range) continue;
+            const x = Math.round(SIZE / 2 + list[i][1] * scale);
+            const y = Math.round(SIZE / 2 - list[i][2] * scale);
             stops.push({ left: x - 7, top: y - 7 });
-            // right of the dot, kept inside the screen
-            labels.push({
-                text: shortStopName(list[i][0]),
-                left: Math.max(20, Math.min(SIZE - 120, x + 10)),
-                top: Math.max(20, Math.min(SIZE - 56, y - 18)),
-            });
+            points.push({ x: x, y: y, text: shortStopName(list[i][0]) });
         }
+        step = 'stops-place';
+        const taken = FIXED_BOXES.concat([
+            this.labelBox(INNER_LABEL, this.innerLabel),
+            this.labelBox(OUTER_LABEL, this.outerLabel),
+        ]);
         step = 'stops-set';
         this.stops = stops;
-        this.stopLabels = labels;
+        // names where they overlap nothing, or left out (their dots stay)
+        this.stopLabels = placeStopLabels(points, SIZE, taken);
         step = 'card';
         if (cardVehicle) {
             const i = findVehicle(vehicles, cardVehicle);
@@ -193,36 +187,12 @@ export default {
 
     showRange() {
         const range = RADAR_RANGES[this.zoom];
-        this.innerLabel = distanceLabel(range / 2);
-        this.outerLabel = distanceLabel(range);
+        this.innerLabel = ringLabel(range / 2);
+        this.outerLabel = ringLabel(range);
     },
 
-    // The map turns with the watch: what is ahead is at the top. Without a compass it stays north up.
-    followCompass() {
-        const self = this;
-        try {
-            sensor.subscribeCompass({
-                success: function (data) {
-                    if (typeof data.direction !== 'number') return;
-                    if (angleDiff(data.direction, rotation) < TURN_STEP) return;
-                    rotation = data.direction;
-                    self.placeNorth();
-                    self.draw();
-                },
-                fail: function () {
-                    rotation = 0;
-                    self.placeNorth();
-                },
-            });
-        } catch (e) {
-            // no compass: north up
-        }
-    },
-
-    placeNorth() {
-        const rad = (-rotation * Math.PI) / 180;
-        this.northLeft = Math.round(SIZE / 2 + Math.sin(rad) * NORTH_RADIUS_PX - 20);
-        this.northTop = Math.round(SIZE / 2 - Math.cos(rad) * NORTH_RADIUS_PX - 18);
+    labelBox(at, text) {
+        return { left: at.left, top: at.top, width: textWidth(text, 30) + 4, height: 36 };
     },
 
     showStatus(text) {

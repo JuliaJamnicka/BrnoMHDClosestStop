@@ -187,38 +187,21 @@ export function arrowFor(heading, dimmed) {
 export const RADAR_RANGES = [400, 800, 1500];
 
 /**
- * [dx, dy] metres east/north turned for a screen that faces [rotation] degrees (the watch's
- * heading, 0 = north up): what lies ahead is drawn at the top.
+ * A radar ring's label, always in metres ("750 m", "1500 m"): on the GT 5 the outer label kept
+ * "800 m" when it should have changed to "1,5 km".
  */
-export function turn(dx, dy, rotation) {
-  if (!rotation) return [dx, dy];
-  const rad = (rotation * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-  return [dx * cos - dy * sin, dy * cos + dx * sin];
-}
-
-/** [degrees] in 0..359. */
-export function normaliseAngle(degrees) {
-  return ((Math.round(degrees) % 360) + 360) % 360;
-}
-
-/** Smallest difference between two headings in degrees (0..180). */
-export function angleDiff(a, b) {
-  const d = Math.abs(normaliseAngle(a) - normaliseAngle(b));
-  return d > 180 ? 360 - d : d;
+export function ringLabel(metres) {
+  return metres + ' m';
 }
 
 /**
- * Radar marker positions in a size x size round screen, user in the centre.
+ * Radar marker positions in a size x size round screen, north up, user in the centre.
  * vehicles: [line, mode, dx, dy, heading, delay, headsign, mine] as the phone sends them.
- * radiusPx is the screen distance of rangeM metres (the outer ring). options.rotation turns the
- * map to the watch's heading; options.highlight dims every vehicle not marked "mine" (index 7).
- * Each marker keeps its vehicle's [index]; the user's own vehicles come last, so they are drawn
- * over the others.
+ * radiusPx is the screen distance of rangeM metres (the outer ring). options.highlight dims every
+ * vehicle not marked "mine" (index 7). Each marker keeps its vehicle's [index]; the user's own
+ * vehicles come last, so they are drawn over the others.
  */
 export function radarMarkers(vehicles, size, radiusPx, rangeM, options) {
-  const rotation = options && options.rotation ? options.rotation : 0;
   const highlight = !!(options && options.highlight);
   const scale = radiusPx / rangeM;
   const centre = size / 2;
@@ -228,9 +211,8 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM, options) {
     const v = vehicles[i];
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
-    const p = turn(v[2], v[3], rotation);
-    const x = centre + p[0] * scale;
-    const y = centre - p[1] * scale;
+    const x = centre + v[2] * scale;
+    const y = centre - v[3] * scale;
     const dimmed = highlight && v[7] !== 1;
     const badge = badgeStyle(v[1], 36); // pages/radar .badge height
     // as wide as the line number ("301" does not fit the 48 px of a short one)
@@ -246,7 +228,7 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM, options) {
       top: Math.round(y - 18),
       late: isLate(v[5]),
     };
-    const arrow = v[4] === undefined || v[4] === null || v[4] < 0 ? null : arrowFor(normaliseAngle(v[4] - rotation), dimmed);
+    const arrow = arrowFor(v[4], dimmed);
     if (arrow) {
       // a small arrow just ahead of the badge, in the direction of travel
       const rad = (arrow.angle * Math.PI) / 180;
@@ -257,6 +239,55 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM, options) {
     (dimmed ? others : own).push(marker);
   }
   return others.concat(own);
+}
+
+const LABEL_H = 36; // pages/radar .stop-label height
+
+/**
+ * Stop names on the radar, placed where they overlap nothing already there ([taken]: the ring
+ * labels, "N", the user's dot) nor each other: right of the dot, else left, above or below; a name
+ * that fits nowhere is left out (its dot stays). points: [{ x, y, text }] dot centres.
+ * Returns [{ text, left, top, width }].
+ */
+export function placeStopLabels(points, size, taken) {
+  const boxes = taken.slice();
+  const labels = [];
+  const radius = size / 2 - 4;
+  function inside(b) {
+    const corners = [[b.left, b.top], [b.left + b.width, b.top], [b.left, b.top + b.height], [b.left + b.width, b.top + b.height]];
+    for (let i = 0; i < corners.length; i++) {
+      const dx = corners[i][0] - size / 2;
+      const dy = corners[i][1] - size / 2;
+      if (Math.sqrt(dx * dx + dy * dy) > radius) return false;
+    }
+    return true;
+  }
+  function free(b) {
+    for (let i = 0; i < boxes.length; i++) {
+      const o = boxes[i];
+      const apart = b.left >= o.left + o.width || o.left >= b.left + b.width || b.top >= o.top + o.height || o.top >= b.top + b.height;
+      if (!apart) return false;
+    }
+    return true;
+  }
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const width = textWidth(p.text, 30) + 4;
+    const candidates = [
+      { left: p.x + 10, top: p.y - LABEL_H / 2 },
+      { left: p.x - 10 - width, top: p.y - LABEL_H / 2 },
+      { left: p.x - width / 2, top: p.y - 10 - LABEL_H },
+      { left: p.x - width / 2, top: p.y + 10 },
+    ];
+    for (let j = 0; j < candidates.length; j++) {
+      const box = { left: Math.round(candidates[j].left), top: Math.round(candidates[j].top), width: width, height: LABEL_H };
+      if (!inside(box) || !free(box)) continue;
+      boxes.push(box);
+      labels.push({ text: p.text, left: box.left, top: box.top, width: width });
+      break;
+    }
+  }
+  return labels;
 }
 
 /**
