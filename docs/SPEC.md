@@ -232,6 +232,12 @@ redeploys. The server therefore never parses `gtfs.zip`, which keeps cold starts
 2. For each vehicle with `trip.trip_id` and a timestamp younger than 120 s:
    - normalise `stop_id` (3.2) and find that stop's `stop_sequence` k in the trip;
    - `STOPPED_AT` -> the vehicle is at stop k; `IN_TRANSIT_TO` -> it has left stop k-1.
+   - The feed's stop is sometimes a point the timetable does not have (about 6 % of vehicles,
+     mostly trains: e.g. Brno-Maloměřice between Židenice and Lesná, where the S3 does not stop).
+     A vehicle already followed on its trip is then placed by position: within 250 m of the stop
+     it was heading to it is standing there; away from it after standing there, it has left it.
+     Taking the nearest stop instead showed on-time trains 3-4 min late (2026-11-05, S3 at Lesná).
+   - Two observations more than 60 s apart give only a lower bound for a departure (the first one).
 3. Delay estimate per trip (seconds; shown rounded down to whole minutes):
    - at stop k: `delay = max(0, ts - scheduled_departure[k])`;
    - in transit to stop k: `delay = max(ts - scheduled_departure[k-1], ts - scheduled_arrival[k], 0)`,
