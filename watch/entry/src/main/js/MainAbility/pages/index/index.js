@@ -1,9 +1,9 @@
 import app from '@system.app';
 import { request, now, cancel } from '../../common/link.js';
-import { departureRows, distanceLabel, wrapLines, describeError, textWidth } from '../../common/format.js';
+import { departureRows, distanceLabel, wrapLines, describeError, textWidth, clockLabel } from '../../common/format.js';
 import { HOME_REFRESH_MS, STALE_AFTER_S } from '../../common/config.js';
 import { t, errorKey } from '../../common/strings.js';
-import state, { go, restore, loadLang } from '../../common/state.js';
+import state, { go, restore, loadSaved, setPinned } from '../../common/state.js';
 
 // Brand-coloured pictures for the link errors (Fčil logo when the phone app is missing).
 const ERROR_ICONS = {
@@ -38,6 +38,8 @@ export default {
         stopWidth: 300,
         direction: '',
         distance: '',
+        distanceWidth: 60,
+        clockText: '',
         showDistance: false,
         pinned: false,
         canReverse: false,
@@ -52,18 +54,20 @@ export default {
         const self = this;
         if (this.nav) {
             this.applyTexts(); // from another page, with the language
+            if (state.lastDep) {
+                // show the last data at once, then refresh
+                reply = state.lastDep;
+                this.showDepartures();
+            }
+            this.load();
         } else {
-            // app start: the loading text stays empty until the language of the last run is read
-            loadLang(function () {
+            // app start: the language and the stop chosen last are read first (the loading text
+            // stays empty meanwhile), then the departures of that stop are asked for
+            loadSaved(function () {
                 if (self.view === 'loading') self.applyTexts();
+                self.load();
             });
         }
-        if (state.lastDep) {
-            // returning from another page: show the last data at once, then refresh
-            reply = state.lastDep;
-            this.showDepartures();
-        }
-        this.load();
         refreshTimer = setInterval(function () {
             self.load();
         }, HOME_REFRESH_MS);
@@ -152,6 +156,8 @@ export default {
         this.direction = r.r ? '→ ' + r.r : ''; // a stop list (r.l) has no single direction
         step = 'distance';
         this.distance = distanceLabel(r.d);
+        this.distanceWidth = textWidth(this.distance, 30) + 4;
+        this.clockText = clockLabel(new Date());
         step = 'pinned';
         this.pinned = !!state.pinned;
         // centred in the header; with the pin beside it the name's box fits the name (300 px at most
@@ -194,12 +200,12 @@ export default {
 
     reverse() {
         if (!reply || !reply.o) return;
-        state.pinned = reply.o;
+        setPinned(reply.o);
         this.load();
     },
 
     unpin() {
-        state.pinned = null;
+        setPinned(null);
         this.load();
     },
 

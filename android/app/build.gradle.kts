@@ -37,6 +37,10 @@ android {
         // Package name and signing fingerprint of the watch app, used by Wear Engine to pair the two apps.
         buildConfigField("String", "WATCH_PACKAGE", quoted(config("watchPackage", "WATCH_PACKAGE", "io.github.juliajamnicka.fcil.watch")))
         buildConfigField("String", "WATCH_FINGERPRINT", quoted(config("watchFingerprint", "WATCH_FINGERPRINT", "")))
+        // Connect IQ id of the Garmin watch app (garmin/manifest.xml, without dashes); it is not secret.
+        buildConfigField("String", "GARMIN_APP_ID", quoted(config("garminAppId", "GARMIN_APP_ID", "a0b25ea076304923a9dfaa04d864da16")))
+        // true: talk to the Connect IQ simulator over adb (adb forward tcp:7381 tcp:7381) instead of a real watch
+        buildConfigField("boolean", "GARMIN_TETHERED", config("garminTethered", "GARMIN_TETHERED", "false"))
         // AppGallery Connect app id, which Huawei Wear Engine reads from the manifest. This is the one
         // value the AppGallery Connect plugin would take from agconnect-services.json; that file also
         // holds a client secret, so it is not used or committed (it is in .gitignore).
@@ -99,6 +103,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.play.services.location)
     implementation(libs.huawei.wearengine)
+    implementation(libs.garmin.connectiq)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.work.runtime)
 

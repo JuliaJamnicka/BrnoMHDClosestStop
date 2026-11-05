@@ -1,0 +1,6 @@
+# build output and the developer key (never commit the key)
+bin/
+*.prg
+*.iq
+*.der
+*.pem

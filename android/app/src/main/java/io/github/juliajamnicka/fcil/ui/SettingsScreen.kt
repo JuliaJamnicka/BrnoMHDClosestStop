@@ -21,6 +21,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +38,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +53,7 @@ import io.github.juliajamnicka.fcil.R
 import io.github.juliajamnicka.fcil.data.AppSettings
 import io.github.juliajamnicka.fcil.data.DepartureTime
 import io.github.juliajamnicka.fcil.data.Language
+import io.github.juliajamnicka.fcil.wear.WatchKind
 import io.github.juliajamnicka.fcil.wear.WatchStatus
 import kotlinx.coroutines.flow.Flow
 import java.text.DateFormat
@@ -55,7 +62,7 @@ import java.util.Date
 class SettingsActions(
     val requestLocation: () -> Unit,
     val requestBackgroundLocation: () -> Unit,
-    val connectWatch: () -> Unit,
+    val connectWatch: (WatchKind) -> Unit,
     val disconnectWatch: () -> Unit,
     val setLanguage: (Language) -> Unit,
     val setDepartureCount: (Int) -> Unit,
@@ -67,6 +74,8 @@ class SettingsActions(
 fun SettingsScreen(
     settingsFlow: Flow<AppSettings>,
     watchEnabled: Boolean,
+    /** The kind of watch connected last, named in the card while the link is off. */
+    watchKind: WatchKind,
     hasLocation: Boolean,
     hasBackgroundLocation: Boolean,
     setupMessage: String?,
@@ -87,7 +96,7 @@ fun SettingsScreen(
         ) {
             LetteredTitle(R.drawable.title_settings, stringResource(R.string.settings_title))
 
-            WatchCard(status, watchEnabled, hasLocation, setupMessage, actions)
+            WatchCard(status, watchEnabled, watchKind, hasLocation, setupMessage, actions)
 
             if (hasLocation && !hasBackgroundLocation) {
                 Section(stringResource(R.string.section_location)) {
@@ -202,10 +211,12 @@ fun SettingsScreen(
 private fun WatchCard(
     status: WatchStatus.State,
     watchEnabled: Boolean,
+    watchKind: WatchKind,
     hasLocation: Boolean,
     setupMessage: String?,
     actions: SettingsActions,
 ) {
+    var picking by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -223,7 +234,11 @@ private fun WatchCard(
                 )
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text(status.deviceName ?: "Huawei Watch GT", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        status.deviceName ?: if (watchKind == WatchKind.GARMIN) "Garmin" else "Huawei Watch GT",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     Text(
                         when {
                             !status.running -> stringResource(R.string.status_off)
@@ -245,9 +260,56 @@ private fun WatchCard(
             }
             when {
                 !hasLocation -> Button(onClick = actions.requestLocation) { Text(stringResource(R.string.grant_location)) }
-                !watchEnabled || !status.running -> Button(onClick = actions.connectWatch) { Text(stringResource(R.string.connect_watch)) }
+                !watchEnabled || !status.running -> Button(onClick = { picking = true }) { Text(stringResource(R.string.connect_watch)) }
                 else -> TextButton(onClick = actions.disconnectWatch) { Text(stringResource(R.string.disconnect_watch)) }
             }
+        }
+    }
+    if (picking) {
+        WatchPicker(
+            onPick = { kind ->
+                picking = false
+                actions.connectWatch(kind)
+            },
+            onDismiss = { picking = false },
+        )
+    }
+}
+
+/** "Connect watch" asks which kind of watch it is (Settings board: Phone: Pick watch). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WatchPicker(onPick: (WatchKind) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.watch_pick_title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            WatchOption("Huawei", stringResource(R.string.watch_huawei_models), stringResource(R.string.watch_huawei_via)) {
+                onPick(WatchKind.HUAWEI)
+            }
+            WatchOption("Garmin", stringResource(R.string.watch_garmin_models), stringResource(R.string.watch_garmin_via)) {
+                onPick(WatchKind.GARMIN)
+            }
+            Text(stringResource(R.string.watch_pick_note), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun WatchOption(name: String, models: String, via: String, onClick: () -> Unit) {
+    OutlinedCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(models, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(via, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

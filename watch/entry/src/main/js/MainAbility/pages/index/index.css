@@ -151,11 +151,11 @@
     height: 50px;
     align-items: center;
 }
-/* 30 px text draws its digits low in its box, leaving no room below them: the badge is 6 px taller
+/* 30 px text draws its digits low in its box, leaving no room below them: the badge is 4 px taller
    than the text, which sits at the top, so the space under the number matches the space above */
 .badge {
     width: 58px;
-    height: 44px;
+    height: 42px;
     justify-content: center;
     align-items: flex-start;
 }
@@ -169,14 +169,14 @@
 /* widths of .headsign and .time come from departureRows (common/format.js); they are as tall as
    .badge so their text lines up with the line number */
 .headsign {
-    height: 44px;
+    height: 42px;
     margin-left: 10px;
     font-size: 30px;
     text-overflow: ellipsis;
 }
 .delay {
     width: 46px;
-    height: 44px;
+    height: 42px;
     font-size: 30px;
     color: #ffb020;
     text-align: right;
@@ -190,7 +190,7 @@
     background-color: #6ea0ee;
 }
 .time {
-    height: 44px;
+    height: 42px;
     margin-left: 4px;
     font-size: 30px;
     text-align: right;
@@ -226,13 +226,21 @@
     height: 24px;
     margin-right: 4px;
 }
+/* width from showDepartures: the box fits the text, so the pin and the distance stay centred */
 .distance {
-    width: 120px;
     height: 40px;
     font-size: 30px;
     color: #8d99b3;
 }
-/* replaces the distance in the footer: on the round screen there is no room for another line */
+/* the time of day under the footer, so it need not be looked up outside the app */
+.clock {
+    width: 120px;
+    height: 40px;
+    font-size: 30px;
+    color: #c3ccdd;
+    text-align: center;
+}
+/* replaces the distance in the footer */
 .stale-text {
     width: 204px;
     height: 40px;

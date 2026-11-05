@@ -1,7 +1,7 @@
 import { request, cancel } from '../../common/link.js';
 import { distanceLabel, modeChips } from '../../common/format.js';
 import { t, errorKey } from '../../common/strings.js';
-import state, { go, restore } from '../../common/state.js';
+import state, { go, restore, setPinned } from '../../common/state.js';
 
 /** A "near" row for the list: name, distance and up to three mode chips in fixed slots. */
 function stopRow(name, metres, modes) {
@@ -69,14 +69,14 @@ export default {
     },
 
     pickNearest() {
-        state.pinned = null;
+        setPinned(null);
         state.lastDep = null;
         go('pages/index/index');
     },
 
     pick(index) {
         if (index < 0 || index >= ids.length) return;
-        state.pinned = ids[index];
+        setPinned(ids[index]);
         state.lastDep = null;
         go('pages/index/index');
     },

@@ -33,25 +33,51 @@ export function restore(page) {
 }
 
 const LANG_KEY = 'lang';
+const PINNED_KEY = 'pinned';
 
-/**
- * Reads the phone app's language from the last run (replies carry it, but the first screen shows
- * before the first reply); calls [done] either way.
- */
-export function loadLang(done) {
+/** Reads [key] from the watch's storage; [use] gets its value, '' when there is none. */
+function read(key, use, done) {
   try {
     storage.get({
-      key: LANG_KEY,
+      key: key,
       default: '',
-      success: function (value) {
-        if (value === 'cs' || value === 'en') state.lang = value;
-      },
-      complete: function () {
-        done();
-      },
+      success: use,
+      complete: done,
     });
   } catch (e) {
     done();
+  }
+}
+
+/**
+ * Reads what the last run left: the phone app's language (replies carry it, but the first screen
+ * shows before the first reply) and the stop or direction chosen last. Calls [done] either way.
+ */
+export function loadSaved(done) {
+  read(
+    LANG_KEY,
+    function (value) {
+      if (value === 'cs' || value === 'en') state.lang = value;
+    },
+    function () {
+      read(
+        PINNED_KEY,
+        function (value) {
+          state.pinned = value ? value : null;
+        },
+        done,
+      );
+    },
+  );
+}
+
+/** Chooses a platform (null: the nearest stop again) and keeps the choice for the next start. */
+export function setPinned(platform) {
+  state.pinned = platform || null;
+  try {
+    storage.set({ key: PINNED_KEY, value: platform || '' });
+  } catch (e) {
+    // the next start shows the nearest stop
   }
 }
 

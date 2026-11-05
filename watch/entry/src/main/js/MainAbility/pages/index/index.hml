@@ -54,12 +54,13 @@
                 <div class="footer-middle">
                     <text if="{{isStale}}" class="stale-text">{{staleText}}</text>
                     <image if="{{showDistance}}" class="loc" src="/common/images/loc.png"></image>
-                    <text if="{{showDistance}}" class="distance">{{distance}}</text>
+                    <text if="{{showDistance}}" class="distance" style="width: {{distanceWidth}}px;">{{distance}}</text>
                 </div>
                 <div class="round-button" onclick="openRadar">
                     <image class="icon" src="/common/images/radar.png"></image>
                 </div>
             </div>
+            <text class="clock">{{clockText}}</text>
         </div>
     </div>
 </div>

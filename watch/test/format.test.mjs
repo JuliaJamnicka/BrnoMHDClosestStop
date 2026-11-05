@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches, clockLabel } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t, errorKey } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -46,7 +46,7 @@ test('builds departure rows with delays, live dots, badge styles and "now" in re
       ['6', '#c8262c', 9, '', '#f0373e', true],
       // with minutes the delay is only the amber colour (the minutes include it)
       ['4', '#c8262c', 9, '', '#ffb020', true],
-      ['N93', '#1f7a4d', 22, '', '#ffffff', false],
+      ['N93', '#1f7a4d', 21, '', '#ffffff', false],
     ],
   );
   // "tf":1 (clock setting): clock times, the departing one still in red
@@ -98,8 +98,8 @@ test('picks pre-drawn mode chips in the phone language', () => {
 test('places radar markers north-up around the centre and drops far vehicles', () => {
   const markers = radarMarkers([['4', 'T', 0, 400, 0, 0], ['1', 'T', 900, 0, 0, 0], ['67', 'B', -400, 0, 0, 2]], 466, 200, 800);
   assert.deepEqual(markers.map((m) => [m.line, m.left, m.top, m.late]), [
-    ['4', 233 - 24, 233 - 100 - 19, false],
-    ['67', 233 - 100 - 24, 233 - 19, true],
+    ['4', 233 - 24, 233 - 100 - 18, false],
+    ['67', 233 - 100 - 24, 233 - 18, true],
   ]);
 });
 
@@ -167,4 +167,9 @@ test('shows a friendly text for unknown error codes', () => {
   assert.equal(errorKey(undefined), 'err_other');
   assert.equal(t('cs', errorKey(undefined)), 'Něco se nepovedlo');
   assert.equal(t('en', errorKey('xyz') + '_hint'), 'Please try again.');
+});
+
+test('shows the time of day as HH:MM', () => {
+  assert.equal(clockLabel(new Date(2026, 9, 28, 7, 5)), '07:05');
+  assert.equal(clockLabel(new Date(2026, 9, 28, 17, 42)), '17:42');
 });

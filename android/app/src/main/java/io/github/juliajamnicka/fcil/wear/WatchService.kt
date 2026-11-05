@@ -28,11 +28,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * Keeps the Wear Engine receiver alive so the watch can ask for departures at any time while the
- * phone stays in the pocket. It does no work until a message arrives (no polling).
+ * Keeps the watch link (Huawei Wear Engine or Garmin Connect IQ, as the user chose) listening so
+ * the watch can ask for departures at any time while the phone stays in the pocket. It does no work
+ * until a message arrives (no polling).
  */
 class WatchService : LifecycleService() {
-    private lateinit var bridge: WearBridge
+    private lateinit var bridge: WatchLink
     private lateinit var handler: RequestHandler
     private var connectJob: Job? = null
     /** Replies in a row that did not reach the watch. */
@@ -50,7 +51,10 @@ class WatchService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         val graph = (application as FcilApp).graph
-        bridge = WearBridge(this)
+        bridge = when (kind(this)) {
+            WatchKind.HUAWEI -> WearBridge(this)
+            WatchKind.GARMIN -> GarminBridge(this)
+        }
         handler = RequestHandler(
             source = graph.repository,
             departureCount = { graph.settings.current().departureCount },
@@ -77,7 +81,7 @@ class WatchService : LifecycleService() {
     private suspend fun connectLoop() {
         while (lifecycleScope.isActive) {
             try {
-                bridge.connect(onMessage = ::onMessage, onConnectionChanged = { connected ->
+                bridge.connect(onRequest = ::onMessage, onConnectionChanged = { connected ->
                     WatchStatus.update { it.copy(connected = connected) }
                 })
                 WatchStatus.update { it.copy(running = true, deviceName = bridge.deviceName, connected = true, lastError = null) }
@@ -143,11 +147,22 @@ class WatchService : LifecycleService() {
         private const val SEND_FAILURES_SHOWN = 3
         private const val PREFS = "watch_service"
         private const val KEY_ENABLED = "enabled"
+        private const val KEY_KIND = "kind"
 
-        fun start(context: Context) {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_ENABLED, true) }
+        /** Starts the link to a watch of [kind], or of the kind chosen last (after a reboot). */
+        fun start(context: Context, kind: WatchKind = kind(context)) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val changed = prefs.getString(KEY_KIND, null) != kind.name
+            prefs.edit { putBoolean(KEY_ENABLED, true).putString(KEY_KIND, kind.name) }
+            // a running service keeps the link it was created with: restart it for another kind
+            if (changed) context.stopService(Intent(context, WatchService::class.java))
             ContextCompat.startForegroundService(context, Intent(context, WatchService::class.java))
         }
+
+        /** The kind of watch the user connected last; Huawei, the only one before Garmin, if none. */
+        fun kind(context: Context): WatchKind =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_KIND, null)
+                ?.let { name -> WatchKind.entries.firstOrNull { it.name == name } } ?: WatchKind.HUAWEI
 
         fun stop(context: Context) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_ENABLED, false) }
