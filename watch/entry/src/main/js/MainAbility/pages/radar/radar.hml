@@ -3,11 +3,11 @@
     <div class="ring-inner"></div>
     <div class="cross-v"></div>
     <div class="cross-h"></div>
-    <text class="north" style="left: {{northLeft}}px; top: {{northTop}}px;">N</text>
+    <text class="north">N</text>
     <text class="label-inner" onclick="nextZoom">{{innerLabel}}</text>
     <text class="label-outer" onclick="nextZoom">{{outerLabel}}</text>
     <div for="{{stops}}" class="stop-dot" style="left: {{$item.left}}px; top: {{$item.top}}px;"></div>
-    <text for="{{stopLabels}}" class="stop-label" style="left: {{$item.left}}px; top: {{$item.top}}px;">{{$item.text}}</text>
+    <text for="{{stopLabels}}" class="stop-label" style="left: {{$item.left}}px; top: {{$item.top}}px; width: {{$item.width}}px;">{{$item.text}}</text>
     <div class="halo"></div>
     <div class="me"></div>
     <image for="{{arrows}}" class="arrow" src="{{$item.arrow}}" style="left: {{$item.arrowLeft}}px; top: {{$item.arrowTop}}px;"></image>

@@ -35,8 +35,9 @@
     height: 1px;
     background-color: #16213a;
 }
-/* left and top from the page: north moves round the outer ring as the watch turns */
 .north {
+    left: 213px;
+    top: 0px;
     width: 40px;
     height: 36px;
     font-size: 30px;
@@ -51,10 +52,11 @@
     font-size: 30px;
     color: #8d99b3;
 }
+/* far enough left that "1500 m" fits inside the round screen ("800 m" was already clipped) */
 .label-outer {
-    left: 340px;
+    left: 296px;
     top: 66px;
-    width: 110px;
+    width: 120px;
     height: 36px;
     font-size: 30px;
     color: #8d99b3;
@@ -67,9 +69,9 @@
     border-color: #8d99b3;
     background-color: #000000;
 }
-/* up to five letters beside each stop, a little dimmer than the other radar labels */
+/* up to five letters beside each stop, a little dimmer than the other radar labels; the width and
+   the side of the dot come from placeStopLabels (common/format.js) */
 .stop-label {
-    width: 100px;
     height: 36px;
     font-size: 30px;
     color: #6f7890;
@@ -145,7 +147,7 @@
     height: 38px;
     font-size: 30px;
 }
-/* zoom (400 m, 800 m, 1,5 km): turn the crown, which reaches only sliders and lists on this watch */
+/* zoom (400 m, 800 m, 1500 m): turn the crown, which reaches only sliders and lists on this watch */
 .zoom {
     left: 183px;
     top: 432px;

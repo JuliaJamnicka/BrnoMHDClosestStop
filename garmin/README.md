@@ -8,7 +8,7 @@ as Monkey C dictionaries instead of JSON text (`GarminMessages.kt`).
 | Screen | Shows | Controls |
 |--------|-------|----------|
 | Departures (`DeparturesView.mc`) | háček mark, stop, direction, departures (as many as fit, the rest scroll), distance | UP/DOWN or swipe: scroll; START or tap: menu; BACK: close |
-| Menu (`Menus.mc`) | Stops, Opposite direction, Platforms, Nearest (automatic) when a stop is chosen, Radar | native list |
+| Menu (`Menus.mc`) | Stops, Next platform (the opposite direction first, then the stop's other platforms in turn), Platforms, Nearest (automatic) when a stop is chosen, Radar | native list |
 | Stops / Platforms | nearest stops with distance and modes / platforms of the stop with lines and direction | pick one to show its departures |
 | Radar (`RadarView.mc`) | 400 m, 800 m or 1,5 km around you, turned with the compass (north up without one): stops (five letters), vehicles with a heading arrow; the departures' lines stand out, the rest dimmed | UP/DOWN or swipe: zoom; tap a vehicle or START (list): its card with headsign, delay and distance; BACK: close the card, then departures |
 

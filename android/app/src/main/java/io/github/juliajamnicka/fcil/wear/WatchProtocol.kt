@@ -74,7 +74,7 @@ object WatchProtocol {
     }
 
     /**
-     * {"c":"dep","lg","t","g","s":stop,"p":platform,"o":opposite,"r":direction,"d":distance,
+     * {"c":"dep","lg","t","g","s":stop,"p":platform,"o":next,"r":direction,"d":distance,
      *  "x":[[line, mode, headsign, expectedEpoch, delayMinutes, live0or1], ...]}
      *
      * A stop list's board (docs/SPEC.md 6.2) has "l":1, the list name as "s", empty "p" and "r",
@@ -90,7 +90,7 @@ object WatchProtocol {
             put("s", TextShortener.shorten(r.stop, NAME_MAX))
             put("p", r.p)
             if (r.listId != null) put("l", 1)
-            r.opp?.let { put("o", it) }
+            nextPlatform(r)?.let { put("o", it) }
             put("r", TextShortener.shorten(r.dir, 24))
             r.d?.let { put("d", it) }
             if (clock) put("tf", 1)
@@ -106,6 +106,26 @@ object WatchProtocol {
             }
         },
     )
+
+    /**
+     * The platform the watch's ⇄ goes to ("o"): every platform of the stop in turn, each with its
+     * opposite direction right after it (1 -> 2 -> 3 -> 4 -> 1 for two pairs), so one press from the
+     * first of a pair is still the way back. The order does not depend on the current platform,
+     * else a stop with four would flip between two of them. Without platforms: the opposite one.
+     */
+    fun nextPlatform(r: DeparturesResponse): String? {
+        val ids = r.pl.map { it.id }.toSet()
+        if (r.p !in ids || ids.size < 2) return r.opp
+        val order = mutableListOf<String>()
+        fun add(id: String?) {
+            if (id != null && id in ids && id !in order) order += id
+        }
+        for (p in r.pl) {
+            add(p.id)
+            add(p.o ?: r.opp.takeIf { p.id == r.p })
+        }
+        return order[(order.indexOf(r.p) + 1) % order.size]
+    }
 
     /** {"c":"pl","lg","s":stop,"p":current,"x":[[platformId, lines, direction], ...]} */
     fun platforms(r: DeparturesResponse, lang: String): ByteArray = fit(

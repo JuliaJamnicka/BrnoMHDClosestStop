@@ -521,8 +521,9 @@ switch on each). The rules below describe them.
   to the stop and radar button.
 - Rows: badge with line number, headsign (ellipsis if too long), time: "teď"/"now" under 30 s,
   "N min" under 60 min, else "HH:MM".
-- Reverse button: switches to the opposite platform as defined in 5.4. Tapping the stop name
-  opens the platform picker for big stops.
+- Reverse button: goes through all platforms of the stop in turn, each followed by its opposite
+  platform as defined in 5.4 (1 -> 2 -> 3 -> 4 -> 1 at a stop with two pairs; with two platforms it
+  just flips). The phone sends the next one as "o". Tapping the stop name opens the platform picker.
 - Pinned stop (chosen in the list): amber pin icon before the name; tapping the pin returns to
   "closest stop" mode.
 - Stale data (no fresh reply for 60 s): rows dimmed to 50 % and an amber line

@@ -103,6 +103,24 @@ class WatchProtocolTest {
     }
 
     @Test
+    fun cyclesThroughAllPlatformsOfAStopInPairs() {
+        // Lesná, nádraží: buses Z1/Z2 and trains Z10/Z11, each pair opposite directions
+        val pl = listOf(
+            PlatformDto("Z1", "Haškova", "44 72", o = "Z2"),
+            PlatformDto("Z2", "Lesná", "44 72", o = "Z1"),
+            PlatformDto("Z10", "Křižanov", "S3", o = "Z11"),
+            PlatformDto("Z11", "Hustopeče", "S3", o = "Z10"),
+        )
+        fun next(p: String) = WatchProtocol.nextPlatform(ceska.copy(p = p, opp = pl.first { it.id == p }.o, pl = pl))
+        assertEquals(listOf("Z2", "Z10", "Z11", "Z1"), listOf("Z1", "Z2", "Z10", "Z11").map(::next))
+        val obj = Json.parseToJsonElement(WatchProtocol.departures(ceska.copy(p = "Z11", opp = "Z10", pl = pl), "cs").decodeToString()).jsonObject
+        assertEquals("Z1", obj["o"]!!.jsonPrimitive.content)
+        // two platforms (or an older backend without "o"): the opposite one, as before
+        assertEquals("U1073Z2", WatchProtocol.nextPlatform(ceska))
+        assertEquals("U1073Z1", WatchProtocol.nextPlatform(ceska.copy(p = "U1073Z2", opp = "U1073Z1")))
+    }
+
+    @Test
     fun encodesPlatformsForThePicker() {
         val obj = Json.parseToJsonElement(WatchProtocol.platforms(ceska, "en").decodeToString()).jsonObject
         assertEquals("""["U1073Z2","3 4 5 6 10","Babická"]""", obj["x"]!!.jsonArray[1].toString())

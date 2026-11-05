@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const common = path.join(here, '../entry/src/main/js/MainAbility/common');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-'));
 for (const f of ['format.js', 'strings.js']) fs.copyFileSync(path.join(common, f), path.join(tmp, f.replace('.js', '.mjs')));
-const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches, clockLabel, turn, angleDiff, vehicleCard, findVehicle, ownLines, RADAR_RANGES } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
+const { parseReply, timeLabel, departureRows, radarMarkers, distanceLabel, badgeStyle, timeColour, arrowFor, wrapLines, pingOutcome, dim, modeChips, shortStopName, textWidth, replyMatches, clockLabel, ringLabel, placeStopLabels, vehicleCard, findVehicle, ownLines, RADAR_RANGES } = await import(pathToFileURL(path.join(tmp, 'format.mjs')));
 const { t, errorKey } = await import(pathToFileURL(path.join(tmp, 'strings.mjs')));
 
 // A reply exactly as android/.../WatchProtocol.kt produces it (non-ASCII escaped).
@@ -174,15 +174,27 @@ test('shows the time of day as HH:MM', () => {
   assert.equal(clockLabel(new Date(2026, 9, 28, 17, 42)), '17:42');
 });
 
-test('turns the radar to the watch heading: what is ahead is drawn at the top', () => {
-  // facing east, a vehicle 100 m east is straight ahead
-  const [x, y] = turn(100, 0, 90);
-  assert.ok(Math.abs(x) < 1e-9 && Math.abs(y - 100) < 1e-9);
-  assert.deepEqual(turn(30, 40, 0), [30, 40]);
-  assert.equal(angleDiff(355, 5), 10);
-  assert.equal(angleDiff(90, 270), 180);
-  const [east] = radarMarkers([['4', 'T', 400, 0, 90, 0]], 466, 200, 800, { rotation: 90 });
-  assert.deepEqual([east.left, east.top, east.arrow], [233 - 24, 233 - 100 - 18, '/common/images/arrow0.png']);
+test('labels the radar rings in metres', () => {
+  assert.deepEqual(RADAR_RANGES, [400, 800, 1500]);
+  // "1,5 km" did not show on the GT 5
+  assert.deepEqual(RADAR_RANGES.map((r) => [ringLabel(r / 2), ringLabel(r)]), [['200 m', '400 m'], ['400 m', '800 m'], ['750 m', '1500 m']]);
+});
+
+test('places stop names where they overlap nothing, or leaves them out', () => {
+  const ring = { left: 300, top: 150, width: 80, height: 36 };
+  // right of the first dot is free; the second dot is just below it, so its name goes elsewhere
+  const [a, b] = placeStopLabels([{ x: 150, y: 200, text: 'Letov.' }, { x: 150, y: 215, text: 'Žitná' }], 466, [ring]);
+  assert.deepEqual([a.left, a.top], [160, 182]);
+  assert.ok(b.top >= a.top + 36 || b.top + 36 <= a.top || b.left + b.width <= a.left || b.left >= a.left + a.width);
+  // the ring label is right of this dot: the name goes left of it
+  const [c] = placeStopLabels([{ x: 295, y: 168, text: 'Koníř.' }], 466, [ring]);
+  assert.ok(c.left + c.width <= 285);
+  // several names on one spot: right and left of it, the rest are left out
+  const crowd = placeStopLabels([1, 2, 3].map((i) => ({ x: 233, y: 120, text: 'Stop' + i })), 466, []);
+  assert.equal(crowd.length, 2);
+  // never outside the round screen
+  const [edge] = placeStopLabels([{ x: 440, y: 233, text: 'Okraj' }], 466, []);
+  assert.ok(edge.left + edge.width <= 440);
 });
 
 test('dims vehicles that are not the departures page lines and draws those last', () => {
@@ -193,7 +205,6 @@ test('dims vehicles that are not the departures page lines and draws those last'
   assert.equal(markers[0].arrow, '/common/images/arrowd0.png');
   // without highlight every vehicle is in full colour
   assert.ok(radarMarkers(vehicles, 466, 200, 800).every((m) => m.textColour === '#ffffff'));
-  assert.deepEqual(RADAR_RANGES, [400, 800, 1500]);
 });
 
 test('describes a tapped vehicle and finds it again after a refresh', () => {

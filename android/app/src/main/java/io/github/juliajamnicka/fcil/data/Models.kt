@@ -33,6 +33,8 @@ data class PlatformDto(
     /** Coordinates (from the backend since stop lists); used to tell which stop list is nearby. */
     val la: Double? = null,
     val lo: Double? = null,
+    /** The platform's opposite direction (from the backend since the watch's ⇄ cycles platforms). */
+    val o: String? = null,
 )
 
 @Serializable
