@@ -29,6 +29,8 @@ export interface TripState {
   delay: number;
   /** Departure delay measured at the last stop the vehicle was seen leaving. */
   carry?: number;
+  /** stop_sequence of the stop the vehicle was last seen standing at, until it moves on. */
+  atSeq?: number;
   ts: number;
   lat: number;
   lon: number;
@@ -46,6 +48,8 @@ interface TripMatch {
   base: number;
   /** Index in stops of the vehicle's current / next stop. */
   k: number;
+  /** Standing at stops[k] (reported so, or found there by position) rather than on its way to it. */
+  stopped: boolean;
 }
 
 /** Positions newer than this are "live" (docs/SPEC.md 3.2: feed refreshes every ~30 s). */
@@ -73,6 +77,22 @@ export const FALLBACK_MAX_EARLY = 10 * 60;
  * from the stop's coordinates.
  */
 export const TERMINUS_RADIUS_M = 400;
+/**
+ * A vehicle this close to a stop counts as standing there when the feed's stop does not tell (see
+ * resolve). Trains stop up to a platform length away from the stop's coordinates.
+ */
+export const AT_STOP_RADIUS_M = 250;
+/**
+ * Two observations further apart than this give only a lower bound for a departure: the vehicle left
+ * some time after the first one. Trains are sometimes reported only every minute or two.
+ */
+export const DEPARTURE_GAP_S = 60;
+/**
+ * A vehicle followed between stops through points the timetable does not have must stay this close
+ * to the stops around it (the S3 runs up to ~1.5 km from Židenice and Lesná on its way round
+ * Maloměřice).
+ */
+export const CONTINUE_MAX_DISTANCE_M = 2500;
 
 /** Real-time stop ids are zero-padded (U01677Z02); static ones are not (U1677Z2). */
 export function normalizeStopId(id: string): string {
@@ -124,6 +144,7 @@ export class Tracker {
     const candidates = [v.tripId!, ...this.timetable.aliasesOf(v.tripId!)];
     const stopId = v.stopId ? normalizeStopId(v.stopId) : undefined;
     let fallback: TripMatch | undefined;
+    let continued: TripMatch | undefined;
     // first pass: trips running that day; second pass: any trip whose times fit
     for (const runningOnly of [true, false]) {
       // Of the candidates serving the vehicle's stop, the one due there closest to now wins: an alias
@@ -139,22 +160,64 @@ export class Tracker {
         if (k >= 0) {
           const late = v.ts - (base + (v.status === STOPPED_AT ? stops[k].dep : stops[k].arr));
           if (late > STOP_MATCH_MAX_LATE || late < -STOP_MATCH_MAX_EARLY) continue;
-          if (!best || Math.abs(late) < best.off) best = { match: { tripId, stops, trip, base, k }, off: Math.abs(late) };
-        } else if (!fallback) {
+          if (!best || Math.abs(late) < best.off) {
+            best = { match: { tripId, stops, trip, base, k, stopped: v.status === STOPPED_AT }, off: Math.abs(late) };
+          }
+          continue;
+        }
+        // The feed's stop is not on the trip. Trains report points the timetable does not have at all
+        // (e.g. Brno-Maloměřice between Židenice and Lesná, where the S3 does not stop): a vehicle
+        // already followed on this trip is placed by its last state and its position, not by its
+        // nearest stop, which lies behind it half of the time and made on-time trains look minutes
+        // late. A stop the timetable has but the trip does not serve means another trip instead.
+        const prev = this.states.get(tripId);
+        if (!continued && prev && prev.base === base && stopId && !this.timetable.platforms.has(stopId)) {
+          continued = this.continueTrip(v, { tripId, stops, trip, base }, prev);
+        }
+        if (!continued && !fallback) {
           const nearest = this.nearestStopIndex(stops, v.lat, v.lon);
-          if (nearest >= 0 && this.plausible(v, stops[nearest], base)) fallback = { tripId, stops, trip, base, k: nearest };
+          if (nearest >= 0 && this.plausible(v, stops[nearest], base)) fallback = this.byPosition(v, { tripId, stops, trip, base }, nearest);
         }
       }
       if (best) return best.match;
     }
-    return fallback;
+    return continued ?? fallback;
+  }
+
+  /**
+   * Where a vehicle seen on this trip before is now: at the stop it was heading to, or past it.
+   * Undefined when it is no longer near that part of the trip.
+   */
+  private continueTrip(v: RtVehicle, trip: Omit<TripMatch, 'k' | 'stopped'>, prev: TripState): TripMatch | undefined {
+    const { stops } = trip;
+    let k = stops.findIndex((s) => s.seq > prev.passedSeq);
+    if (k < 0) return undefined;
+    if (!stops.slice(Math.max(0, k - 1), k + 2).some((s) => this.near(v, s, CONTINUE_MAX_DISTANCE_M))) return undefined;
+    if (this.near(v, stops[k], AT_STOP_RADIUS_M)) return { ...trip, k, stopped: true };
+    // seen standing at it and now away: it has left
+    if (prev.atSeq === stops[k].seq && k < stops.length - 1) k++;
+    return { ...trip, k, stopped: false };
+  }
+
+  /** A vehicle matched by position only: at its nearest stop, or on its way to it or the next one. */
+  private byPosition(v: RtVehicle, trip: Omit<TripMatch, 'k' | 'stopped'>, nearest: number): TripMatch {
+    const { stops } = trip;
+    if (v.status === STOPPED_AT || this.near(v, stops[nearest], AT_STOP_RADIUS_M)) return { ...trip, k: nearest, stopped: true };
+    const next = stops[nearest + 1];
+    const here = this.timetable.platforms.get(stops[nearest].stopId);
+    const there = next && this.timetable.platforms.get(next.stopId);
+    // closer to the next stop than the nearest one is: the nearest is behind it
+    if (here && there && distanceM(v.lat, v.lon, there.lat, there.lon) < distanceM(here.lat, here.lon, there.lat, there.lon)) {
+      return { ...trip, k: nearest + 1, stopped: false };
+    }
+    return { ...trip, k: nearest, stopped: false };
   }
 
   private estimate(v: RtVehicle, match: TripMatch, prev: TripState | undefined): TripState {
-    const { stops, trip, base, k } = match;
+    const { stops, trip, base, k, stopped } = match;
 
     const last = stops.length - 1;
-    if (k === last && (v.status === STOPPED_AT || this.atStop(v, stops[last]))) {
+    if (k === last && (stopped || this.atStop(v, stops[last]))) {
       // At (or stopped at) the last stop the trip is done. The feed keeps reporting it there while
       // the vehicle waits, which must not grow the delay.
       return {
@@ -175,7 +238,7 @@ export class Tracker {
 
     let passedSeq: number;
     let lower: number;
-    if (v.status === STOPPED_AT) {
+    if (stopped) {
       passedSeq = stops[k].seq - 1;
       lower = v.ts - (base + stops[k].dep);
     } else if (k === 0) {
@@ -190,7 +253,9 @@ export class Tracker {
     if (prev && prev.base === base && passedSeq > prev.passedSeq) {
       // Seen leaving a stop between the two observations: use the midpoint as departure time.
       const left = stops.find((s) => s.seq === passedSeq);
-      if (left) carry = Math.max(0, Math.round((prev.ts + v.ts) / 2) - (base + left.dep));
+      // over a long gap only the first observation is sure: it left after that
+      const leftAt = v.ts - prev.ts > DEPARTURE_GAP_S ? prev.ts : Math.round((prev.ts + v.ts) / 2);
+      if (left) carry = Math.max(0, leftAt - (base + left.dep));
     }
     if (passedSeq < stops[0].seq) carry = undefined;
 
@@ -200,6 +265,8 @@ export class Tracker {
       passedSeq,
       delay: Math.max(0, Math.round(lower), carry ?? 0),
       carry,
+      // also when the feed says "in transit to" a stop the vehicle already stands at
+      atSeq: stopped || this.near(v, stops[k], AT_STOP_RADIUS_M) ? stops[k].seq : undefined,
       ts: v.ts,
       lat: v.lat,
       lon: v.lon,
@@ -231,8 +298,12 @@ export class Tracker {
   }
 
   private atStop(v: RtVehicle, stop: TripStop): boolean {
+    return this.near(v, stop, TERMINUS_RADIUS_M);
+  }
+
+  private near(v: RtVehicle, stop: TripStop, radius: number): boolean {
     const p = this.timetable.platforms.get(stop.stopId);
-    return !!p && distanceM(v.lat, v.lon, p.lat, p.lon) <= TERMINUS_RADIUS_M;
+    return !!p && distanceM(v.lat, v.lon, p.lat, p.lon) <= radius;
   }
 
   /** Service day the trip is running on: today or yesterday (trips after midnight). */

@@ -161,6 +161,45 @@ describe('departures', () => {
     expect(tracker.get('100', BASE, at('10:30:00'))).toMatchObject({ delay: 60, passedSeq: 3 });
   });
 
+  it('follows a vehicle through points the timetable does not have without making it late', () => {
+    // Like the S3 between Židenice and Lesná: the feed names a point the S3 does not stop at
+    // ("U9999Z1"), first while the train still stands at Česká, then on its way to Řečkovice.
+    const tracker = new Tracker(tt);
+    const ces = { lat: 49.1981, lon: 16.6061 };
+    tracker.update([vehicle({ tripId: '100', stopId: 'U1Z1', ts: at('10:04:30'), ...ces })], at('10:04:30'));
+    tracker.update([vehicle({ tripId: '100', stopId: 'U9999Z1', ts: at('10:05:00'), ...ces })], at('10:05:00'));
+    // standing at Česká until its departure time is not a delay
+    expect(tracker.get('100', BASE, at('10:05:00'))).toMatchObject({ delay: 0, passedSeq: 1 });
+    // 2 km on: it left Česká between the two observations, not "is still on its way to it"
+    tracker.update([vehicle({ tripId: '100', stopId: 'U9999Z1', ts: at('10:05:40'), lat: 49.215, lon: 16.595 })], at('10:05:40'));
+    expect(tracker.get('100', BASE, at('10:05:40'))).toMatchObject({ delay: 20, passedSeq: 2 });
+    expect(departures(tt, tracker, 'U1Z1', at('10:05:40'), 4).map((d) => d.e)).toEqual([at('10:25:00')]);
+  });
+
+  it('does not follow a vehicle reported at a stop of another trip', () => {
+    const tracker = new Tracker(tt);
+    tracker.update([vehicle({ tripId: '100', stopId: 'U1Z1', ts: at('10:04:30'), lat: 49.1981, lon: 16.6061 })], at('10:04:30'));
+    // Kořískova is in the timetable but not on trip 100, and 15 km away: another vehicle's trip
+    tracker.update([vehicle({ tripId: '100', stopId: 'U4Z1', ts: at('10:08:00'), lat: 49.33, lon: 16.6 })], at('10:08:00'));
+    // the state from Česká stays as it was
+    expect(tracker.get('100', BASE, at('10:08:00'))).toMatchObject({ delay: 30, passedSeq: 1, ts: at('10:04:30') });
+  });
+
+  it('counts a vehicle standing at a stop by position as stopped there', () => {
+    // in transit to a point the timetable does not have, but at Česká: waits for its departure time
+    const tracker = new Tracker(tt);
+    tracker.update([vehicle({ tripId: '100', stopId: 'U9999Z1', ts: at('10:04:50'), lat: 49.1981, lon: 16.6061 })], at('10:04:50'));
+    expect(tracker.get('100', BASE, at('10:04:50'))).toMatchObject({ delay: 0, passedSeq: 1 });
+  });
+
+  it('takes only the first of two observations far apart as the departure time', () => {
+    const tracker = new Tracker(tt);
+    tracker.update([vehicle({ tripId: '100', stopId: 'U1Z1', status: STOPPED_AT, ts: at('10:06:00') })], at('10:06:00'));
+    tracker.update([vehicle({ tripId: '100', stopId: 'U3Z1', status: IN_TRANSIT_TO, ts: at('10:09:00') })], at('10:09:00'));
+    // left U1Z1 (due 10:05) some time after 10:06: at least 60 s late, not the midpoint's 150 s
+    expect(tracker.get('100', BASE, at('10:09:00'))).toMatchObject({ delay: 60, passedSeq: 2 });
+  });
+
   it('shows trips after midnight from the previous service day', () => {
     const tracker = new Tracker(tt);
     const nextDayBase = serviceDayBase(20261009);
