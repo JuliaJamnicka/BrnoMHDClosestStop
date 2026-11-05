@@ -51,7 +51,8 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       });
 
   // la/lo let the phone tell which of the user's stop lists is nearby without asking the server
-  const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines, la: round5(p.lat), lo: round5(p.lon) });
+  // o: the platform's opposite direction, so the watch's ⇄ can go through a stop's platforms in pairs
+  const platformInfo = (p: Platform) => ({ id: p.stopId, dir: p.dirLabel, l: p.lines, la: round5(p.lat), lo: round5(p.lon), o: p.opp });
 
   const departurePayload = async (group: Group, platform: Platform, n: number, distance?: number) => {
     await feed.refresh(now());

@@ -7,7 +7,7 @@ import Toybox.WatchUi;
 //! Garmin Connect (the phone does the location and the network; see garmin/README.md).
 class FcilApp extends Application.AppBase {
     var link as Link;
-    //! Platform chosen in the stop list, platform list or "Opposite direction"; null = nearest stop.
+    //! Platform chosen in the stop list, platform list or "Next platform"; null = nearest stop.
     var pinned as String or Null = null;
     //! Last "dep" reply, for the menu and a quick redraw.
     var lastDep as Dictionary or Null = null;
