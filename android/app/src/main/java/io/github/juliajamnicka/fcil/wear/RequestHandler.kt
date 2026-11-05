@@ -26,7 +26,7 @@ class RequestHandler(
                 is Request.Departures -> WatchProtocol.departures(source.departures(request.platform, departureCount()), lang, clockTimes())
                 is Request.Platforms -> WatchProtocol.platforms(source.departures(request.platform, 1), lang)
                 Request.Nearby -> WatchProtocol.nearby(source.nearby(), lang)
-                Request.Vehicles -> WatchProtocol.vehicles(source.vehicles(), lang)
+                is Request.Vehicles -> WatchProtocol.vehicles(source.vehicles(request.radius), lang, request.mine)
             }
         } catch (e: NoLocationException) {
             WatchProtocol.error(Error.NO_LOCATION, lang)

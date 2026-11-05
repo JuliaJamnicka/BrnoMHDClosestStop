@@ -10,7 +10,7 @@ as Monkey C dictionaries instead of JSON text (`GarminMessages.kt`).
 | Departures (`DeparturesView.mc`) | háček mark, stop, direction, departures (as many as fit, the rest scroll), distance | UP/DOWN or swipe: scroll; START or tap: menu; BACK: close |
 | Menu (`Menus.mc`) | Stops, Opposite direction, Platforms, Nearest (automatic) when a stop is chosen, Radar | native list |
 | Stops / Platforms | nearest stops with distance and modes / platforms of the stop with lines and direction | pick one to show its departures |
-| Radar (`RadarView.mc`) | 800 m around you, north up: stops (five letters), vehicles with a heading arrow | BACK: departures |
+| Radar (`RadarView.mc`) | 400 m, 800 m or 1,5 km around you, turned with the compass (north up without one): stops (five letters), vehicles with a heading arrow; the departures' lines stand out, the rest dimmed | UP/DOWN or swipe: zoom; tap a vehicle or START (list): its card with headsign, delay and distance; BACK: close the card, then departures |
 
 Designs: the Garmin row on the canvas (Garmin: Departures, Garmin: Radar).
 
@@ -51,6 +51,7 @@ if it happens, try another SDK version in the SDK Manager.
   `android/app/build.gradle.kts`, without dashes). Change both together or not at all.
 - The products in `manifest.xml` are the colour watches with Connect IQ 3.2+ whose ids the SDK's own
   samples use. Add more with **Monkey C: Edit Products**.
+- The radar reads the compass (`Sensor` permission) once a second while it is open.
 - The language comes from the phone app's replies and is kept for the next start
   (`Application.Storage`), as on the Huawei watch.
 - Not checked on a real Garmin watch yet. The code builds with SDK 9.3.0, checked against a

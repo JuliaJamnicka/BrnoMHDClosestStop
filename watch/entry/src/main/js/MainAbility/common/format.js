@@ -177,39 +177,76 @@ export function modeChips(modes, lang) {
 const ARROW_OFFSET = 36;
 
 /** One of 8 pre-drawn arrow images (lite wearables cannot rotate images); null when the heading is unknown. */
-export function arrowFor(heading) {
+export function arrowFor(heading, dimmed) {
   if (heading === undefined || heading === null || heading < 0) return null;
   const sector = Math.round(heading / 45) % 8;
-  return { src: '/common/images/arrow' + sector + '.png', angle: sector * 45 };
+  return { src: '/common/images/arrow' + (dimmed ? 'd' : '') + sector + '.png', angle: sector * 45 };
+}
+
+/** Radar zoom levels: the outer ring's distance in metres; the inner ring is half of it. */
+export const RADAR_RANGES = [400, 800, 1500];
+
+/**
+ * [dx, dy] metres east/north turned for a screen that faces [rotation] degrees (the watch's
+ * heading, 0 = north up): what lies ahead is drawn at the top.
+ */
+export function turn(dx, dy, rotation) {
+  if (!rotation) return [dx, dy];
+  const rad = (rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return [dx * cos - dy * sin, dy * cos + dx * sin];
+}
+
+/** [degrees] in 0..359. */
+export function normaliseAngle(degrees) {
+  return ((Math.round(degrees) % 360) + 360) % 360;
+}
+
+/** Smallest difference between two headings in degrees (0..180). */
+export function angleDiff(a, b) {
+  const d = Math.abs(normaliseAngle(a) - normaliseAngle(b));
+  return d > 180 ? 360 - d : d;
 }
 
 /**
- * Radar marker positions in a size x size round screen, north up, user in the centre.
- * radiusPx is the screen distance of rangeM metres (the outer ring).
+ * Radar marker positions in a size x size round screen, user in the centre.
+ * vehicles: [line, mode, dx, dy, heading, delay, headsign, mine] as the phone sends them.
+ * radiusPx is the screen distance of rangeM metres (the outer ring). options.rotation turns the
+ * map to the watch's heading; options.highlight dims every vehicle not marked "mine" (index 7).
+ * Each marker keeps its vehicle's [index]; the user's own vehicles come last, so they are drawn
+ * over the others.
  */
-export function radarMarkers(vehicles, size, radiusPx, rangeM) {
+export function radarMarkers(vehicles, size, radiusPx, rangeM, options) {
+  const rotation = options && options.rotation ? options.rotation : 0;
+  const highlight = !!(options && options.highlight);
   const scale = radiusPx / rangeM;
   const centre = size / 2;
-  const markers = [];
+  const own = [];
+  const others = [];
   for (let i = 0; i < vehicles.length; i++) {
     const v = vehicles[i];
-    const x = centre + v[2] * scale;
-    const y = centre - v[3] * scale;
     const dist = Math.sqrt(v[2] * v[2] + v[3] * v[3]);
     if (dist > rangeM) continue;
+    const p = turn(v[2], v[3], rotation);
+    const x = centre + p[0] * scale;
+    const y = centre - p[1] * scale;
+    const dimmed = highlight && v[7] !== 1;
     const badge = badgeStyle(v[1], 36); // pages/radar .badge height
     // as wide as the line number ("301" does not fit the 48 px of a short one)
     const width = Math.max(48, textWidth(v[0], 30) + 12);
     const marker = {
+      index: i,
       line: v[0],
-      badgeColour: badge.colour,
+      badgeColour: dimmed ? dim(badge.colour) : badge.colour,
+      textColour: dimmed ? '#808080' : '#ffffff',
       badgeRadius: badge.radius,
       width: width,
       left: Math.round(x - width / 2),
       top: Math.round(y - 18),
       late: isLate(v[5]),
     };
-    const arrow = arrowFor(v[4]);
+    const arrow = v[4] === undefined || v[4] === null || v[4] < 0 ? null : arrowFor(normaliseAngle(v[4] - rotation), dimmed);
     if (arrow) {
       // a small arrow just ahead of the badge, in the direction of travel
       const rad = (arrow.angle * Math.PI) / 180;
@@ -217,9 +254,74 @@ export function radarMarkers(vehicles, size, radiusPx, rangeM) {
       marker.arrowLeft = Math.round(x + Math.sin(rad) * ARROW_OFFSET - 12);
       marker.arrowTop = Math.round(y - Math.cos(rad) * ARROW_OFFSET - 12);
     }
-    markers.push(marker);
+    (dimmed ? others : own).push(marker);
   }
-  return markers;
+  return others.concat(own);
+}
+
+/**
+ * The card of a tapped radar vehicle: line badge, headsign, and "+3 min · 350 m" (delay, distance
+ * from the user), amber from 2 minutes late as on the departures page.
+ */
+export function vehicleCard(v, onTime) {
+  const badge = badgeStyle(v[1], 42); // pages/radar .card-badge height
+  const delay = v[5] || 0;
+  let when = onTime;
+  if (delay >= 1) when = '+' + delay + ' min';
+  else if (delay <= -1) when = '-' + -delay + ' min';
+  const width = Math.max(52, textWidth(v[0], 30) + 14);
+  return {
+    line: v[0],
+    badgeColour: badge.colour,
+    badgeRadius: badge.radius,
+    badgeWidth: width,
+    headsign: v[6] || '',
+    headsignWidth: CARD_TEXT_W - width - 10,
+    info: when + ' \u00b7 ' + distanceLabel(Math.round(Math.sqrt(v[2] * v[2] + v[3] * v[3]))),
+    infoColour: isLate(delay) ? '#ffb020' : '#8d99b3',
+  };
+}
+
+const CARD_TEXT_W = 276; // pages/radar .card width 300 - padding 2 x 12
+
+/**
+ * The tapped vehicle again after a refresh (vehicles have no id): the same line and headsign,
+ * nearest to where it was; -1 when it is gone.
+ */
+export function findVehicle(vehicles, previous) {
+  let best = -1;
+  let bestDist = 0;
+  for (let i = 0; i < vehicles.length; i++) {
+    const v = vehicles[i];
+    if (v[0] !== previous[0] || (v[6] || '') !== (previous[6] || '')) continue;
+    const dx = v[2] - previous[2];
+    const dy = v[3] - previous[3];
+    const d = dx * dx + dy * dy;
+    if (best < 0 || d < bestDist) {
+      best = i;
+      bestDist = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * The departures page's lines for the radar request: [line, headsign] pairs, headsign '' for a
+ * stop list's board (its rows name stops, not directions); empty without departures.
+ */
+export function ownLines(lastDep) {
+  const result = [];
+  if (!lastDep || lastDep.c !== 'dep' || !lastDep.x) return result;
+  const seen = {};
+  for (let i = 0; i < lastDep.x.length; i++) {
+    const row = lastDep.x[i];
+    const pair = [row[0], lastDep.l ? '' : row[2] || ''];
+    const key = pair[0] + '|' + pair[1];
+    if (seen[key]) continue;
+    seen[key] = true;
+    result.push(pair);
+  }
+  return result;
 }
 
 /**

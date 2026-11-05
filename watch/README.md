@@ -9,7 +9,7 @@ follows the design canvas (docs/SPEC.md 7.3).
 | `pages/index` (home) | Stop, direction, 3-5 departures as set in the phone app (4 visible, the rest scroll (no scroll bar); `+N` delay with clock times, live mark, "now" in red, amber when 2+ min late), distance | ⇄ reverse, tap stop name: platform picker, ≡ stop list, ◎ radar; swipe or turn the crown on the departures: scroll; swipe up below them: stop list; swipe left: radar, right: close |
 | `pages/stops` | Nearest stops; first row "Nearest (automatic)" | tap to pin, swipe right: back |
 | `pages/platforms` | Platforms of the current stop with lines and direction | tap to pin, swipe right: back |
-| `pages/radar` | Vehicles within 800 m around you, north up, an arrow for each one's direction of travel | swipe right: back |
+| `pages/radar` | Vehicles within 400 m, 800 m or 1,5 km around you, turned with the watch's compass (north up without one), an arrow for each one's direction of travel; the departures page's lines stand out, the rest dimmed | turn the crown (zoom slider) or tap a distance label: zoom; tap a vehicle: line, headsign, delay, distance (tap the card to close); swipe right: back |
 
 When one of the user's stop lists (made in the phone app) is nearby, the home page shows the
 list's merged departures with each row's stop name instead of the headsign. Pinned stops show an amber pin; tapping it goes back to following the nearest stop. Texts are

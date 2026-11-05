@@ -29,7 +29,7 @@ class RequestHandlerTest {
             return response(platform)
         }
         override suspend fun nearby() = NearbyResponse(1, emptyList())
-        override suspend fun vehicles() = VehiclesResponse(1, emptyList())
+        override suspend fun vehicles(radius: Int) = VehiclesResponse(1, emptyList())
     }
 
     private fun handler(source: TransitSource) = RequestHandler(source, departureCount = { 3 }, language = { "cs" })

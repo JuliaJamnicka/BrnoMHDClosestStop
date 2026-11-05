@@ -51,7 +51,7 @@ class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
             _view.reload();
         } else if (id == :radar) {
             var radar = new RadarView();
-            WatchUi.pushView(radar, new RadarDelegate(), WatchUi.SLIDE_LEFT);
+            WatchUi.pushView(radar, new RadarDelegate(radar), WatchUi.SLIDE_LEFT);
         }
     }
 }

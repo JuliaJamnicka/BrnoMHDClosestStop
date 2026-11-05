@@ -31,7 +31,13 @@ class WatchProtocolTest {
         assertEquals(WatchProtocol.Request.Departures("U1073Z2"), WatchProtocol.parseRequest("""{"c":"dep","p":"U1073Z2"}""".toByteArray()))
         assertEquals(WatchProtocol.Request.Platforms("U1073Z2"), WatchProtocol.parseRequest("""{"c":"pl","p":"U1073Z2"}""".toByteArray()))
         assertEquals(WatchProtocol.Request.Nearby, WatchProtocol.parseRequest("""{"c":"near"}""".toByteArray()))
-        assertEquals(WatchProtocol.Request.Vehicles, WatchProtocol.parseRequest("""{"c":"veh"}""".toByteArray()))
+        assertEquals(WatchProtocol.Request.Vehicles(), WatchProtocol.parseRequest("""{"c":"veh"}""".toByteArray()))
+        assertEquals(
+            WatchProtocol.Request.Vehicles(1500, listOf("4" to "Náměstí Míru", "9" to "")),
+            WatchProtocol.parseRequest("""{"c":"veh","r":1500,"m":[["4","Náměstí Míru"],["9",""]]}""".toByteArray()),
+        )
+        // the radius stays within what the backend serves
+        assertEquals(WatchProtocol.Request.Vehicles(2000), WatchProtocol.parseRequest("""{"c":"veh","r":50000}""".toByteArray()))
         assertNull(WatchProtocol.parseRequest("""{"c":"dep"}""".toByteArray()))
         assertNull(WatchProtocol.parseRequest("not json".toByteArray()))
     }
@@ -75,6 +81,25 @@ class WatchProtocolTest {
         assertTrue(bytes.size <= WatchProtocol.MAX_BYTES)
         val kept = Json.parseToJsonElement(bytes.decodeToString()).jsonObject["x"]!!.jsonArray.size
         assertTrue(kept in 10 until 200)
+    }
+
+    @Test
+    fun marksTheWatchsOwnVehiclesAndSendsThemFirst() {
+        val near = VehiclesResponse(
+            t = 1,
+            v = listOf(
+                VehicleDto("4", "T", 10, 0, 90, 120, 3, h = "Bystrc, Ečerova"),
+                VehicleDto("6", "T", 20, 0, 90, 0, 3, h = "Starý Lískovec, smyčka"),
+                VehicleDto("4", "T", 30, 0, 270, 0, 3, h = "Náměstí Míru"),
+                VehicleDto("9", "T", 40, 0, -1, 0, 3, h = "Lesná, Čertova rokle"),
+            ),
+        )
+        // headsigns as the watch got them in its departures ("Starý Lískovec, sm."); "" is any direction
+        val mine = listOf("6" to "Starý Lískovec, sm.", "4" to "Náměstí Míru", "9" to "")
+        val rows = Json.parseToJsonElement(WatchProtocol.vehicles(near, "cs", mine).decodeToString()).jsonObject["x"]!!.jsonArray
+        assertEquals(listOf("6", "4", "9", "4"), rows.map { it.jsonArray[0].jsonPrimitive.content })
+        assertEquals(listOf("1", "1", "1", "0"), rows.map { it.jsonArray[7].jsonPrimitive.content })
+        assertEquals("""["4","T",10,0,90,2,"Bystrc, Ečerova",0]""", rows[3].toString())
     }
 
     @Test
