@@ -20,7 +20,7 @@ import kotlinx.serialization.json.put
  * Messages between the phone and the watch over Wear Engine P2P (docs/SPEC.md 6).
  *
  * Watch -> phone:  {"c":"home"} | {"c":"dep","p":"U1073Z2"} | {"c":"pl","p":"U1073Z2"} | {"c":"near"}
- *                  | {"c":"veh","r":radiusMetres,"m":[[line, headsign], ...]}
+ *                  | {"c":"veh","r":radiusMetres,"p":platform,"m":[[line, headsign], ...]}
  * Phone -> watch:  compact JSON with "c" echoing the kind, "lg" the UI language and lists as
  * positional arrays to stay under [MAX_BYTES]; see the builders below for the field order.
  */
@@ -31,6 +31,8 @@ object WatchProtocol {
     const val NAME_MAX = 20
     /** Radar headsigns: one line of the watch's vehicle card. */
     const val RADAR_HEADSIGN_MAX = 16
+    const val RADAR_STOPS = 8
+    const val RADAR_STOP_NAME = 8
     const val RADAR_RADIUS_MIN = 100
     const val RADAR_RADIUS_MAX = 2000
 
@@ -40,12 +42,15 @@ object WatchProtocol {
         data class Platforms(val platform: String) : Request
         data object Nearby : Request
         /**
-         * Vehicles within [radius] metres. [mine] are the watch's departures as (line, headsign as
-         * the watch got it, "" for any direction); vehicles matching one are marked and sent first.
+         * Vehicles within [radius] metres. Marked and sent first: those still to stop at [platform]
+         * (the watch's departures page), and those matching [mine], the watch's departures as
+         * (line, headsign as the watch got it, "" for any direction) - for a stop list's board,
+         * which has no single platform.
          */
         data class Vehicles(
             val radius: Int = TransitRepository.RADAR_RADIUS_M,
             val mine: List<Pair<String, String>> = emptyList(),
+            val platform: String? = null,
         ) : Request
     }
 
@@ -61,6 +66,7 @@ object WatchProtocol {
             "near" -> Request.Nearby
             "veh" -> Request.Vehicles(
                 radius = ((obj["r"] as? JsonPrimitive)?.intOrNull ?: TransitRepository.RADAR_RADIUS_M).coerceIn(RADAR_RADIUS_MIN, RADAR_RADIUS_MAX),
+                platform = (obj["p"] as? JsonPrimitive)?.content?.takeIf { it.isNotEmpty() },
                 mine = (obj["m"] as? JsonArray).orEmpty().mapNotNull { entry ->
                     val pair = entry as? JsonArray ?: return@mapNotNull null
                     val line = (pair.getOrNull(0) as? JsonPrimitive)?.content ?: return@mapNotNull null
@@ -165,12 +171,13 @@ object WatchProtocol {
      * {"c":"veh","lg","t","s":[[stopName, dx, dy], ...],
      *  "x":[[line, mode, dxMetres, dyMetres, headingDegreesOrMinus1, delayMinutes, headsign, mine0or1], ...]}
      *
-     * A vehicle is "mine" when its line and headsign match one of [mine] (headsigns shortened as in
-     * [departures], so they compare equal; an empty headsign matches any). Those come first, so the
-     * size limit drops other vehicles before them; the rest stay nearest first.
+     * A vehicle is "mine" when the backend marked it as still to stop at the watch's platform ("c"),
+     * or its line and headsign match one of [mine] (headsigns shortened as in [departures], so they
+     * compare equal; an empty headsign matches any). Those come first, so the size limit drops other
+     * vehicles before them; the rest stay nearest first.
      */
     fun vehicles(r: VehiclesResponse, lang: String, mine: List<Pair<String, String>> = emptyList()): ByteArray {
-        fun isMine(v: VehicleDto) = mine.any { (line, headsign) ->
+        fun isMine(v: VehicleDto) = v.c == 1 || mine.any { (line, headsign) ->
             line == v.l && (headsign.isEmpty() || headsign == TextShortener.shorten(v.h, HEADSIGN_MAX))
         }
         return fit(
@@ -178,10 +185,12 @@ object WatchProtocol {
                 put("c", "veh")
                 put("lg", lang)
                 put("t", r.t)
+                // the watches show five letters of a stop's name ("Koneč."): eight are plenty and
+                // leave room for stops out to the radar's edge
                 put("s", buildJsonArray {
-                    r.s.take(3).forEach { s ->
+                    r.s.take(RADAR_STOPS).forEach { s ->
                         add(buildJsonArray {
-                            add(JsonPrimitive(TextShortener.shorten(s.n, 14)))
+                            add(JsonPrimitive(s.n.take(RADAR_STOP_NAME)))
                             add(JsonPrimitive(s.dx))
                             add(JsonPrimitive(s.dy))
                         })

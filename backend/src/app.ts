@@ -5,7 +5,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import { departures } from './departures.js';
 import { offsetM, distanceM } from './geo.js';
 import { RealtimeFeed } from './realtime/feed.js';
-import { Tracker } from './realtime/tracker.js';
+import { Tracker, TripState } from './realtime/tracker.js';
 import { Group, Platform, Timetable } from './timetable.js';
 
 export interface AppOptions {
@@ -21,6 +21,8 @@ const MAX_NEARBY = 20;
 const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
 const MAX_VEHICLES = 30;
+/** Stops on the radar: enough to show the whole range, few enough to leave room for the vehicles. */
+const MAX_RADAR_STOPS = 8;
 const MAX_BOARD_PLATFORMS = 8;
 const MAX_HIDDEN_LINES = 200;
 const HOME_RADIUS = 400;
@@ -180,19 +182,23 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { t, dep };
   });
 
-  app.get<{ Querystring: { lat?: string; lon?: string; r?: string } }>('/v1/vehicles', async (req, reply) => {
+  app.get<{ Querystring: { lat?: string; lon?: string; r?: string; p?: string } }>('/v1/vehicles', async (req, reply) => {
     const pos = position(req.query);
     if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
     const radius = clampInt(req.query.r, 800, 100, MAX_RADIUS);
     await feed.refresh(now());
     const t = now();
+    // p: the platform(s) the user is looking at; vehicles still to stop there come first ("c": 1)
+    const platforms = new Set((req.query.p ?? '').split(',').filter((id) => id.length > 0).slice(0, MAX_BOARD_PLATFORMS));
+    const coming = (v: TripState) => platforms.size > 0 && tt.tripStops(v.tripId).some((s) => s.seq > v.passedSeq && platforms.has(s.stopId));
     const seen = new Set<string>();
     const vehicles = tracker
       .liveVehicles(t)
       .map((v) => ({ v, distance: distanceM(pos.lat, pos.lon, v.lat, v.lon) }))
       .filter((x) => x.distance <= radius)
-      .sort((a, b) => a.distance - b.distance)
-      .map(({ v }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: v.heading, h: v.headsign, dl: v.delay, a: t - v.ts }))
+      .map((x) => ({ ...x, c: coming(x.v) }))
+      .sort((a, b) => Number(b.c) - Number(a.c) || a.distance - b.distance)
+      .map(({ v, c }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: v.heading, h: v.headsign, dl: v.delay, a: t - v.ts, ...(c ? { c: 1 } : {}) }))
       // coupled units are reported as separate trips at the same spot; show them once
       .filter((v) => {
         const key = `${v.l}|${Math.round(v.dx / 20)}|${Math.round(v.dy / 20)}`;
@@ -201,14 +207,30 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         return true;
       })
       .slice(0, MAX_VEHICLES);
-    const stops = tt
-      .nearbyGroups(pos.lat, pos.lon, 3)
-      .filter((x) => x.distance <= radius)
-      .map(({ group }) => ({ n: group.name, ...offsetM(pos.lat, pos.lon, group.lat, group.lon) }));
+    const stops = radarStops(
+      tt.nearbyGroups(pos.lat, pos.lon, 200).filter((x) => x.distance <= radius).map(({ group }) => group),
+      radius,
+    ).map((group) => ({ n: group.name, ...offsetM(pos.lat, pos.lon, group.lat, group.lon) }));
     return { t, v: vehicles, s: stops };
   });
 
   return app;
+}
+
+/**
+ * Stops for the radar out of [groups] (nearest first): the nearest ones, then others at least a
+ * quarter of the range apart, so a zoomed-out radar shows stops out to its edge, not only the
+ * three next to the user.
+ */
+export function radarStops(groups: Group[], radius: number): Group[] {
+  const spacing = radius / 4;
+  const kept: Group[] = [];
+  for (const g of groups) {
+    if (kept.length >= MAX_RADAR_STOPS) break;
+    // the three nearest always: they are the ones the user can walk to
+    if (kept.length < 3 || kept.every((k) => distanceM(k.lat, k.lon, g.lat, g.lon) >= spacing)) kept.push(g);
+  }
+  return kept;
 }
 
 function position(q: { lat?: string; lon?: string }): { lat: number; lon: number } | undefined {

@@ -3,6 +3,7 @@ package io.github.juliajamnicka.fcil.wear
 import io.github.juliajamnicka.fcil.data.DepartureDto
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.PlatformDto
+import io.github.juliajamnicka.fcil.data.StopOffset
 import io.github.juliajamnicka.fcil.data.VehicleDto
 import io.github.juliajamnicka.fcil.data.VehiclesResponse
 import kotlinx.serialization.json.Json
@@ -35,6 +36,10 @@ class WatchProtocolTest {
         assertEquals(
             WatchProtocol.Request.Vehicles(1500, listOf("4" to "Náměstí Míru", "9" to "")),
             WatchProtocol.parseRequest("""{"c":"veh","r":1500,"m":[["4","Náměstí Míru"],["9",""]]}""".toByteArray()),
+        )
+        assertEquals(
+            WatchProtocol.Request.Vehicles(800, platform = "U1073Z1"),
+            WatchProtocol.parseRequest("""{"c":"veh","r":800,"p":"U1073Z1"}""".toByteArray()),
         )
         // the radius stays within what the backend serves
         assertEquals(WatchProtocol.Request.Vehicles(2000), WatchProtocol.parseRequest("""{"c":"veh","r":50000}""".toByteArray()))
@@ -100,6 +105,10 @@ class WatchProtocolTest {
         assertEquals(listOf("6", "4", "9", "4"), rows.map { it.jsonArray[0].jsonPrimitive.content })
         assertEquals(listOf("1", "1", "1", "0"), rows.map { it.jsonArray[7].jsonPrimitive.content })
         assertEquals("""["4","T",10,0,90,2,"Bystrc, Ečerova",0]""", rows[3].toString())
+        // still to stop at the watch's platform, as the backend marks it: mine whatever its line
+        val coming = near.copy(v = near.v + VehicleDto("12", "T", 50, 0, 0, 0, 3, h = "Komárov", c = 1))
+        val all = Json.parseToJsonElement(WatchProtocol.vehicles(coming, "cs", mine).decodeToString()).jsonObject["x"]!!.jsonArray
+        assertEquals(listOf("6", "4", "9", "12", "4"), all.map { it.jsonArray[0].jsonPrimitive.content })
     }
 
     @Test
@@ -118,6 +127,15 @@ class WatchProtocolTest {
         // two platforms (or an older backend without "o"): the opposite one, as before
         assertEquals("U1073Z2", WatchProtocol.nextPlatform(ceska))
         assertEquals("U1073Z1", WatchProtocol.nextPlatform(ceska.copy(p = "U1073Z2", opp = "U1073Z1")))
+    }
+
+    @Test
+    fun sendsTheRadarsStopsWithShortNames() {
+        val stops = List(10) { StopOffset("Konečného náměstí $it", it * 100, 0) }
+        val obj = Json.parseToJsonElement(WatchProtocol.vehicles(VehiclesResponse(t = 1, v = emptyList(), s = stops), "cs").decodeToString()).jsonObject
+        val s = obj["s"]!!.jsonArray
+        assertEquals(8, s.size)
+        assertEquals("""["Konečnéh",0,0]""", s[0].toString())
     }
 
     @Test

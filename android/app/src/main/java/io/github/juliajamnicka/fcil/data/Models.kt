@@ -80,6 +80,8 @@ data class VehicleDto(
     val a: Int,
     /** Headsign. */
     val h: String = "",
+    /** 1 when the vehicle will still stop at the platform the radar was asked about. */
+    val c: Int = 0,
 )
 
 @Serializable

@@ -48,8 +48,12 @@ class ApiClient(
     suspend fun nearby(at: GeoPoint, limit: Int): NearbyResponse =
         get("v1/nearby") { addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString()).addQueryParameter("limit", limit.toString()) }
 
-    suspend fun vehicles(at: GeoPoint, radius: Int): VehiclesResponse =
-        get("v1/vehicles") { addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString()).addQueryParameter("r", radius.toString()) }
+    /** [platform]: vehicles still to stop there are marked and listed first. */
+    suspend fun vehicles(at: GeoPoint, radius: Int, platform: String? = null): VehiclesResponse =
+        get("v1/vehicles") {
+            addQueryParameter("lat", at.lat.toString()).addQueryParameter("lon", at.lon.toString()).addQueryParameter("r", radius.toString())
+            if (!platform.isNullOrEmpty()) addQueryParameter("p", platform)
+        }
 
     /** Wakes a scaled-to-zero Cloud Run instance; errors are ignored. */
     suspend fun warmUp() {

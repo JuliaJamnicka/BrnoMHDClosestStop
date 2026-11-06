@@ -83,7 +83,11 @@ export default {
 
     load() {
         const self = this;
-        request({ c: 'veh', r: RADAR_RANGES[this.zoom], m: ownLines(state.lastDep) }, function (reply) {
+        const body = { c: 'veh', r: RADAR_RANGES[this.zoom], m: ownLines(state.lastDep) };
+        // the phone marks vehicles still to stop at the departures page's platform (a stop list's
+        // board has none: its lines are matched instead)
+        if (state.lastDep && state.lastDep.p) body.p = state.lastDep.p;
+        request(body, function (reply) {
             try {
                 self.showReply(reply);
             } catch (e) {

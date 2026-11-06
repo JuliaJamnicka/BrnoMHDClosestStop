@@ -5,7 +5,7 @@ interface TransitSource {
     suspend fun home(n: Int): DeparturesResponse
     suspend fun departures(platform: String, n: Int): DeparturesResponse
     suspend fun nearby(): NearbyResponse
-    suspend fun vehicles(radius: Int = TransitRepository.RADAR_RADIUS_M): VehiclesResponse
+    suspend fun vehicles(radius: Int = TransitRepository.RADAR_RADIUS_M, platform: String? = null): VehiclesResponse
 }
 
 class NoLocationException : Exception("Location unavailable")
@@ -34,8 +34,8 @@ class TransitRepository(
     override suspend fun nearby(): NearbyResponse =
         api.nearby(location.current() ?: throw NoLocationException(), NEARBY_LIMIT)
 
-    override suspend fun vehicles(radius: Int): VehiclesResponse =
-        api.vehicles(location.current() ?: throw NoLocationException(), radius)
+    override suspend fun vehicles(radius: Int, platform: String?): VehiclesResponse =
+        api.vehicles(location.current() ?: throw NoLocationException(), radius, platform)
 
     suspend fun warmUp() = api.warmUp()
 
