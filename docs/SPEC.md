@@ -114,6 +114,10 @@ Verified on 2026-10-08 by downloading the feeds and decoding them (results in se
   and both alias sources, 1085 / 1041 of 1146 / 1129 vehicle positions matched, the same as with
   the 2026-10-09 export alone (without the previous export: about 80). Because a new export no
   longer breaks matching, CI checks hourly for a new export (`Last-Modified`) and deploys it.
+- **Not only the previous one: the last four exports.** On 2026-11-06 a new export (05:53 Prague
+  time) pushed the 2026-10-29 export out of the cache, but the feed still used its numbering (it
+  never switched to the export in between): 25 of 1605 vehicles matched, no live data for hours.
+  CI now keeps the last four earlier exports and aliases all of them.
 - The feed sends one vehicle per calendar variant of a trip (e.g. vehicles 212200-212202 at the same
   position with trips 2903, 16936, 24096 of three service_ids). Mapped through aliases they collapse
   into the single trip of the current export.

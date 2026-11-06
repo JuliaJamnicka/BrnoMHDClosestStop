@@ -2,7 +2,7 @@
 // Runs offline (GitHub Actions / Docker build), never on the request path.
 //
 // Usage: node dist/build/buildDb.js [--source <url|zip|dir>] [--out <file>]
-//        [--alias-source <url|zip|dir>[,...]|none] [--prev-source <zip|dir>]
+//        [--alias-source <url|zip|dir>[,...]|none] [--prev-source <zip|dir>[,...]]
 
 import Database from 'better-sqlite3';
 import { parse } from 'csv-parse';
@@ -402,9 +402,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const source = arg('--source') ?? DEFAULT_SOURCE;
   const aliasArg = arg('--alias-source') ?? DEFAULT_ALIAS_SOURCE;
   const aliasSources = aliasArg === 'none' ? [] : aliasArg.split(',').filter(Boolean);
-  // The previous KORDIS export, kept by CI: the real-time feed can use its numbering for hours.
-  const prev = arg('--prev-source');
-  if (prev && fs.existsSync(prev)) aliasSources.push(prev);
+  // Earlier KORDIS exports, kept by CI: the real-time feed can use the numbering of one of them
+  // for days (on 2026-11-06 it still used the export of 2026-10-29, two exports back).
+  for (const prev of (arg('--prev-source') ?? '').split(',').filter(Boolean)) {
+    if (fs.existsSync(prev)) aliasSources.push(prev);
+  }
   const out = arg('--out') ?? 'data/timetable.db';
   buildDatabase(source, out, console.log, aliasSources).catch((err) => {
     console.error(err);

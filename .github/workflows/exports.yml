@@ -1,0 +1,30 @@
+name: kordis exports
+
+# Manual only: makes the KORDIS GTFS exports kept in an Actions cache by the backend workflow
+# downloadable (GitHub offers no download for caches). Find the key in the backend workflow's
+# deploy logs ("Cache restored from key" / "Cache saved with key").
+on:
+  workflow_dispatch:
+    inputs:
+      cache_key:
+        description: Cache key, e.g. kordis-exports-42069746962-1 (empty = the newest cache)
+        required: false
+        default: ''
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      # same path as in backend.yml: a cache is found only under the path it was saved with
+      - uses: actions/cache/restore@v4
+        with:
+          path: backend/data/exports
+          key: ${{ inputs.cache_key || format('kordis-exports-{0}', github.run_id) }}
+          restore-keys: ${{ inputs.cache_key == '' && 'kordis-exports-' || '' }}
+          fail-on-cache-miss: true
+      - run: ls -lR backend/data/exports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kordis-exports
+          path: backend/data/exports
+          retention-days: 30
