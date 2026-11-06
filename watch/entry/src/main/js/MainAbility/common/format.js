@@ -377,7 +377,10 @@ export function clockLabel(date) {
 export function distanceLabel(metres) {
   if (metres === undefined || metres === null) return '';
   if (metres < 1000) return metres + ' m';
-  return (Math.round(metres / 100) / 10).toString().replace('.', ',') + ' km';
+  // no String.replace: the GT 5 throws a TypeError on it (this broke the app from 1 km away and the
+  // radar's old "1,5 km" label)
+  const tenths = Math.round(metres / 100);
+  return Math.floor(tenths / 10) + ',' + (tenths % 10) + ' km';
 }
 
 // Lite wearable <text> wraps at any character, splitting words; break at spaces ourselves

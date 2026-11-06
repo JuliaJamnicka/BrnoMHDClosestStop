@@ -114,6 +114,9 @@ test('adds a direction arrow ahead of each vehicle with a known heading', () => 
 test('labels distances and texts in both languages', () => {
   assert.equal(distanceLabel(85), '85 m');
   assert.equal(distanceLabel(1240), '1,2 km');
+  assert.equal(distanceLabel(1000), '1,0 km');
+  assert.equal(distanceLabel(1960), '2,0 km');
+  assert.equal(distanceLabel(12345), '12,3 km');
   assert.equal(t('en', 'stale', { m: 2 }), 'Data 2 min old');
   assert.equal(t('cs', 'err_phone'), 'Telefon není připojen');
   assert.equal(t('xx', 'now'), 'teď');
