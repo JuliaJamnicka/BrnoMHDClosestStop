@@ -21,6 +21,8 @@ const MAX_NEARBY = 20;
 const MAX_DEPARTURES = 8;
 const MAX_RADIUS = 2000;
 const MAX_VEHICLES = 30;
+/** Stops on the radar: enough to show the whole range, few enough to leave room for the vehicles. */
+const MAX_RADAR_STOPS = 8;
 const MAX_BOARD_PLATFORMS = 8;
 const MAX_HIDDEN_LINES = 200;
 const HOME_RADIUS = 400;
@@ -201,14 +203,30 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         return true;
       })
       .slice(0, MAX_VEHICLES);
-    const stops = tt
-      .nearbyGroups(pos.lat, pos.lon, 3)
-      .filter((x) => x.distance <= radius)
-      .map(({ group }) => ({ n: group.name, ...offsetM(pos.lat, pos.lon, group.lat, group.lon) }));
+    const stops = radarStops(
+      tt.nearbyGroups(pos.lat, pos.lon, 200).filter((x) => x.distance <= radius).map(({ group }) => group),
+      radius,
+    ).map((group) => ({ n: group.name, ...offsetM(pos.lat, pos.lon, group.lat, group.lon) }));
     return { t, v: vehicles, s: stops };
   });
 
   return app;
+}
+
+/**
+ * Stops for the radar out of [groups] (nearest first): the nearest ones, then others at least a
+ * quarter of the range apart, so a zoomed-out radar shows stops out to its edge, not only the
+ * three next to the user.
+ */
+export function radarStops(groups: Group[], radius: number): Group[] {
+  const spacing = radius / 4;
+  const kept: Group[] = [];
+  for (const g of groups) {
+    if (kept.length >= MAX_RADAR_STOPS) break;
+    // the three nearest always: they are the ones the user can walk to
+    if (kept.length < 3 || kept.every((k) => distanceM(k.lat, k.lon, g.lat, g.lon) >= spacing)) kept.push(g);
+  }
+  return kept;
 }
 
 function position(q: { lat?: string; lon?: string }): { lat: number; lon: number } | undefined {

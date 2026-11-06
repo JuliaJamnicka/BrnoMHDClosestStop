@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildApp } from '../src/app.js';
+import { buildApp, radarStops } from '../src/app.js';
 import { departures } from '../src/departures.js';
 import { normalizeStopId, RtVehicle, STOPPED_AT, Tracker } from '../src/realtime/tracker.js';
 import { serviceDayBase, localDate, parseGtfsTime } from '../src/time.js';
@@ -271,6 +271,14 @@ describe('HTTP API', () => {
     const body = (await app.inject('/v1/vehicles?lat=49.198&lon=16.606&r=500')).json();
     // no bearing in the feed: the heading is the direction to the next stop (U1Z1, to the south)
     expect(body.v).toEqual([{ l: '4', m: 'T', dx: 0, dy: 111, b: 176, h: 'Řečkovice', dl: 0, a: 0 }]);
+  });
+
+  it('spreads the radar stops over the whole range', () => {
+    // a stop every 50 m going north: the three nearest, then one every quarter of the range
+    const groups = Array.from({ length: 30 }, (_, i) => ({ groupId: `G${i}`, name: `S${i}`, lat: 49.2 + (i * 50) / 111_200, lon: 16.6, platforms: [] }));
+    expect(radarStops(groups, 1500).map((g) => g.name)).toEqual(['S0', 'S1', 'S2', 'S10', 'S18', 'S26']);
+    // at most eight; 100 m apart at 400 m (S3 and S4 are within 100 m of S2)
+    expect(radarStops(groups, 400).map((g) => g.name)).toEqual(['S0', 'S1', 'S2', 'S5', 'S8', 'S11', 'S14', 'S17']);
   });
 
   it('uses the bearing from the feed when there is one', async () => {

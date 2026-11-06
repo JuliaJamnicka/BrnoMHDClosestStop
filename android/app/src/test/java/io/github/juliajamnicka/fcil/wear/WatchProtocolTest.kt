@@ -3,6 +3,7 @@ package io.github.juliajamnicka.fcil.wear
 import io.github.juliajamnicka.fcil.data.DepartureDto
 import io.github.juliajamnicka.fcil.data.DeparturesResponse
 import io.github.juliajamnicka.fcil.data.PlatformDto
+import io.github.juliajamnicka.fcil.data.StopOffset
 import io.github.juliajamnicka.fcil.data.VehicleDto
 import io.github.juliajamnicka.fcil.data.VehiclesResponse
 import kotlinx.serialization.json.Json
@@ -118,6 +119,15 @@ class WatchProtocolTest {
         // two platforms (or an older backend without "o"): the opposite one, as before
         assertEquals("U1073Z2", WatchProtocol.nextPlatform(ceska))
         assertEquals("U1073Z1", WatchProtocol.nextPlatform(ceska.copy(p = "U1073Z2", opp = "U1073Z1")))
+    }
+
+    @Test
+    fun sendsTheRadarsStopsWithShortNames() {
+        val stops = List(10) { StopOffset("Konečného náměstí $it", it * 100, 0) }
+        val obj = Json.parseToJsonElement(WatchProtocol.vehicles(VehiclesResponse(t = 1, v = emptyList(), s = stops), "cs").decodeToString()).jsonObject
+        val s = obj["s"]!!.jsonArray
+        assertEquals(8, s.size)
+        assertEquals("""["Konečnéh",0,0]""", s[0].toString())
     }
 
     @Test

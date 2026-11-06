@@ -31,6 +31,8 @@ object WatchProtocol {
     const val NAME_MAX = 20
     /** Radar headsigns: one line of the watch's vehicle card. */
     const val RADAR_HEADSIGN_MAX = 16
+    const val RADAR_STOPS = 8
+    const val RADAR_STOP_NAME = 8
     const val RADAR_RADIUS_MIN = 100
     const val RADAR_RADIUS_MAX = 2000
 
@@ -178,10 +180,12 @@ object WatchProtocol {
                 put("c", "veh")
                 put("lg", lang)
                 put("t", r.t)
+                // the watches show five letters of a stop's name ("Koneč."): eight are plenty and
+                // leave room for stops out to the radar's edge
                 put("s", buildJsonArray {
-                    r.s.take(3).forEach { s ->
+                    r.s.take(RADAR_STOPS).forEach { s ->
                         add(buildJsonArray {
-                            add(JsonPrimitive(TextShortener.shorten(s.n, 14)))
+                            add(JsonPrimitive(s.n.take(RADAR_STOP_NAME)))
                             add(JsonPrimitive(s.dx))
                             add(JsonPrimitive(s.dy))
                         })
