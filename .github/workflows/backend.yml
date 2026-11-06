@@ -12,6 +12,11 @@ on:
     # Hourly: deploy a new KORDIS export soon after it appears (skipped while it is unchanged)
     - cron: '50 * * * *'
   workflow_dispatch:
+    inputs:
+      exports_cache_key:
+        description: Also keep the KORDIS exports of this older cache (e.g. kordis-exports-<run id>-1) as trip aliases
+        required: false
+        default: ''
 
 defaults:
   run:
@@ -78,25 +83,40 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run build
-      # The real-time feed keeps using the previous export's trip_ids for hours after KORDIS
-      # publishes a new one, so the previous export is kept between runs and mapped as aliases.
+      # The real-time feed keeps using the trip_ids of an earlier export for days after KORDIS
+      # publishes a new one (on 2026-11-06 those of 2026-10-29, two exports back), so the last few
+      # exports are kept between runs and mapped as aliases.
+      # A manual run can bring back the exports of an older cache (exports_cache_key).
+      - if: inputs.exports_cache_key != ''
+        uses: actions/cache/restore@v4
+        with:
+          path: backend/data/exports
+          key: ${{ inputs.exports_cache_key }}
+      - if: inputs.exports_cache_key != ''
+        run: mkdir -p data/import && mv data/exports data/import/older && ls -lR data/import
       - uses: actions/cache/restore@v4
         with:
           path: backend/data/exports
           key: kordis-exports-${{ github.run_id }}
           restore-keys: kordis-exports-
-      - name: Download the current export, keep the previous one
+      - name: Download the current export, keep the earlier ones
         run: |
-          mkdir -p data/exports
+          mkdir -p data/exports/history
           curl -fsSL -D data/headers.txt -o data/gtfs.zip https://kordis-jmk.cz/gtfs/gtfs.zip
-          if [ -f data/exports/latest.zip ] && ! cmp -s data/gtfs.zip data/exports/latest.zip; then
-            mv data/exports/latest.zip data/exports/previous.zip
-          fi
+          # every export seen before that differs from the current one goes to history, once
+          # (previous.zip: caches from before the history; data/import: a manually restored cache)
+          for f in data/exports/latest.zip data/exports/previous.zip $(find data/import -name '*.zip' 2>/dev/null); do
+            [ -f "$f" ] && ! cmp -s "$f" data/gtfs.zip || continue
+            cp -p "$f" "data/exports/history/$(sha256sum "$f" | cut -c1-16).zip"
+          done
+          rm -f data/exports/previous.zip
           cp data/gtfs.zip data/exports/latest.zip
           tr -d '\r' < data/headers.txt | sed -n 's/^last-modified: //Ip' > data/exports/latest.modified
-          ls -l data/exports
+          # the four most recent earlier exports
+          ls -t data/exports/history/*.zip 2>/dev/null | tail -n +5 | xargs -r rm
+          ls -l data/exports data/exports/history
       - name: Build timetable database from the current GTFS feed
-        run: npm run build-db -- --source data/gtfs.zip --prev-source data/exports/previous.zip
+        run: npm run build-db -- --source data/gtfs.zip --prev-source "$(ls -t data/exports/history/*.zip 2>/dev/null | paste -sd, -)"
       - uses: actions/cache/save@v4
         with:
           path: backend/data/exports
