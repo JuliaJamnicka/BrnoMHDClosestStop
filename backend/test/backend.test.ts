@@ -281,6 +281,24 @@ describe('HTTP API', () => {
     expect(radarStops(groups, 400).map((g) => g.name)).toEqual(['S0', 'S1', 'S2', 'S5', 'S8', 'S11', 'S14', 'S17']);
   });
 
+  it('lists vehicles still to stop at the given platform first', async () => {
+    const tracker = new Tracker(tt);
+    const now = at('10:03:00');
+    // trip 100 is on its way to Česká (U1Z1); trip 200, nearer, goes the other way
+    tracker.update([
+      vehicle({ vehicleId: '1', tripId: '100', stopId: 'U1Z1', status: IN_TRANSIT_TO, ts: now, lat: 49.2, lon: 16.606 }),
+      vehicle({ vehicleId: '2', tripId: '200', stopId: 'U1Z2', status: IN_TRANSIT_TO, ts: now, lat: 49.1985, lon: 16.606 }),
+    ], now);
+    const app = buildApp({ timetable: tt, tracker, feed, now: () => now });
+    const mine = (await app.inject('/v1/vehicles?lat=49.198&lon=16.606&r=800&p=U1Z1')).json();
+    expect(mine.v.map((v: { l: string; h: string; c?: number }) => [v.h, v.c])).toEqual([['Řečkovice', 1], ['Komárov', undefined]]);
+    // already past Konečného náměstí (U2Z1): not coming there; without p no vehicle is marked
+    const passed = (await app.inject('/v1/vehicles?lat=49.198&lon=16.606&r=800&p=U2Z1')).json();
+    expect(passed.v.map((v: { h: string; c?: number }) => [v.h, v.c])).toEqual([['Komárov', undefined], ['Řečkovice', undefined]]);
+    const plain = (await app.inject('/v1/vehicles?lat=49.198&lon=16.606&r=800')).json();
+    expect(plain.v.every((v: { c?: number }) => v.c === undefined)).toBe(true);
+  });
+
   it('uses the bearing from the feed when there is one', async () => {
     const tracker = new Tracker(tt);
     const now = at('10:03:00');

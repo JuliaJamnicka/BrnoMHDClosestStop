@@ -5,7 +5,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import { departures } from './departures.js';
 import { offsetM, distanceM } from './geo.js';
 import { RealtimeFeed } from './realtime/feed.js';
-import { Tracker } from './realtime/tracker.js';
+import { Tracker, TripState } from './realtime/tracker.js';
 import { Group, Platform, Timetable } from './timetable.js';
 
 export interface AppOptions {
@@ -182,19 +182,23 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { t, dep };
   });
 
-  app.get<{ Querystring: { lat?: string; lon?: string; r?: string } }>('/v1/vehicles', async (req, reply) => {
+  app.get<{ Querystring: { lat?: string; lon?: string; r?: string; p?: string } }>('/v1/vehicles', async (req, reply) => {
     const pos = position(req.query);
     if (!pos) return reply.code(400).send({ error: 'lat and lon are required' });
     const radius = clampInt(req.query.r, 800, 100, MAX_RADIUS);
     await feed.refresh(now());
     const t = now();
+    // p: the platform(s) the user is looking at; vehicles still to stop there come first ("c": 1)
+    const platforms = new Set((req.query.p ?? '').split(',').filter((id) => id.length > 0).slice(0, MAX_BOARD_PLATFORMS));
+    const coming = (v: TripState) => platforms.size > 0 && tt.tripStops(v.tripId).some((s) => s.seq > v.passedSeq && platforms.has(s.stopId));
     const seen = new Set<string>();
     const vehicles = tracker
       .liveVehicles(t)
       .map((v) => ({ v, distance: distanceM(pos.lat, pos.lon, v.lat, v.lon) }))
       .filter((x) => x.distance <= radius)
-      .sort((a, b) => a.distance - b.distance)
-      .map(({ v }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: v.heading, h: v.headsign, dl: v.delay, a: t - v.ts }))
+      .map((x) => ({ ...x, c: coming(x.v) }))
+      .sort((a, b) => Number(b.c) - Number(a.c) || a.distance - b.distance)
+      .map(({ v, c }) => ({ l: v.line, m: v.mode, ...offsetM(pos.lat, pos.lon, v.lat, v.lon), b: v.heading, h: v.headsign, dl: v.delay, a: t - v.ts, ...(c ? { c: 1 } : {}) }))
       // coupled units are reported as separate trips at the same spot; show them once
       .filter((v) => {
         const key = `${v.l}|${Math.round(v.dx / 20)}|${Math.round(v.dy / 20)}`;

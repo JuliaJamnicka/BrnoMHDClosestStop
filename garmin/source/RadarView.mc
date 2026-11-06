@@ -56,7 +56,14 @@ class RadarView extends WatchUi.View {
     }
 
     function load() as Void {
-        getFcil().link.request({"c" => "veh", "r" => range(), "m" => ownLines()}, method(:onReply));
+        var body = {"c" => "veh", "r" => range(), "m" => ownLines()};
+        // the phone marks vehicles still to stop at the departures screen's platform (a stop list's
+        // board has none: its lines are matched instead)
+        var dep = getFcil().lastDep;
+        if (dep != null && dep["p"] instanceof String && !"".equals(dep["p"])) {
+            body["p"] = dep["p"];
+        }
+        getFcil().link.request(body, method(:onReply));
     }
 
     //! The departures screen's lines as [line, headsign] ("" for a stop list's board, whose rows
