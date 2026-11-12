@@ -23,8 +23,8 @@ export default {
         nav: '', // shared state from the previous page (common/state.js)
         title: '',
         autoText: '',
-        message: '',
-        hasMessage: false,
+        // the loading text or an error: a list of one or none, shown as a row under "Nearest (automatic)"
+        messages: [],
         stops: [],
     },
 
@@ -32,17 +32,16 @@ export default {
         restore(this);
         this.title = t(state.lang, 'nearest');
         this.autoText = t(state.lang, 'nearestAuto');
-        this.hasMessage = true;
-        this.message = t(state.lang, 'loading');
+        this.messages = [t(state.lang, 'loading')];
         const self = this;
         request({ c: 'near' }, function (reply) {
             self.title = t(state.lang, 'nearest');
             self.autoText = t(state.lang, 'nearestAuto');
             if (reply.c !== 'near') {
-                self.message = t(state.lang, errorKey(reply.e));
+                self.messages = [t(state.lang, errorKey(reply.e))];
                 return;
             }
-            self.hasMessage = false;
+            self.messages = [];
             const list = reply.x || [];
             ids = [];
             const stops = [];
