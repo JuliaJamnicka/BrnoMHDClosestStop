@@ -1,13 +1,17 @@
 <div class="screen" onswipe="onSwipe">
     <image class="now-mark" src="/common/images/now.png"></image>
     <text class="title">{{title}}</text>
-    <text if="{{hasMessage}}" class="hint">{{message}}</text>
     <list ref="list" class="list">
         <list-item class="item" onclick="pickNearest">
             <div class="rule"></div>
             <div class="item-content">
                 <text class="auto">{{autoText}}</text>
             </div>
+        </list-item>
+        <!-- loading or error under "Nearest (automatic)", which so stays at the top -->
+        <list-item for="{{messages}}" class="message-item">
+            <div class="rule"></div>
+            <text class="hint">{{$item}}</text>
         </list-item>
         <list-item for="{{stops}}" class="item" onclick="pick($idx)">
             <div class="rule"></div>

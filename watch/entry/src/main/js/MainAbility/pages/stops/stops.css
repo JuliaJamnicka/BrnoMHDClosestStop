@@ -76,7 +76,14 @@
     color: #c3ccdd;
     text-align: right;
 }
+.message-item {
+    width: 340px;
+    height: 132px;
+    flex-direction: column;
+    align-items: center;
+}
 .hint {
+    margin-top: 10px;
     width: 320px;
     height: 120px;
     font-size: 30px;

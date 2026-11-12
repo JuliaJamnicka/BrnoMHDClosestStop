@@ -160,8 +160,9 @@ export default {
 
     openCard(v) {
         cardVehicle = v;
-        this.card = vehicleCard(v, t(state.lang, 'onTime'));
+        // shown before it is filled: the GT 5 throws on a change inside a removed `if` (pages/index)
         this.hasCard = true;
+        this.card = vehicleCard(v, t(state.lang, 'onTime'));
     },
 
     closeCard() {
@@ -200,8 +201,8 @@ export default {
     },
 
     showStatus(text) {
-        this.status = text;
         this.hasStatus = true;
+        this.status = text;
     },
 
     onSwipe(e) {
