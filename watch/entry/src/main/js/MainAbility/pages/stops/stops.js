@@ -32,8 +32,8 @@ export default {
         restore(this);
         this.title = t(state.lang, 'nearest');
         this.autoText = t(state.lang, 'nearestAuto');
-        this.message = t(state.lang, 'loading');
         this.hasMessage = true;
+        this.message = t(state.lang, 'loading');
         const self = this;
         request({ c: 'near' }, function (reply) {
             self.title = t(state.lang, 'nearest');
@@ -42,7 +42,6 @@ export default {
                 self.message = t(state.lang, errorKey(reply.e));
                 return;
             }
-            self.message = '';
             self.hasMessage = false;
             const list = reply.x || [];
             ids = [];
