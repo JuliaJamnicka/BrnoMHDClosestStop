@@ -17,8 +17,8 @@ export default {
         restore(this);
         const current = state.lastDep;
         this.title = current ? current.s : t(state.lang, 'platforms');
-        this.message = t(state.lang, 'loading');
         this.hasMessage = true;
+        this.message = t(state.lang, 'loading');
         if (!current) {
             go('pages/index/index');
             return;
@@ -29,7 +29,6 @@ export default {
                 self.message = t(state.lang, errorKey(reply.e));
                 return;
             }
-            self.message = '';
             self.hasMessage = false;
             const list = reply.x || [];
             ids = [];

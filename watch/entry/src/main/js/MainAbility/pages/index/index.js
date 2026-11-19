@@ -14,6 +14,11 @@ const ERROR_ICONS = {
 };
 const HINT_CHARS = 22; // ~15 px per character at 30 px, 400 px lines, with margin for wide letters
 
+// On the GT 5 a page throws a TypeError when it changes a value bound inside an element that an
+// `if` has removed (seen as "TypeError @distance": a new distance while the footer showed the stale
+// note, or right after the error screen). So an `if` is switched on before what it shows is set,
+// and what it shows is only set while it is on.
+
 // Page-level variables (lite wearable pages only keep data and methods on `this`).
 let reply = null;
 let receivedAt = 0;
@@ -86,11 +91,22 @@ export default {
         cancel();
     },
 
+    // the loading screen's texts: only while it is shown (see the note at the top)
     applyTexts() {
+        if (this.view !== 'loading') return;
         this.loadingText = t(state.lang, 'loading');
         this.loadingSubText = t(state.lang, 'loadingSub');
+    },
+
+    // the error screen with [title], [lines] and an optional [icon], switched on before it is filled
+    showError(title, lines, icon) {
+        this.view = 'error';
+        crownOnRows = false;
+        this.errorTitle = title;
         this.retryText = t(state.lang, 'retry');
-        this.noDeparturesText = t(state.lang, 'noDepartures');
+        this.hasErrorIcon = !!icon;
+        if (icon) this.errorIcon = icon;
+        this.errorLines = lines;
     },
 
     load() {
@@ -110,14 +126,12 @@ export default {
     },
 
     showScriptError(e) {
-        this.errorTitle = t(state.lang, 'err_other');
-        this.hasErrorIcon = false;
         // "Try again" first; the technical detail last, small enough to ignore but there for a bug report
-        this.errorLines = wrapLines(t(state.lang, 'err_other_hint'), HINT_CHARS).concat(
-            wrapLines(describeError(e) + ' @' + step, HINT_CHARS),
+        this.showError(
+            t(state.lang, 'err_other'),
+            wrapLines(t(state.lang, 'err_other_hint'), HINT_CHARS).concat(wrapLines(describeError(e) + ' @' + step, HINT_CHARS)),
+            '',
         );
-        this.view = 'error';
-        crownOnRows = false;
     },
 
     showReply(answer) {
@@ -132,12 +146,11 @@ export default {
             if (reply) {
                 this.showDepartures(); // keep showing the last data; it turns stale after a minute
             } else {
-                this.errorTitle = t(state.lang, errorKey(answer.e));
-                this.errorIcon = ERROR_ICONS[answer.e] || '';
-                this.hasErrorIcon = this.errorIcon !== '';
-                this.errorLines = wrapLines(t(state.lang, errorKey(answer.e) + '_hint'), HINT_CHARS);
-                this.view = 'error';
-                crownOnRows = false;
+                this.showError(
+                    t(state.lang, errorKey(answer.e)),
+                    wrapLines(t(state.lang, errorKey(answer.e) + '_hint'), HINT_CHARS),
+                    ERROR_ICONS[answer.e] || '',
+                );
             }
         }
     },
@@ -150,34 +163,41 @@ export default {
         // "TypeError" without a place)
         step = 'now';
         const current = now();
+        const age = receivedAt ? current - receivedAt : 0;
+        const stale = age > STALE_AFTER_S;
+        const distance = distanceLabel(r.d);
+        const showDistance = !stale && distance !== '';
+        step = 'rows-compute';
+        const rows = departureRows(r, current, t(state.lang, 'now'), stale);
+        // the departures page first, then its contents (see the note at the top)
+        step = 'view';
+        this.view = 'dep';
         step = 'stop';
         this.stop = r.s;
         step = 'direction';
         this.direction = r.r ? '→ ' + r.r : ''; // a stop list (r.l) has no single direction
-        step = 'distance';
-        this.distance = distanceLabel(r.d);
-        this.distanceWidth = textWidth(this.distance, 30) + 4;
-        this.clockText = clockLabel(new Date());
         step = 'pinned';
         this.pinned = !!state.pinned;
         // centred in the header; with the pin beside it the name's box fits the name (300 px at most
         // with the 36 px pin), so the pin is not left out at the edge of the round screen
         this.stopWidth = this.pinned ? Math.min(264, textWidth(r.s, 38) + 4) : 300;
         this.canReverse = !!r.o;
-        const age = receivedAt ? current - receivedAt : 0;
-        const stale = age > STALE_AFTER_S;
-        step = 'rows-compute';
-        const rows = departureRows(r, current, t(state.lang, 'now'), stale);
         step = 'rows-set';
         this.rows = rows;
         this.empty = rows.length === 0;
+        if (this.empty) this.noDeparturesText = t(state.lang, 'noDepartures');
         // stale data dims the rows and takes the distance's place in the footer
         step = 'stale';
         this.isStale = stale;
-        this.staleText = stale ? t(state.lang, 'stale', { m: Math.floor(age / 60) }) : '';
-        this.showDistance = !stale && this.distance !== '';
-        step = 'view';
-        this.view = 'dep';
+        if (stale) this.staleText = t(state.lang, 'stale', { m: Math.floor(age / 60) });
+        step = 'distance';
+        this.showDistance = showDistance;
+        if (showDistance) {
+            this.distance = distance;
+            this.distanceWidth = textWidth(distance, 30) + 4;
+        }
+        step = 'clock';
+        this.clockText = clockLabel(new Date());
         this.focusCrown();
         step = 'done';
     },

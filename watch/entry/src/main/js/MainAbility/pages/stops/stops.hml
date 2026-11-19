@@ -1,26 +1,21 @@
 <div class="screen" onswipe="onSwipe">
     <image class="now-mark" src="/common/images/now.png"></image>
     <text class="title">{{title}}</text>
-    <text if="{{hasMessage}}" class="hint">{{message}}</text>
     <list ref="list" class="list">
-        <list-item class="item" onclick="pickNearest">
+        <!-- one list in a fixed order: "Nearest (automatic)", then the loading text or the stops (the
+             watch drew a second `for` above a fixed row before it, so there is only this one) -->
+        <list-item for="{{rows}}" class="item" onclick="pick($idx)">
             <div class="rule"></div>
             <div class="item-content">
-                <text class="auto">{{autoText}}</text>
-            </div>
-        </list-item>
-        <list-item for="{{stops}}" class="item" onclick="pick($idx)">
-            <div class="rule"></div>
-            <div class="item-content">
-                <div class="name-column">
-                    <text class="name">{{$item.name}}</text>
+                <div class="name-column" style="width: {{$item.nameWidth}}px;">
+                    <text class="name" style="width: {{$item.nameWidth}}px; color: {{$item.colour}};">{{$item.name}}</text>
                     <div class="chips">
                         <image if="{{$item.has0}}" class="chip" src="{{$item.c0}}" style="width: {{$item.w0}}px;"></image>
                         <image if="{{$item.has1}}" class="chip" src="{{$item.c1}}" style="width: {{$item.w1}}px;"></image>
                         <image if="{{$item.has2}}" class="chip" src="{{$item.c2}}" style="width: {{$item.w2}}px;"></image>
                     </div>
                 </div>
-                <text class="distance">{{$item.distance}}</text>
+                <text class="distance" style="width: {{$item.distanceWidth}}px;">{{$item.distance}}</text>
             </div>
         </list-item>
     </list>
